@@ -1,0 +1,22 @@
+{
+  "id": "09-expressao-escrita",
+  "title": "Uma história com cheiro a outono",
+  "topic": "Expressão escrita",
+  "instructions": "Lê com atenção e responde. Podes tentar as vezes que quiseres.",
+  "questions": [
+    {
+      "id": "q1",
+      "type": "written",
+      "prompt": "Imagina que encontras uma castanha mágica no caminho da escola. Escreve uma história de 6 a 10 frases. Conta onde estavas, o que aconteceu e como terminou a aventura.",
+      "explanation": "Revê com um adulto: a história tem início, desenvolvimento e fim? As frases têm sentido? Usaste letras maiúsculas, pontuação e algumas palavras ligadas ao outono?"
+    },
+    {
+      "id": "q2",
+      "type": "written",
+      "prompt": "Dá um título à tua história.",
+      "explanation": "Escolhe um título curto e relacionado com o acontecimento principal."
+    }
+  ],
+  "text": "Antes de escrever, pensa:\nQuem participa na história?\nOnde e quando acontece?\nQue surpresa traz a castanha mágica?\nComo termina a aventura?",
+  "subject": "Português"
+}

@@ -1,0 +1,73 @@
+{
+  "id": "02-compreensao-oral",
+  "title": "Escuta a história da Rita",
+  "topic": "Compreensão oral",
+  "instructions": "Lê com atenção e responde. Podes tentar as vezes que quiseres.",
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "prompt": "Com quem foi a Rita à feira?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Com a mãe."
+        },
+        {
+          "id": "b",
+          "text": "Com o irmão."
+        },
+        {
+          "id": "c",
+          "text": "Com os colegas."
+        }
+      ],
+      "correctAnswer": "a",
+      "explanation": "A Rita foi à feira com a mãe."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "prompt": "O que compraram para o lanche?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Pão e queijo."
+        },
+        {
+          "id": "b",
+          "text": "Castanhas assadas."
+        },
+        {
+          "id": "c",
+          "text": "Maçãs e peras."
+        }
+      ],
+      "correctAnswer": "b",
+      "explanation": "Compraram um cartucho de castanhas assadas."
+    },
+    {
+      "id": "q3",
+      "type": "multiple-choice",
+      "prompt": "A quem ofereceu a Rita a primeira castanha?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Ao vendedor."
+        },
+        {
+          "id": "b",
+          "text": "À avó."
+        },
+        {
+          "id": "c",
+          "text": "À mãe."
+        }
+      ],
+      "correctAnswer": "c",
+      "explanation": "A Rita ofereceu a primeira castanha à mãe."
+    }
+  ],
+  "audioText": "No sábado, a Rita foi à feira com a mãe. Estava frio e as duas levavam cachecóis. Perto da entrada, um vendedor assava castanhas. Compraram um cartucho para o lanche e sentaram-se num banco. A Rita ofereceu a primeira castanha à mãe.",
+  "subject": "Português"
+}

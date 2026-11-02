@@ -1,0 +1,57 @@
+{
+  "id": "06-onomatopeias",
+  "title": "As palavras também fazem sons",
+  "topic": "Onomatopeias",
+  "instructions": "Lê com atenção e responde. Podes tentar as vezes que quiseres.",
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "prompt": "Que som pode ser representado por «miau»?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O som de um gato."
+        },
+        {
+          "id": "b",
+          "text": "O som da chuva."
+        },
+        {
+          "id": "c",
+          "text": "O som de um relógio."
+        }
+      ],
+      "correctAnswer": "a",
+      "explanation": "Miau imita o som produzido pelo gato."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "prompt": "Que onomatopeia pode representar um relógio?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Atchim!"
+        },
+        {
+          "id": "b",
+          "text": "Tique-taque."
+        },
+        {
+          "id": "c",
+          "text": "Có-córó-có!"
+        }
+      ],
+      "correctAnswer": "b",
+      "explanation": "Tique-taque imita o som de um relógio."
+    },
+    {
+      "id": "q3",
+      "type": "written",
+      "prompt": "Escreve uma frase que inclua uma onomatopeia.",
+      "explanation": "Exemplo: «Toc, toc! Alguém bateu à porta.» Verifica se a palavra escolhida imita um som."
+    }
+  ],
+  "subject": "Português"
+}

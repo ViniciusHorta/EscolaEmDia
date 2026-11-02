@@ -1,0 +1,93 @@
+{
+  "id": "04-silabas",
+  "title": "Palavras aos bocadinhos",
+  "topic": "Sílabas",
+  "instructions": "Lê com atenção e responde. Podes tentar as vezes que quiseres.",
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "prompt": "Quantas sílabas tem «castanha»?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Duas."
+        },
+        {
+          "id": "b",
+          "text": "Três."
+        },
+        {
+          "id": "c",
+          "text": "Quatro."
+        }
+      ],
+      "correctAnswer": "b",
+      "explanation": "cas-ta-nha: três sílabas. É uma palavra trissilábica."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "prompt": "Como se classifica «sol» quanto ao número de sílabas?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Monossílabo."
+        },
+        {
+          "id": "b",
+          "text": "Dissílabo."
+        },
+        {
+          "id": "c",
+          "text": "Polissílabo."
+        }
+      ],
+      "correctAnswer": "a",
+      "explanation": "Sol tem uma única sílaba: é um monossílabo."
+    },
+    {
+      "id": "q3",
+      "type": "multiple-choice",
+      "prompt": "Qual destas palavras é dissilábica?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Pé."
+        },
+        {
+          "id": "b",
+          "text": "Casa."
+        },
+        {
+          "id": "c",
+          "text": "Borboleta."
+        }
+      ],
+      "correctAnswer": "b",
+      "explanation": "Ca-sa tem duas sílabas. Pé tem uma e bor-bo-le-ta tem quatro."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "prompt": "Como se classifica «borboleta» quanto ao número de sílabas?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Dissílabo."
+        },
+        {
+          "id": "b",
+          "text": "Trissílabo."
+        },
+        {
+          "id": "c",
+          "text": "Polissílabo."
+        }
+      ],
+      "correctAnswer": "c",
+      "explanation": "Bor-bo-le-ta tem quatro sílabas. Uma palavra com quatro ou mais sílabas é um polissílabo."
+    }
+  ],
+  "subject": "Português"
+}

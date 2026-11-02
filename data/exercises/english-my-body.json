@@ -1,0 +1,252 @@
+{
+  "id": "english-my-body",
+  "title": "Parts of the Body",
+  "subject": "Inglês",
+  "topic": "My body - Pages 16, 17 and 20",
+  "instructions": "Practise body parts and complete the sentences.",
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "prompt": "What is 'pescoço' in English?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Shoulders"
+        },
+        {
+          "id": "b",
+          "text": "Neck"
+        },
+        {
+          "id": "c",
+          "text": "Arms"
+        },
+        {
+          "id": "d",
+          "text": "Legs"
+        }
+      ],
+      "correctAnswer": "b",
+      "explanation": "Neck significa pescoço."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "prompt": "What does 'shoulders' mean?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Joelhos"
+        },
+        {
+          "id": "b",
+          "text": "Braços"
+        },
+        {
+          "id": "c",
+          "text": "Ombros"
+        },
+        {
+          "id": "d",
+          "text": "Mãos"
+        }
+      ],
+      "correctAnswer": "c",
+      "explanation": "Shoulders significa ombros."
+    },
+    {
+      "id": "q3",
+      "type": "multiple-choice",
+      "prompt": "What is the plural of 'foot'?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Foots"
+        },
+        {
+          "id": "b",
+          "text": "Footes"
+        },
+        {
+          "id": "c",
+          "text": "Feets"
+        },
+        {
+          "id": "d",
+          "text": "Feet"
+        }
+      ],
+      "correctAnswer": "d",
+      "explanation": "Foot significa pé e feet significa pés."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "prompt": "What does 'toes' mean?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Dedos dos pés"
+        },
+        {
+          "id": "b",
+          "text": "Dedos das mãos"
+        },
+        {
+          "id": "c",
+          "text": "Pernas"
+        },
+        {
+          "id": "d",
+          "text": "Braços"
+        }
+      ],
+      "correctAnswer": "a",
+      "explanation": "Toes significa dedos dos pés."
+    },
+    {
+      "id": "q5",
+      "type": "multiple-choice",
+      "prompt": "Complete: Touch your ____! (Toca nas tuas pernas!)",
+      "options": [
+        {
+          "id": "a",
+          "text": "hands"
+        },
+        {
+          "id": "b",
+          "text": "legs"
+        },
+        {
+          "id": "c",
+          "text": "ears"
+        },
+        {
+          "id": "d",
+          "text": "arms"
+        }
+      ],
+      "correctAnswer": "b",
+      "explanation": "Legs significa pernas."
+    },
+    {
+      "id": "q6",
+      "type": "multiple-choice",
+      "prompt": "How many arms has a typical human body got?",
+      "options": [
+        {
+          "id": "a",
+          "text": "One"
+        },
+        {
+          "id": "b",
+          "text": "Three"
+        },
+        {
+          "id": "c",
+          "text": "Two"
+        },
+        {
+          "id": "d",
+          "text": "Four"
+        }
+      ],
+      "correctAnswer": "c",
+      "explanation": "O corpo humano tem normalmente dois braços. Two arms."
+    },
+    {
+      "id": "q7",
+      "type": "multiple-choice",
+      "prompt": "Complete: My robot has got four ____ and three legs.",
+      "options": [
+        {
+          "id": "a",
+          "text": "arms"
+        },
+        {
+          "id": "b",
+          "text": "nose"
+        },
+        {
+          "id": "c",
+          "text": "head"
+        },
+        {
+          "id": "d",
+          "text": "mouth"
+        }
+      ],
+      "correctAnswer": "a",
+      "explanation": "Four arms significa quatro braços."
+    },
+    {
+      "id": "q8",
+      "type": "multiple-choice",
+      "prompt": "Which word means 'mãos'?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Feet"
+        },
+        {
+          "id": "b",
+          "text": "Legs"
+        },
+        {
+          "id": "c",
+          "text": "Arms"
+        },
+        {
+          "id": "d",
+          "text": "Hands"
+        }
+      ],
+      "correctAnswer": "d",
+      "explanation": "Hands significa mãos."
+    },
+    {
+      "id": "q9",
+      "type": "multiple-choice",
+      "prompt": "Complete: He has got ____ eyes and brown hair.",
+      "options": [
+        {
+          "id": "a",
+          "text": "long"
+        },
+        {
+          "id": "b",
+          "text": "blue"
+        },
+        {
+          "id": "c",
+          "text": "tall"
+        },
+        {
+          "id": "d",
+          "text": "short"
+        }
+      ],
+      "correctAnswer": "b",
+      "explanation": "Blue eyes significa olhos azuis."
+    },
+    {
+      "id": "q10",
+      "type": "written",
+      "prompt": "Write five parts of the body in English.",
+      "explanation": "Exemplo: head, neck, arms, hands, legs."
+    },
+    {
+      "id": "q11",
+      "type": "written",
+      "prompt": "Imagine a robot. Complete: My robot has got ____ arms, ____ legs and ____ eyes.",
+      "explanation": "Resposta livre. Utiliza números em inglês para descrever o robô."
+    },
+    {
+      "id": "q12",
+      "type": "written",
+      "prompt": "Describe your best friend using 'He has got' or 'She has got'.",
+      "explanation": "Exemplo: She has got brown eyes and long hair."
+    }
+  ]
+}

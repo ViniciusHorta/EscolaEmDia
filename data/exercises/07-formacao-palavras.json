@@ -1,0 +1,72 @@
+{
+  "id": "07-formacao-palavras",
+  "title": "Uma palavra pode crescer",
+  "topic": "Formação de palavras",
+  "instructions": "Lê com atenção e responde. Podes tentar as vezes que quiseres.",
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "prompt": "Que elemento foi acrescentado a «feliz» para formar «infeliz»?",
+      "options": [
+        {
+          "id": "a",
+          "text": "O prefixo in-."
+        },
+        {
+          "id": "b",
+          "text": "O sufixo -mente."
+        },
+        {
+          "id": "c",
+          "text": "A palavra sol."
+        }
+      ],
+      "correctAnswer": "a",
+      "explanation": "O prefixo in- foi colocado antes da palavra feliz."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "prompt": "Como se forma «felizmente»?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Acrescentando o prefixo des-."
+        },
+        {
+          "id": "b",
+          "text": "Acrescentando o sufixo -mente a feliz."
+        },
+        {
+          "id": "c",
+          "text": "Juntando duas palavras completas."
+        }
+      ],
+      "correctAnswer": "b",
+      "explanation": "O sufixo -mente foi acrescentado no final de feliz."
+    },
+    {
+      "id": "q3",
+      "type": "multiple-choice",
+      "prompt": "Qual é uma palavra formada por composição?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Infeliz."
+        },
+        {
+          "id": "b",
+          "text": "Florista."
+        },
+        {
+          "id": "c",
+          "text": "Guarda-chuva."
+        }
+      ],
+      "correctAnswer": "c",
+      "explanation": "Guarda-chuva resulta da junção de guarda e chuva."
+    }
+  ],
+  "subject": "Português"
+}

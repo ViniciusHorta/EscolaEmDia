@@ -1,0 +1,68 @@
+{
+  "id": "05-silaba-tonica",
+  "title": "Onde está a força da palavra?",
+  "topic": "Sílaba tónica",
+  "instructions": "Lê com atenção e responde. Podes tentar as vezes que quiseres.",
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "prompt": "Qual é a sílaba tónica de «café»?",
+      "options": [
+        {
+          "id": "a",
+          "text": "ca"
+        },
+        {
+          "id": "b",
+          "text": "fé"
+        }
+      ],
+      "correctAnswer": "b",
+      "explanation": "Em ca-FÉ, a última sílaba é a mais forte. Café é uma palavra aguda."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "prompt": "Como se classifica «castanha» quanto à posição da sílaba tónica?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Aguda."
+        },
+        {
+          "id": "b",
+          "text": "Grave."
+        },
+        {
+          "id": "c",
+          "text": "Esdrúxula."
+        }
+      ],
+      "correctAnswer": "b",
+      "explanation": "Em cas-TA-nha, a sílaba tónica é a penúltima. É uma palavra grave."
+    },
+    {
+      "id": "q3",
+      "type": "multiple-choice",
+      "prompt": "Qual destas palavras é esdrúxula?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Sofá."
+        },
+        {
+          "id": "b",
+          "text": "Janela."
+        },
+        {
+          "id": "c",
+          "text": "Música."
+        }
+      ],
+      "correctAnswer": "c",
+      "explanation": "MÚ-si-ca tem a antepenúltima sílaba tónica: é esdrúxula."
+    }
+  ],
+  "subject": "Português"
+}

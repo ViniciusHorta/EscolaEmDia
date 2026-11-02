@@ -1,0 +1,58 @@
+{
+  "id": "01-compreensao-escrita",
+  "title": "Um passeio de outono",
+  "topic": "Compreensão escrita",
+  "instructions": "Lê com atenção e responde. Podes tentar as vezes que quiseres.",
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "prompt": "Onde foi a Leonor com o avô?",
+      "options": [
+        {
+          "id": "a",
+          "text": "À praia."
+        },
+        {
+          "id": "b",
+          "text": "Ao parque."
+        },
+        {
+          "id": "c",
+          "text": "À biblioteca."
+        }
+      ],
+      "correctAnswer": "b",
+      "explanation": "O texto conta que a Leonor foi ao parque com o avô."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "prompt": "Porque guardou a folha no caderno?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Para recordar o passeio."
+        },
+        {
+          "id": "b",
+          "text": "Para alimentar os pássaros."
+        },
+        {
+          "id": "c",
+          "text": "Para fazer uma sopa."
+        }
+      ],
+      "correctAnswer": "a",
+      "explanation": "A folha ajudaria a Leonor a recordar aquele dia."
+    },
+    {
+      "id": "q3",
+      "type": "written",
+      "prompt": "Que outro título darias a este texto?",
+      "explanation": "Aceitam-se títulos relacionados com o passeio, o outono ou a descoberta da folha."
+    }
+  ],
+  "text": "Numa manhã de outono, a Leonor foi ao parque com o avô. O chão estava coberto de folhas amarelas e castanhas. Junto a um banco, encontrou uma folha em forma de estrela.\n— Posso levá-la comigo? — perguntou.\nO avô sorriu. Em casa, a Leonor guardou a folha no caderno para recordar aquele passeio.",
+  "subject": "Português"
+}
