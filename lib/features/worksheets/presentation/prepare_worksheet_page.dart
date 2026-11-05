@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/request_id.dart';
+import '../../../core/utils/search_text.dart';
 import '../../../core/utils/subject_icons.dart';
 import '../../../shared/widgets/app_badge.dart';
 import '../../../shared/widgets/app_button.dart';
@@ -21,6 +22,10 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
   List<SchoolSubject> subjects=[];
   List<SchoolTopic> topics=[];
   List<WorksheetSummary> proposals=[];
+  /// Fichas publicadas da disciplina e do ano, para pesquisar temas também pelo nome das fichas.
+  List<WorksheetSummary> catalogue=[];
+  final topicSearch=TextEditingController();
+  final worksheetSearch=TextEditingController();
   ChildProfile? child;
   SchoolSubject? subject;
   final selectedTopics=<String>{};
@@ -33,6 +38,7 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
   int generation=0;
 
   @override void initState(){super.initState();child=widget.children.isEmpty?null:widget.children.first;loadSubjects();}
+  @override void dispose(){topicSearch.dispose();worksheetSearch.dispose();super.dispose();}
   Future<void> loadSubjects() async {
     setState((){loading=true;error=null;});
     try{final data=await widget.service.subjects();if(!mounted)return;setState(()=>subjects=data);}
@@ -42,8 +48,14 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
   Future<void> loadTopics() async {
     final target=subject; final profile=child;if(target==null||profile==null)return;
     final current=++generation;
-    setState((){loading=true;topics=[];selectedTopics.clear();error=null;});
-    try{final data=await widget.service.topics(target.id,profile.schoolYear);if(mounted&&current==generation)setState(()=>topics=data);}
+    setState((){loading=true;topics=[];catalogue=[];selectedTopics.clear();error=null;});
+    try{
+      // Sem temas, o catálogo devolve todas as fichas publicadas da disciplina e do ano.
+      // Se falhar, a pesquisa continua a funcionar só pelo nome dos temas.
+      final fetched=await Future.wait([widget.service.topics(target.id,profile.schoolYear),
+        widget.service.proposals(target.id,profile.schoolYear,const <String>{}).catchError((Object _)=>const <WorksheetSummary>[])]);
+      if(mounted&&current==generation)setState((){topics=fetched[0] as List<SchoolTopic>;catalogue=fetched[1] as List<WorksheetSummary>;});
+    }
     on WorksheetException catch(failure){if(mounted&&current==generation)setState(()=>error=failure.message);}
     finally{if(mounted&&current==generation)setState(()=>loading=false);}
   }
@@ -54,9 +66,13 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
       final data=await widget.service.proposals(subject!.id,child!.schoolYear,selectedTopics);
       if(!mounted)return;
       if(data.isEmpty){setState(()=>error='Ainda não existe uma ficha publicada para estes temas. Escolhe outra combinação.');return;}
-      final content=await widget.service.detail(data.first);
+      // O termo pesquisado nos temas passa para a seleção da ficha e escolhe a primeira que corresponde.
+      final term=topicSearch.text.trim();
+      final initial=data.firstWhere((item)=>worksheetMatches(item,term),orElse:()=>data.first);
+      final content=await widget.service.detail(initial);
       if(!mounted)return;
-      setState((){proposals=data;worksheet=data.first;detail=content;step=2;requestId=newRequestId();});
+      worksheetSearch.text=term;
+      setState((){proposals=data;worksheet=initial;detail=content;step=2;requestId=newRequestId();});
     }on WorksheetException catch(failure){if(mounted)setState(()=>error=failure.message);}
     finally{if(mounted)setState(()=>busy=false);}
   }
@@ -74,6 +90,35 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
     on WorksheetException catch(failure){if(mounted)setState(()=>error=failure.message);}
     finally{if(mounted)setState(()=>busy=false);}
   }
+  bool worksheetMatches(WorksheetSummary item,String query)=>
+    matchesSearch('${item.title} ${item.topicNames.join(' ')}',query);
+  /// Fichas cujo título corresponde à pesquisa e que cobrem este tema.
+  List<WorksheetSummary> worksheetHits(SchoolTopic topic,String query)=>normalizeSearch(query).isEmpty?const []
+    :catalogue.where((item)=>item.topicNames.contains(topic.name)&&matchesSearch(item.title,query)).toList();
+  List<SchoolTopic> get visibleTopics{
+    final query=topicSearch.text;
+    if(normalizeSearch(query).isEmpty)return topics;
+    return topics.where((item)=>selectedTopics.contains(item.id)||matchesSearch(item.name,query)||worksheetHits(item,query).isNotEmpty).toList();
+  }
+
+  Widget searchField(TextEditingController controller,String hint)=>TextField(
+    controller:controller,
+    enabled:!busy,
+    textInputAction:TextInputAction.search,
+    onChanged:(_)=>setState((){}),
+    decoration:InputDecoration(
+      hintText:hint,
+      prefixIcon:const Icon(Icons.search_rounded),
+      suffixIcon:controller.text.isEmpty?null:IconButton(tooltip:'Limpar pesquisa',icon:const Icon(Icons.close_rounded),
+        onPressed:()=>setState(controller.clear)),
+      filled:true,fillColor:AppColors.softBlue,
+      contentPadding:const EdgeInsets.symmetric(horizontal:16,vertical:14),
+      border:OutlineInputBorder(borderRadius:BorderRadius.circular(AppRadii.pill),borderSide:BorderSide.none),
+      focusedBorder:OutlineInputBorder(borderRadius:BorderRadius.circular(AppRadii.pill),
+        borderSide:const BorderSide(color:AppColors.primary,width:2)),
+    ),
+  );
+
   void reset()=>setState((){step=1;success=false;worksheet=null;detail=null;proposals=[];error=null;requestId='';});
   Future<void> viewChild() async {
     if(busy||child==null)return;
@@ -174,19 +219,27 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
             SizedBox(height:2),
             Text('Seleciona 1 ou mais do currículo oficial',style:TextStyle(fontSize:14,color:AppColors.muted)),
           ])),
-          if(topics.isNotEmpty&&!loading)TextButton(
-            onPressed:busy?null:()=>setState((){
-              if(selectedTopics.length==topics.length){selectedTopics.clear();}else{selectedTopics.addAll(topics.map((item)=>item.id));}
-            }),
-            style:TextButton.styleFrom(backgroundColor:AppColors.lavender,shape:const StadiumBorder()),
-            child:Text(selectedTopics.length==topics.length?'Nenhum':'Todos')),
+          if(visibleTopics.isNotEmpty&&!loading)Builder(builder:(context){
+            final visible=visibleTopics.map((item)=>item.id).toList();
+            final all=visible.every(selectedTopics.contains);
+            return TextButton(
+              onPressed:busy?null:()=>setState((){if(all){selectedTopics.removeAll(visible);}else{selectedTopics.addAll(visible);}}),
+              style:TextButton.styleFrom(backgroundColor:AppColors.lavender,shape:const StadiumBorder()),
+              child:Text(all?'Nenhum':'Todos'));
+          }),
         ])),
         const SizedBox(height:16),
         if(loading)const Padding(padding:EdgeInsets.all(24),child:Center(child:CircularProgressIndicator(semanticsLabel:'A carregar o catálogo')))
         else if(subject==null)const _HintBox('Escolhe uma disciplina para ver os temas.')
         else if(topics.isEmpty)const _HintBox('Ainda não existem temas para esta disciplina e ano escolar.')
-        else for(final item in topics)Padding(padding:const EdgeInsets.only(bottom:10),child:_TopicOption(
+        else ...[
+          Padding(padding:const EdgeInsets.only(bottom:14),
+            child:searchField(topicSearch,'Pesquisar tema ou nome de ficha')),
+          if(visibleTopics.isEmpty)_HintBox('Nenhum tema ou ficha encontrado para «${topicSearch.text.trim()}».'),
+        ],
+        if(!loading&&subject!=null)for(final item in visibleTopics)Padding(padding:const EdgeInsets.only(bottom:10),child:_TopicOption(
           topic:item,selected:selectedTopics.contains(item.id),
+          worksheets:worksheetHits(item,topicSearch.text).map((w)=>w.title).toList(),
           onTap:busy?null:()=>setState((){if(!selectedTopics.remove(item.id))selectedTopics.add(item.id);}))),
         const SizedBox(height:6),
         Container(padding:const EdgeInsets.all(16),
@@ -264,7 +317,11 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
       ])),
       if(proposals.length>1)...[
         sectionTitle('Outras propostas para estes temas'),
-        for(final candidate in proposals)Padding(padding:const EdgeInsets.only(bottom:10),child:AppCard(
+        Padding(padding:const EdgeInsets.only(bottom:12),
+          child:searchField(worksheetSearch,'Pesquisar ficha por nome ou tema')),
+        if(!proposals.any((candidate)=>worksheetMatches(candidate,worksheetSearch.text)))
+          _HintBox('Nenhuma ficha encontrada para «${worksheetSearch.text.trim()}».'),
+        for(final candidate in proposals.where((candidate)=>worksheetMatches(candidate,worksheetSearch.text)))Padding(padding:const EdgeInsets.only(bottom:10),child:AppCard(
           padding:const EdgeInsets.all(16),
           selected:candidate.versionId==item.versionId,onTap:busy?null:()=>chooseProposal(candidate),
           child:Row(children:[Icon(candidate.versionId==item.versionId?Icons.check_circle_rounded:Icons.circle_outlined,color:AppColors.primary),
@@ -459,11 +516,14 @@ class _SubjectOption extends StatelessWidget {
 }
 
 class _TopicOption extends StatelessWidget {
-  const _TopicOption({required this.topic,required this.selected,required this.onTap});
+  const _TopicOption({required this.topic,required this.selected,required this.onTap,this.worksheets=const []});
   final SchoolTopic topic;
+  /// Fichas deste tema cujo nome corresponde à pesquisa.
+  final List<String> worksheets;
   final bool selected;
   final VoidCallback? onTap;
-  @override Widget build(BuildContext context)=>Semantics(checked:selected,button:true,excludeSemantics:true,label:topic.name,
+  @override Widget build(BuildContext context)=>Semantics(checked:selected,button:true,excludeSemantics:true,
+    label:worksheets.isEmpty?topic.name:'${topic.name}. Ficha: ${worksheets.join(', ')}',
     child:Material(
       color:selected?AppColors.surface:AppColors.softBlue,
       shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(22),
@@ -477,7 +537,14 @@ class _TopicOption extends StatelessWidget {
               boxShadow:selected?const [BoxShadow(color:Color(0xFF46A302),offset:Offset(0,2))]:null),
             child:selected?const Icon(Icons.check_rounded,color:Colors.white,size:22):null),
           const SizedBox(width:14),
-          Expanded(child:Text(topic.name,style:TextStyle(fontSize:16,fontWeight:selected?FontWeight.w700:FontWeight.w600,color:AppColors.text))),
+          Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+            Text(topic.name,style:TextStyle(fontSize:16,fontWeight:selected?FontWeight.w700:FontWeight.w600,color:AppColors.text)),
+            if(worksheets.isNotEmpty)Padding(padding:const EdgeInsets.only(top:4),child:Row(children:[
+              const Icon(Icons.description_outlined,size:16,color:AppColors.primary),const SizedBox(width:6),
+              Expanded(child:Text('Ficha: «${worksheets.first}»${worksheets.length>1?' e mais ${worksheets.length-1}':''}',
+                maxLines:2,overflow:TextOverflow.ellipsis,style:const TextStyle(fontSize:13,color:AppColors.primary,fontWeight:FontWeight.w600))),
+            ])),
+          ])),
         ]))),
     ));
 }
