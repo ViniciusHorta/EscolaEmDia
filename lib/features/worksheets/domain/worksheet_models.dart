@@ -24,14 +24,15 @@ class WorksheetSummary {
     topicNames:(value['topicNames'] as List).cast<String>(),isSample:value['isSample']==true);
 }
 class AssignedWorksheet {
-  const AssignedWorksheet({required this.id,required this.childId,required this.worksheet,required this.assignedAt,this.activeAttemptId,this.latestAttemptId,this.latestAttemptStatus,this.latestAttemptNumber});
+  const AssignedWorksheet({required this.id,required this.childId,required this.worksheet,required this.assignedAt,this.activeAttemptId,this.latestAttemptId,this.latestAttemptStatus,this.latestAttemptNumber,this.latestCompletedAttemptId,this.latestCompletedAttemptNumber});
   final String id,childId;
-  final String? activeAttemptId,latestAttemptId,latestAttemptStatus;
-  final int? latestAttemptNumber;
+  final String? activeAttemptId,latestAttemptId,latestAttemptStatus,latestCompletedAttemptId;
+  final int? latestAttemptNumber,latestCompletedAttemptNumber;
   bool get canRepeat => activeAttemptId==null && latestAttemptId!=null && latestAttemptStatus=='completed';
   final WorksheetSummary worksheet;
   final DateTime assignedAt;
   factory AssignedWorksheet.fromJson(Map value) => AssignedWorksheet(id:value['id'] as String,
     childId:value['childId'] as String,worksheet:WorksheetSummary.fromJson(value['worksheet'] as Map),
-    assignedAt:DateTime.parse(value['assignedAt'] as String),activeAttemptId:value['activeAttemptId'] as String?,latestAttemptId:value['latestAttemptId'] as String?,latestAttemptStatus:value['latestAttemptStatus'] as String?,latestAttemptNumber:value['latestAttemptNumber'] as int?);
+    assignedAt:DateTime.parse(value['assignedAt'] as String),activeAttemptId:value['activeAttemptId'] as String?,latestAttemptId:value['latestAttemptId'] as String?,latestAttemptStatus:value['latestAttemptStatus'] as String?,latestAttemptNumber:value['latestAttemptNumber'] as int?,
+    latestCompletedAttemptId:value['latestCompletedAttemptId'] as String?,latestCompletedAttemptNumber:value['latestCompletedAttemptNumber'] as int?);
 }

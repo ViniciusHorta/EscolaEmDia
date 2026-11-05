@@ -6,9 +6,9 @@ import '../../../../shared/widgets/app_button.dart';
 import '../../domain/worksheet_models.dart';
 
 class AssignedWorksheetCard extends StatelessWidget {
-  const AssignedWorksheetCard({super.key,required this.assignment,this.onStart,this.onRepeat});
+  const AssignedWorksheetCard({super.key,required this.assignment,this.onStart,this.onRepeat,this.onViewFeedback});
   final AssignedWorksheet assignment;
-  final VoidCallback? onStart,onRepeat;
+  final VoidCallback? onStart,onRepeat,onViewFeedback;
   @override Widget build(BuildContext context){
     final item=assignment.worksheet;
     return AppCard(child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
@@ -25,6 +25,11 @@ class AssignedWorksheetCard extends StatelessWidget {
         child:AppBadge(label:assignment.activeAttemptId!=null?'Em pausa':assignment.latestAttemptStatus=='pending_review'?'Aguarda revisão':assignment.latestAttemptStatus=='completed'?'Concluída':assignment.latestAttemptId!=null?'Entregue':'Por começar',icon:Icons.menu_book_rounded)),
       const SizedBox(height:20),
       AppButton(label:assignment.activeAttemptId!=null?'Continuar':assignment.latestAttemptId!=null?'Ver entrega':'Começar',icon:Icons.play_arrow_rounded,onPressed:onStart),
+      if(assignment.latestCompletedAttemptId!=null)...[
+        const SizedBox(height:14),AppButton(label:assignment.latestCompletedAttemptNumber==null?'Ver a correção':
+          'Ver correção da tentativa ${assignment.latestCompletedAttemptNumber}',variant:AppButtonVariant.secondary,
+          icon:Icons.fact_check_outlined,onPressed:onViewFeedback),
+      ],
       if(assignment.canRepeat)...[
         const SizedBox(height:14),AppButton(label:'Fazer outra vez',variant:AppButtonVariant.secondary,icon:Icons.replay_rounded,onPressed:onRepeat),
       ],

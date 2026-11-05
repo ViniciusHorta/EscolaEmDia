@@ -5,6 +5,7 @@ import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../data/auth_service.dart';
+import 'password_recovery_page.dart';
 import 'widgets/account_mode_selector.dart';
 import 'widgets/family_brand_card.dart';
 
@@ -97,6 +98,15 @@ class _FamilyAccountPageState extends State<FamilyAccountPage> {
     } finally {
       if (mounted) setState(() => busy = false);
     }
+  }
+
+  Future<void> openRecovery() async {
+    FocusScope.of(context).unfocus();
+    setState(() => feedback = null);
+    final used = await Navigator.of(context).push<String>(MaterialPageRoute(
+      builder: (_) => PasswordRecoveryPage(auth: widget.auth, initialEmail: email.text),
+    ));
+    if (mounted && used != null && used.isNotEmpty) email.text = used;
   }
 
   void showDocument(String title) => showDialog<void>(
@@ -195,8 +205,8 @@ class _FamilyAccountPageState extends State<FamilyAccountPage> {
                     ),
                   ] else ...[
                     const SizedBox(height: 8),
-                    const Align(alignment: Alignment.centerRight,
-                      child: TextButton(onPressed: null, child: Text('Esqueceu-se do acesso?'))),
+                    Align(alignment: Alignment.centerRight,
+                      child: TextButton(onPressed: busy ? null : openRecovery, child: const Text('Esqueceu-se do acesso?'))),
                   ],
                   if (feedback != null || widget.auth.streamError != null) ...[
                     const SizedBox(height: 20),

@@ -7,10 +7,11 @@ import '../../../shared/widgets/layout/app_page.dart';
 import '../domain/submission_summary.dart';
 
 class SubmissionSummaryPage extends StatelessWidget {
-  const SubmissionSummaryPage({super.key,required this.summary,required this.onClose,required this.onParents,this.onViewLocalDraft,this.onRepeat,this.errorMessage});
+  const SubmissionSummaryPage({super.key,required this.summary,required this.onClose,required this.onParents,this.onViewLocalDraft,this.onRepeat,this.errorMessage,this.onViewFeedback,this.onRefreshResult,this.loadingResult=false});
   final SubmissionSummary summary;
   final VoidCallback onClose,onParents;
-  final VoidCallback? onViewLocalDraft,onRepeat;
+  final VoidCallback? onViewLocalDraft,onRepeat,onViewFeedback,onRefreshResult;
+  final bool loadingResult;
   final String? errorMessage;
   @override Widget build(BuildContext context)=>AppPage(title:'Muito bem!',subtitle:'A tua ficha foi entregue.',children:[
     AppCard(color:AppColors.lavender,child:Column(children:[
@@ -36,6 +37,13 @@ class SubmissionSummaryPage extends StatelessWidget {
     if(onViewLocalDraft!=null)...[
       const SizedBox(height:20),const AppCard(child:Text('Existem alterações neste dispositivo que não foram incluídas na entrega confirmada. Podes consultá-las sem alterar a ficha entregue.')),
       const SizedBox(height:12),AppButton(label:'Consultar alterações locais',variant:AppButtonVariant.secondary,onPressed:onViewLocalDraft),
+    ],
+    if(onViewFeedback!=null)...[
+      const SizedBox(height:24),AppButton(label:'Ver a correção',icon:Icons.fact_check_outlined,onPressed:onViewFeedback),
+    ]else if(summary.pendingReview>0)...[
+      const SizedBox(height:20),const Text('A correção detalhada fica disponível quando os teus pais terminarem a revisão.'),
+      const SizedBox(height:12),AppButton(label:'Atualizar resultado',variant:AppButtonVariant.secondary,
+        icon:Icons.refresh_rounded,loading:loadingResult,onPressed:onRefreshResult),
     ],
     if(onRepeat!=null)...[
       const SizedBox(height:24),AppButton(label:'Fazer outra vez',icon:Icons.replay_rounded,onPressed:onRepeat),

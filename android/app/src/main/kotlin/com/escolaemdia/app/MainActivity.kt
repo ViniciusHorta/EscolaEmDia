@@ -1,4 +1,4 @@
-package com.escolaemdia.escola_em_dia
+package com.escolaemdia.app
 
 import io.flutter.embedding.android.FlutterActivity
 

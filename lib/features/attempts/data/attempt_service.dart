@@ -4,6 +4,7 @@ import '../../child_session/data/child_session_service.dart';
 import '../../worksheets/domain/worksheet_models.dart';
 import '../domain/attempt_models.dart';
 import '../domain/submission_summary.dart';
+import '../domain/child_feedback_models.dart';
 
 class AttemptService {
   const AttemptService(this.sessions);
@@ -19,6 +20,13 @@ class AttemptService {
       throw const ChildSessionException('Não foi possível preparar a gravação desta ficha. Tenta novamente.');
     }}
     return AttemptSnapshot.fromJson(await sessions.attemptRequest('/v1/assignments/${assignment.id}/attempts',method:'POST',body:{'clientRequestId':requestId,if(repeatFromAttemptId!=null)'previousAttemptId':repeatFromAttemptId}));
+  }
+  Future<ChildAttemptFeedback> feedback(String attemptId,String childId) async {
+    final data=ChildAttemptFeedback.fromJson(await sessions.attemptRequest('/v1/attempts/$attemptId/feedback'));
+    if(data.summary.attemptId!=attemptId||data.summary.childId!=childId||data.summary.status!='completed'||data.questions.isEmpty){
+      throw const ChildSessionException('Não foi possível confirmar a correção desta tentativa.');
+    }
+    return data;
   }
   Future<AttemptSnapshot> get(String id) async=>AttemptSnapshot.fromJson(await sessions.attemptRequest('/v1/attempts/$id'));
   Future<int> save(String attemptId,String questionId,PendingAnswer draft) async {

@@ -8,6 +8,7 @@ const hash = async (text: string) =>
     (b) => b.toString(16).padStart(2, "0"),
   ).join("");
 const messages: Record<string, string> = {
+  FEEDBACK_NOT_AVAILABLE: "A correção fica disponível quando esta tentativa estiver concluída. Aguarda a revisão dos teus pais.",
   REPEAT_NOT_AVAILABLE: "Esta ficha ainda não está concluída. Aguarda a revisão antes de repetir.",
   REPEAT_STATE_CHANGED: "Esta ficha já tem outra tentativa. Volta ao teu espaço e atualiza a lista.",
   ATTEMPT_REVISION_CONFLICT:
@@ -41,19 +42,10 @@ Deno.serve(async (req: Request) => {
   const start = /^\/v1\/assignments\/([^/]+)\/attempts$/.exec(path);
   const submit = /^\/v1\/attempts\/([^/]+)\/submit$/.exec(path);
   const result = /^\/v1\/attempts\/([^/]+)\/result$/.exec(path);
+  const feedback = /^\/v1\/attempts\/([^/]+)\/feedback$/.exec(path);
   const get = /^\/v1\/attempts\/([^/]+)$/.exec(path);
   const answer = /^\/v1\/attempts\/([^/]+)\/answers\/([^/]+)$/.exec(path);
-  const operation = start
-    ? "start"
-    : submit
-      ? "submit"
-      : result
-        ? "result"
-        : get
-          ? "get"
-          : answer
-            ? "answer"
-            : "unknown";
+  const operation = start ? "start" : submit ? "submit" : result ? "result" : feedback ? "feedback" : get ? "get" : answer ? "answer" : "unknown";
   const corsPolicy = createCors(req, {
     methods: "GET, POST, PUT, OPTIONS",
     parentUnlock: false,
@@ -105,13 +97,13 @@ Deno.serve(async (req: Request) => {
     req.method !==
     (operation === "start" || operation === "submit"
       ? "POST"
-      : operation === "get" || operation === "result"
+      : operation === "get" || operation === "result" || operation === "feedback"
         ? "GET"
         : "PUT")
   )
     return fail(405, "METHOD_NOT_ALLOWED");
   const targetId =
-    start?.[1] ?? submit?.[1] ?? result?.[1] ?? get?.[1] ?? answer?.[1];
+    start?.[1] ?? submit?.[1] ?? result?.[1] ?? feedback?.[1] ?? get?.[1] ?? answer?.[1];
   if (!targetId || !uuid.test(targetId)) return fail(400, "INVALID_REQUEST");
   let questionId: string | undefined;
   if (answer) {
@@ -140,9 +132,8 @@ Deno.serve(async (req: Request) => {
     });
     const tokenHash = await hash(token);
     let rpcName: string, params: Record<string, unknown>;
-    if (operation === "get" || operation === "result") {
-      rpcName =
-        operation === "get" ? "get_child_attempt" : "get_child_attempt_result";
+    if (operation === "get" || operation === "result" || operation === "feedback") {
+      rpcName = operation === "get" ? "get_child_attempt" : operation === "feedback" ? "get_child_attempt_feedback" : "get_child_attempt_result";
       params = { p_token_hash: tokenHash, p_attempt_id: targetId };
     } else {
       if (!req.headers.get("content-type")?.includes("application/json"))

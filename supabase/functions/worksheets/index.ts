@@ -316,7 +316,7 @@ Deno.serve(async (req: Request) => {
       if (catalogueError) return fail(503, "STORAGE_UNAVAILABLE");
       const { data: states, error: attemptError } = await admin
         .from("assignment_attempt_state")
-        .select("assignment_id,active_attempt_id,latest_attempt_id,latest_attempt_status,latest_attempt_number")
+        .select("assignment_id,active_attempt_id,latest_attempt_id,latest_attempt_status,latest_attempt_number,latest_completed_attempt_id,latest_completed_attempt_number")
         .eq("child_id", childId!).in("assignment_id", rows.map((r) => r.id));
       if (attemptError) return fail(503, "STORAGE_UNAVAILABLE");
       const attemptStates = new Map((states ?? []).map((state) => [state.assignment_id, state]));
@@ -336,6 +336,8 @@ Deno.serve(async (req: Request) => {
           latestAttemptId: attemptStates.get(r.id)?.latest_attempt_id ?? null,
           latestAttemptStatus: attemptStates.get(r.id)?.latest_attempt_status ?? null,
           latestAttemptNumber: attemptStates.get(r.id)?.latest_attempt_number ?? null,
+          latestCompletedAttemptId: attemptStates.get(r.id)?.latest_completed_attempt_id ?? null,
+          latestCompletedAttemptNumber: attemptStates.get(r.id)?.latest_completed_attempt_number ?? null,
           worksheet: meta(byVersion.get(r.worksheet_version_id)),
         })),
         nextCursor: (data?.length ?? 0) > 50 ? rows[49].id : null,

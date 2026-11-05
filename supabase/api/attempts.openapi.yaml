@@ -1,12 +1,14 @@
 openapi: 3.0.3
 info:
   title: Escola em Dia — Tentativas e respostas
-  version: 1.2.0
+  version: 1.3.0
   description: >-
     Iniciar/retomar, guardar respostas, entregar e consultar o resumo da própria criança.
     Apenas tokens infantis opacos são aceites. Correção objetiva feita no servidor;
     respostas abertas preenchidas aguardam revisão. Repetição explícita após conclusão
     usa a mesma atribuição e versão, com uma tentativa nova e respostas em branco.
+    Correção detalhada disponível apenas para a própria tentativa completed através
+    de /feedback; os payloads de início, edição e resumo mantêm-se sem soluções.
     A sincronização em lote continua pendente.
 servers:
   - url: https://hhgxxvvreyhigxynrgmv.supabase.co/functions/v1/attempts
@@ -50,6 +52,75 @@ paths:
       responses:
         '201':
           description: Tentativa iniciada ou retomada, com payload infantil sanitizado e respostas guardadas
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/attempts/{id}/feedback:
+    get:
+      summary: Consultar a correção de uma tentativa própria concluída
+      description: >-
+        Exclusivo da sessão infantil titular. Apenas status completed; uma tentativa
+        em curso, submitted ou pending_review não fornece correção detalhada.
+        Devolve summary, instructions/text/audioText e questions em ordem original.
+        As respostas são as entregues no servidor, nunca rascunhos locais.
+        Inclui texto da opção correta e explicação publicada só para escolhas múltiplas.
+        Nas abertas, apenas resposta própria e classificação parental atual, sem solução
+        inventada, critérios privados, identidade do adulto ou histórico de revisões.
+        A correção de uma realização anterior completed pode ser consultada enquanto
+        outra realização está em curso; não altera nenhuma das tentativas.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Correção própria concluída, sem cache; atualizar relê as classificações atuais.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [summary, instructions, text, audioText, questions]
+                properties:
+                  summary:
+                    type: object
+                    description: Resumo agregado da entrega com attemptId, childId, attemptNumber e status completed.
+                  instructions:
+                    type: string
+                  text:
+                    type: string
+                  audioText:
+                    type: string
+                  questions:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, number, type, prompt, answerType, answerText, outcome, explanation, selectedOptionText, correctOptionText]
+                      properties:
+                        id:
+                          type: string
+                        number:
+                          type: integer
+                          minimum: 1
+                        type:
+                          type: string
+                          enum: [multiple-choice, written]
+                        prompt:
+                          type: string
+                        answerType:
+                          type: string
+                          enum: [multiple-choice, typed, paper, unanswered]
+                        answerText:
+                          type: string
+                        outcome:
+                          type: string
+                          enum: [correct, partially_correct, incorrect, unanswered, pending_review]
+                        selectedOptionText:
+                          type: string
+                          nullable: true
+                        correctOptionText:
+                          type: string
+                          nullable: true
+                        explanation:
+                          type: string
+        '409':
+          description: FEEDBACK_NOT_AVAILABLE; a tentativa ainda não está completed. Sem respostas ou soluções no erro.
         default:
           $ref: '#/components/responses/Error'
   /v1/attempts/{id}:

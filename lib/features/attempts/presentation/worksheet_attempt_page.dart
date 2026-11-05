@@ -10,6 +10,7 @@ import '../data/attempt_controller.dart';
 import '../data/attempt_service.dart';
 import 'widgets/question_answer_editor.dart';
 import 'submission_summary_page.dart';
+import 'child_feedback_page.dart';
 
 class WorksheetAttemptPage extends StatefulWidget {
   const WorksheetAttemptPage({super.key,required this.assignment,required this.childId,required this.sessions,
@@ -25,6 +26,7 @@ class WorksheetAttemptPage extends StatefulWidget {
 class _WorksheetAttemptPageState extends State<WorksheetAttemptPage> {
   late final AttemptController controller;
   bool confirmingDelivery=false;
+  bool showingFeedback=false;
   @override void initState(){super.initState();controller=AttemptController(service:AttemptService(widget.sessions),assignment:widget.assignment,childId:widget.childId,repeatFromAttemptId:widget.repeatFromAttemptId);open();}
   Future<void> open()async{try{await controller.open();}on ChildSessionException catch(error){if(error.ended&&mounted)widget.onExpired();}catch(_){/* Message is held by the controller. */}}
   @override void dispose(){controller.dispose();super.dispose();}
@@ -91,7 +93,13 @@ class _WorksheetAttemptPageState extends State<WorksheetAttemptPage> {
       AppButton(label:'Tentar novamente',onPressed:open),const SizedBox(height:16),
       AppButton(label:'Voltar ao meu espaço',variant:AppButtonVariant.secondary,onPressed:widget.onPause),
     ]);
+    if(showingFeedback&&controller.result?.status=='completed')return ChildFeedbackPage(
+      key:ValueKey(controller.result!.attemptId),attemptId:controller.result!.attemptId,childId:widget.childId,
+      service:controller.service,onClose:()=>setState((){showingFeedback=false;}),onParents:parents,onExpired:widget.onExpired,
+    );
     if(controller.result!=null&&!controller.viewLocalDraft)return SubmissionSummaryPage(summary:controller.result!,
+      onViewFeedback:controller.result!.status=='completed'?()=>setState((){showingFeedback=true;}):null,
+      loadingResult:controller.busy,onRefreshResult:controller.busy?null:()=>run(controller.loadResult),
       errorMessage:controller.problem,onClose:closeSummary,onParents:parents,onRepeat:controller.result!.status=='completed'?repeat:null,onViewLocalDraft:controller.pending.isEmpty?null:controller.showLocalDraft);
     if(controller.serverSubmitted&&controller.result==null)return AppPage(title:'Consultar entrega',
       subtitle:controller.problem??'Vamos carregar o resumo da tua ficha.',children:[

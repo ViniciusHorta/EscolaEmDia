@@ -7,6 +7,7 @@ import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/layout/app_page.dart';
 import '../data/auth_service.dart';
 import 'family_account_page.dart';
+import 'new_password_page.dart';
 import '../../parent_pin/presentation/parent_pin_gate.dart';
 import '../../family/presentation/family_workspace_page.dart';
 
@@ -69,15 +70,17 @@ class _AuthGateState extends State<AuthGate> {
       final auth = snapshot.data!;
       return ListenableBuilder(
         listenable: auth,
-        builder: (context, _) => auth.signedIn
-            ? (auth.emailConfirmed
-                ? ParentPinGate(
-                    key: ValueKey(auth.user!.id),
-                    auth: auth,
-                    child: FamilyWorkspacePage(key: ValueKey(auth.user!.id), auth: auth),
-                  )
-                : AccountSessionPage(auth: auth))
-            : FamilyAccountPage(auth: auth),
+        builder: (context, _) => !auth.signedIn
+            ? FamilyAccountPage(auth: auth)
+            : auth.recoveringPassword
+                ? NewPasswordPage(auth: auth)
+                : auth.emailConfirmed
+                    ? ParentPinGate(
+                        key: ValueKey(auth.user!.id),
+                        auth: auth,
+                        child: FamilyWorkspacePage(key: ValueKey(auth.user!.id), auth: auth),
+                      )
+                    : AccountSessionPage(auth: auth),
       );
     },
   );

@@ -10,6 +10,8 @@ import '../../family/data/family_service.dart';
 import '../../family/domain/family_models.dart';
 import '../data/child_session_service.dart';
 import '../../attempts/presentation/worksheet_attempt_page.dart';
+import '../../attempts/presentation/child_feedback_page.dart';
+import '../../attempts/data/attempt_service.dart';
 import '../../attempts/presentation/widgets/repeat_worksheet_confirmation.dart';
 import '../../worksheets/domain/worksheet_models.dart';
 import '../../worksheets/presentation/widgets/assigned_worksheet_card.dart';
@@ -40,6 +42,7 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
   Timer? ticker;
   Timer? expiry;
   Future<List<AssignedWorksheet>>? assignedWorksheets;
+  String? feedbackAttemptId;
   AssignedWorksheet? activeAssignment;
   AssignedWorksheet? repeatCandidate;
   String? repeatFromAttemptId;
@@ -90,7 +93,7 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
     try {
       final child = await widget.sessions.login(selected!.id, pin);
       if (!mounted) return;
-      setState(() {authenticated = child; activeAssignment=null;repeatCandidate=null;repeatFromAttemptId=null; pin = ''; inputVersion++; assignedWorksheets=fetchAssignments(child.id);});
+      setState(() {authenticated = child; activeAssignment=null;feedbackAttemptId=null;repeatCandidate=null;repeatFromAttemptId=null; pin = ''; inputVersion++; assignedWorksheets=fetchAssignments(child.id);});
       scheduleExpiry();
     } on ChildSessionException catch (failure) {
       if (!mounted) return;
@@ -114,7 +117,7 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
     final remaining = widget.sessions.expiresAt?.difference(DateTime.now()) ?? Duration.zero;
     expiry = Timer(remaining.isNegative ? Duration.zero : remaining, () {
       widget.sessions.forgetExpired();
-      if (mounted) setState(() {authenticated = null; activeAssignment=null;repeatCandidate=null;repeatFromAttemptId=null; error = 'A tua sessão terminou. Introduz o PIN para continuar.';});
+      if (mounted) setState(() {authenticated = null; activeAssignment=null;feedbackAttemptId=null;repeatCandidate=null;repeatFromAttemptId=null; error = 'A tua sessão terminou. Introduz o PIN para continuar.';});
     });
   }
 
@@ -124,14 +127,14 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
       final child = await widget.sessions.profile();
       if (mounted) {setState(() {authenticated=child;assignedWorksheets=fetchAssignments(child.id);}); scheduleExpiry();}
     } on ChildSessionException catch (failure) {
-      if (mounted) setState(() {error = failure.message; if (failure.ended) {authenticated = null; activeAssignment=null;repeatCandidate=null;repeatFromAttemptId=null;}});
+      if (mounted) setState(() {error = failure.message; if (failure.ended) {authenticated = null; activeAssignment=null;feedbackAttemptId=null;repeatCandidate=null;repeatFromAttemptId=null;}});
     } finally {if (mounted) setState(() => busy = false);}
   }
 
   Future<List<AssignedWorksheet>> fetchAssignments(String childId) async {
     try {return await widget.sessions.assignments(childId);}
     on ChildSessionException catch(failure){
-      if(failure.ended && mounted && authenticated?.id==childId)setState((){authenticated=null;activeAssignment=null;repeatCandidate=null;repeatFromAttemptId=null;});
+      if(failure.ended && mounted && authenticated?.id==childId)setState((){authenticated=null;activeAssignment=null;feedbackAttemptId=null;repeatCandidate=null;repeatFromAttemptId=null;});
       rethrow;
     }
   }
@@ -156,22 +159,30 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
       ]));
       return Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[for(final item in items)
         Padding(padding:const EdgeInsets.only(bottom:20),child:AssignedWorksheetCard(assignment:item,onStart:busy?null:()=>openAssignment(item),
-          onRepeat:busy||!item.canRepeat?null:()=>prepareRepeat(item,item.latestAttemptId!)))]);
+          onRepeat:busy||!item.canRepeat?null:()=>prepareRepeat(item,item.latestAttemptId!),
+          onViewFeedback:busy?null:()=>showFeedback(item)))]);
     },
   );
 
+  void showFeedback(AssignedWorksheet assignment) {
+    if(busy||authenticated?.id!=assignment.childId||assignment.latestCompletedAttemptId==null)return;
+    setState(() {
+      activeAssignment=null;repeatCandidate=null;repeatFromAttemptId=null;
+      feedbackAttemptId=assignment.latestCompletedAttemptId;
+    });
+  }
   void openAssignment(AssignedWorksheet assignment) {
     if(busy||authenticated?.id!=assignment.childId)return;
-    setState(() { activeAssignment=assignment;repeatCandidate=null;repeatFromAttemptId=null; });
+    setState(() { activeAssignment=assignment;feedbackAttemptId=null;repeatCandidate=null;repeatFromAttemptId=null; });
   }
   void prepareRepeat(AssignedWorksheet assignment,String previousId) {
     if(busy||authenticated?.id!=assignment.childId)return;
-    setState(() { activeAssignment=null;repeatCandidate=assignment;repeatFromAttemptId=previousId; });
+    setState(() { activeAssignment=null;feedbackAttemptId=null;repeatCandidate=assignment;repeatFromAttemptId=previousId; });
   }
   void beginRepeat() {
     final candidate=repeatCandidate;
     if(candidate==null||repeatFromAttemptId==null||authenticated?.id!=candidate.childId)return;
-    setState(() { activeAssignment=candidate;repeatCandidate=null; });
+    setState(() { activeAssignment=candidate;feedbackAttemptId=null;repeatCandidate=null; });
   }
   void cancelRepeat() {
     setState(() {
@@ -186,7 +197,7 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
     try {
       await widget.sessions.endSession();
       expiry?.cancel();
-      if (mounted) setState(() {authenticated = null; activeAssignment=null;repeatCandidate=null;repeatFromAttemptId=null; pin = ''; inputVersion++;});
+      if (mounted) setState(() {authenticated = null; activeAssignment=null;feedbackAttemptId=null;repeatCandidate=null;repeatFromAttemptId=null; pin = ''; inputVersion++;});
     } on ChildSessionException catch (failure) {if (mounted) setState(() => error = failure.message);}
     finally {if (mounted) setState(() => busy = false);}
   }
@@ -205,10 +216,20 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
   @override
   Widget build(BuildContext context) {
     if (loading) return const Scaffold(body: Center(child: CircularProgressIndicator(semanticsLabel: 'A carregar os perfis')));
+    if(authenticated!=null&&feedbackAttemptId!=null)return ChildFeedbackPage(
+      key:ValueKey(feedbackAttemptId),attemptId:feedbackAttemptId!,childId:authenticated!.id,
+      service:AttemptService(widget.sessions),onParents:widget.onOpenParents,
+      onClose:(){
+        final child=authenticated;if(child==null)return;
+        setState((){feedbackAttemptId=null;assignedWorksheets=fetchAssignments(child.id);});
+      },
+      onExpired:()=>setState((){feedbackAttemptId=null;activeAssignment=null;repeatCandidate=null;repeatFromAttemptId=null;
+        authenticated=null;error='A tua sessão terminou. Introduz o PIN para continuar.';}),
+    );
     if(authenticated!=null && activeAssignment!=null)return WorksheetAttemptPage(
       key:ValueKey('${activeAssignment!.id}-${repeatFromAttemptId??'open'}'),repeatFromAttemptId:repeatFromAttemptId,assignment:activeAssignment!,childId:authenticated!.id,sessions:widget.sessions,
-      onPause:()=>setState((){activeAssignment=null;repeatCandidate=null;repeatFromAttemptId=null;assignedWorksheets=fetchAssignments(authenticated!.id);}),
-      onExpired:()=>setState((){activeAssignment=null;repeatCandidate=null;repeatFromAttemptId=null;authenticated=null;error='A tua sessão terminou. Introduz o PIN para continuar.';}),
+      onPause:()=>setState((){activeAssignment=null;feedbackAttemptId=null;repeatCandidate=null;repeatFromAttemptId=null;assignedWorksheets=fetchAssignments(authenticated!.id);}),
+      onExpired:()=>setState((){activeAssignment=null;feedbackAttemptId=null;repeatCandidate=null;repeatFromAttemptId=null;authenticated=null;error='A tua sessão terminou. Introduz o PIN para continuar.';}),
       onOpenParents:widget.onOpenParents,
       onRepeat:(previousId){
         final assignment=activeAssignment;
