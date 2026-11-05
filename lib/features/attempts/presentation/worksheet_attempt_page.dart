@@ -127,6 +127,7 @@ class _WorksheetAttemptPageState extends State<WorksheetAttemptPage> {
             onPressed:controller.busy?null:parents),
         ),
         Expanded(child:SingleChildScrollView(
+          key:ValueKey('question-${q.id}'),
           keyboardDismissBehavior:ScrollViewKeyboardDismissBehavior.onDrag,
           child:Center(child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:720),child:Padding(
             padding:EdgeInsets.fromLTRB(gutter,18,gutter,24),

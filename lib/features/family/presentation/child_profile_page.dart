@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/request_id.dart';
-import '../../../shared/widgets/app_badge.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_card.dart';
-import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/layout/onboarding_header.dart';
 import '../../../shared/widgets/pin/app_pin_input.dart';
 import '../data/family_service.dart';
@@ -73,63 +71,154 @@ class _ChildProfilePageState extends State<ChildProfilePage> {
     } finally { if (mounted) setState(() => busy = false); }
   }
 
+  Widget sectionLabel(IconData icon, String text, {Widget? trailing}) => Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: Row(children: [
+      Icon(icon, color: AppColors.primary, size: 22),
+      const SizedBox(width: 10),
+      Expanded(child: Text(text, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.text))),
+      if (trailing != null) trailing,
+    ]),
+  );
+
   @override
-  Widget build(BuildContext context) => Scaffold(body: SafeArea(child: SingleChildScrollView(
-    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-    child: Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 680), child: Padding(
-      padding: EdgeInsets.all(MediaQuery.sizeOf(context).width < 640 ? 16 : 32),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        OnboardingHeader(title: 'Perfil do Educando', step: 3, section: 'Perfil', icon: Icons.face_rounded,
-          onBack: busy || (!confirming && widget.onBack == null) ? null : back),
-        const SizedBox(height: 28),
-        const Center(child: AppBadge(label: 'Passo 3 de 4 • Perfil', icon: Icons.face_rounded)),
-        const SizedBox(height: 20),
-        Text(confirming ? 'Confirma o PIN da criança' : 'Um espaço só para a criança',
-          textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineMedium),
-        const SizedBox(height: 10),
-        Text(confirming ? 'Repete os mesmos 4 dígitos antes de guardar.' : 'Escolhe uma alcunha, um avatar amigo e o ano escolar.',
-          textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge),
-        const SizedBox(height: 24),
-        if (!confirming) AppCard(child: Form(key: form, child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          AppTextField(label: 'Como quer que a app lhe chame?', hint: 'Alcunha da criança', controller: name, enabled: !busy,
-            inputFormatters: [LengthLimitingTextInputFormatter(40)],
-            validator: (value) => value == null || value.trim().isEmpty ? 'Indica a alcunha da criança.' : null),
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: AppColors.background,
+    body: SafeArea(child: SingleChildScrollView(
+      key: ValueKey('profile-$confirming'),
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      child: Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 680), child: Padding(
+        padding: EdgeInsets.all(MediaQuery.sizeOf(context).width < 640 ? 16 : 32),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          OnboardingHeader(title: 'Perfil do Educando', step: 3, section: 'Perfil', icon: Icons.face_rounded,
+            onBack: busy || (!confirming && widget.onBack == null) ? null : back),
           const SizedBox(height: 24),
-          Text('Escolhe o avatar amigo', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 14),
-          AvatarSelector(value: avatar, enabled: !busy, onChanged: (value) => setState(() => avatar = value)),
-          const SizedBox(height: 24),
-          Text('Ano escolar', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 12),
-          SchoolYearSelector(value: year, enabled: !busy, onChanged: (value) => setState(() => year = value)),
-        ]))),
-        if (confirming) AppCard(child: Row(children: [
-          ExcludeSemantics(child: Text(ChildAvatars.emoji(avatar), style: const TextStyle(fontSize: 44))),
-          const SizedBox(width: 16),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(name.text.trim(), style: Theme.of(context).textTheme.titleLarge),
-            Text('$year.º Ano • ${ChildAvatars.label(avatar)}'),
-          ])),
-        ])),
-        const SizedBox(height: 24),
-        AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Text(confirming ? 'Confirma o PIN Infantil' : 'Identificação & PIN Infantil',
+            style: const TextStyle(fontSize: 28, height: 1.2, fontWeight: FontWeight.w800, color: AppColors.text)),
+          const SizedBox(height: 8),
+          Text(confirming ? 'Repete os mesmos 4 dígitos antes de guardar o perfil.'
+            : 'Configura o espaço personalizado da criança, com diversão e autonomia segura.',
+            style: const TextStyle(fontSize: 16, height: 1.45, color: AppColors.muted)),
+          const SizedBox(height: 20),
           if (!confirming) ...[
-            const Text('Um código simples para a criança entrar no seu próprio espaço.'),
-            const SizedBox(height: 18),
-          ],
-          Center(child: AppPinInput(key: ValueKey(inputVersion),
-            label: confirming ? 'Repetir PIN infantil' : 'PIN infantil (4 dígitos)',
-            enabled: !busy, errorText: error,
-            onChanged: (value) => setState(() {pin = value; error = null;}))),
-        ])),
-        const SizedBox(height: 28),
-        AppButton(label: confirming ? 'Guardar perfil e avançar' : 'Confirmar PIN infantil',
-          icon: Icons.arrow_forward_rounded, loading: busy, onPressed: busy || pin.length != 4 ? null : submit),
-        const SizedBox(height: 16),
-        const Text('Usa uma alcunha e escolhe um PIN diferente do PIN parental.',
-          textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted, fontSize: 13)),
-        const SizedBox(height: 24),
-      ]),
-    ))),
-  )));
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: AppColors.lavender)),
+              child: const Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                CircleAvatar(radius: 20, backgroundColor: AppColors.successSoft,
+                  child: Icon(Icons.verified_user_outlined, color: AppColors.success, size: 22)),
+                SizedBox(width: 12),
+                Expanded(child: Text.rich(TextSpan(style: TextStyle(fontSize: 14, height: 1.45, color: AppColors.text), children: [
+                  TextSpan(text: 'Privacidade em primeiro lugar: ', style: TextStyle(fontWeight: FontWeight.w700)),
+                  TextSpan(text: 'sem datas de nascimento nem dados sensíveis. Só uma alcunha, um avatar e o ano escolar, para carinho e personalização.'),
+                ]))),
+              ]),
+            ),
+            const SizedBox(height: 20),
+            AppCard(child: Form(key: form, child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              sectionLabel(Icons.badge_outlined, 'Como quer que a app lhe chame?',
+                trailing: const Text('Obrigatório', style: TextStyle(fontSize: 13, color: AppColors.muted))),
+              TextFormField(
+                controller: name, enabled: !busy,
+                inputFormatters: [LengthLimitingTextInputFormatter(40)],
+                textCapitalization: TextCapitalization.words,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                validator: (value) => value == null || value.trim().isEmpty ? 'Indica a alcunha da criança.' : null,
+                decoration: InputDecoration(
+                  hintText: 'Alcunha da criança',
+                  filled: true, fillColor: AppColors.softBlue,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                  suffixIcon: const Padding(padding: EdgeInsets.only(right: 8),
+                    child: CircleAvatar(radius: 18, backgroundColor: AppColors.lavender,
+                      child: Icon(Icons.edit_rounded, size: 18, color: AppColors.primary))),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadii.pill), borderSide: BorderSide.none),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadii.pill), borderSide: BorderSide.none),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadii.pill),
+                    borderSide: const BorderSide(color: AppColors.primary, width: 2)),
+                ),
+              ),
+              const SizedBox(height: 26),
+              sectionLabel(Icons.sentiment_satisfied_alt_rounded, 'Escolhe o Avatar Amigo',
+                trailing: Text('Escolhido: ${ChildAvatars.label(avatar)}',
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary))),
+              AvatarSelector(value: avatar, enabled: !busy, onChanged: (value) => setState(() => avatar = value)),
+              const SizedBox(height: 26),
+              sectionLabel(Icons.school_outlined, 'Ano Escolar (1.º Ciclo do Ensino Básico)'),
+              SchoolYearSelector(value: year, enabled: !busy, onChanged: (value) => setState(() => year = value)),
+            ]))),
+          ] else AppCard(child: Row(children: [
+            Container(width: 64, height: 64, alignment: Alignment.center,
+              decoration: const BoxDecoration(color: AppColors.lavender, shape: BoxShape.circle),
+              child: ExcludeSemantics(child: Text(ChildAvatars.emoji(avatar), style: const TextStyle(fontSize: 36)))),
+            const SizedBox(width: 16),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(name.text.trim(), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+              Text('$year.º Ano • ${ChildAvatars.label(avatar)}', style: const TextStyle(color: AppColors.muted)),
+            ])),
+            TextButton.icon(onPressed: busy ? null : back, icon: const Icon(Icons.edit_rounded, size: 18), label: const Text('Editar')),
+          ])),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(color: AppColors.softBlue, borderRadius: BorderRadius.circular(32),
+              border: Border.all(color: AppColors.blueBorder)),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Container(width: 48, height: 48,
+                  decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(16)),
+                  child: const Icon(Icons.lock_outline_rounded, color: Colors.white)),
+                const SizedBox(width: 14),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(confirming ? 'Repetir PIN Infantil' : 'PIN Infantil (4 Dígitos)',
+                    style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700, color: AppColors.text)),
+                  const SizedBox(height: 4),
+                  const Text('Um código simples para a criança entrar sozinha no seu espaço de fichas e aventuras.',
+                    style: TextStyle(fontSize: 14, height: 1.45, color: AppColors.muted)),
+                ])),
+              ]),
+              const SizedBox(height: 18),
+              Container(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
+                decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(24)),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  Row(children: [
+                    const Expanded(child: Text('CÓDIGO DE ACESSO',
+                      style: TextStyle(fontSize: 13, letterSpacing: 1.2, fontWeight: FontWeight.w700, color: AppColors.muted))),
+                    if (pin.length == 4) const Row(children: [
+                      Icon(Icons.lock_rounded, size: 16, color: AppColors.success), SizedBox(width: 4),
+                      Text('Pronto', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.success)),
+                    ]),
+                  ]),
+                  const SizedBox(height: 14),
+                  Center(child: AppPinInput(key: ValueKey(inputVersion),
+                    label: confirming ? 'Repete o código' : 'Escolhe 4 números',
+                    enabled: !busy, errorText: error,
+                    onChanged: (value) => setState(() {pin = value; error = null;}))),
+                ]),
+              ),
+              const SizedBox(height: 14),
+              const Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Icon(Icons.info_outline_rounded, size: 18, color: AppColors.muted), SizedBox(width: 8),
+                Expanded(child: Text('Usa um PIN diferente do PIN parental e fácil de lembrar para a criança.',
+                  style: TextStyle(fontSize: 13, height: 1.45, color: AppColors.muted))),
+              ]),
+            ]),
+          ),
+          const SizedBox(height: 28),
+          AppButton(label: confirming ? 'Guardar Perfil & Avançar' : 'Continuar e confirmar PIN',
+            icon: Icons.arrow_forward_rounded, variant: confirming ? AppButtonVariant.success : AppButtonVariant.primary,
+            loading: busy, onPressed: busy || pin.length != 4 ? null : submit),
+          const SizedBox(height: 10),
+          const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Icon(Icons.check_circle_outline_rounded, size: 16, color: AppColors.success), SizedBox(width: 6),
+            Flexible(child: Text('A alcunha, o avatar e o ano escolar ficam guardados na tua família.',
+              textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: AppColors.muted))),
+          ]),
+          const SizedBox(height: 24),
+        ]),
+      ))),
+    )),
+  );
 }

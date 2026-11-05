@@ -119,7 +119,7 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
               style:IconButton.styleFrom(backgroundColor:AppColors.lavender,minimumSize:const Size(48,48)),
               icon:const Icon(Icons.help_outline_rounded,color:AppColors.primary)),
           ])))))),
-      Expanded(child:SingleChildScrollView(child:Center(child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:720),
+      Expanded(child:SingleChildScrollView(key:ValueKey('step-$step-$success'),child:Center(child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:720),
         child:Padding(padding:EdgeInsets.fromLTRB(gutter,16,gutter,32),child:body))))),
     ]),
   );

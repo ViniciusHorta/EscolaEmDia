@@ -116,6 +116,7 @@ class _ParentPinResetPageState extends State<ParentPinResetPage> {
     canPop: !busy && step == _Step.password,
     onPopInvokedWithResult: (didPop, _) { if (!didPop) back(); },
     child: Scaffold(body: SafeArea(child: SingleChildScrollView(
+      key: ValueKey(step),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       child: Center(child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 640),

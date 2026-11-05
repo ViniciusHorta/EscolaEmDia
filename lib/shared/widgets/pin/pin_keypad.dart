@@ -51,12 +51,15 @@ class PinKeypad extends StatelessWidget {
             longPress: onClear,
             fill: AppColors.coralSoft,
             shadow: const Color(0xFFFFC2B3),
-            child: const Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(Icons.backspace_outlined, color: Color(0xFFE5603E), size: 22),
-              SizedBox(width: 6),
-              Flexible(child: Text('Apagar', maxLines: 1, overflow: TextOverflow.fade, softWrap: false,
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Color(0xFFE5603E)))),
-            ]),
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 14),
+              child: FittedBox(fit: BoxFit.scaleDown, child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.backspace_outlined, color: Color(0xFFE5603E), size: 22),
+                SizedBox(width: 6),
+                Text('Apagar', maxLines: 1,
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Color(0xFFE5603E))),
+              ])),
+            ),
           ),
           key(semantics: '0', action: () => onDigit('0'), child: const Text('0', style: digitStyle)),
           if (onHelp != null)

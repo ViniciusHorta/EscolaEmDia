@@ -83,7 +83,7 @@ class _ParentPinSetupPageState extends State<ParentPinSetupPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    body: SafeArea(child: SingleChildScrollView(child: Center(child: ConstrainedBox(
+    body: SafeArea(child: SingleChildScrollView(key: ValueKey('pin-setup-$confirming'), child: Center(child: ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 640),
       child: Padding(
         padding: EdgeInsets.all(MediaQuery.sizeOf(context).width < 640 ? 16 : 32),

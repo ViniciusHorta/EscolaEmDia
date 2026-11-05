@@ -15,7 +15,9 @@ class AppPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
         body: SafeArea(
+            // Um scroll por título: ecrãs AppPage seguidos abrem sempre no topo.
             child: SingleChildScrollView(
+                key: ValueKey('app-page-$title'),
                 child: Center(
                     child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: AppSpacing.maxWidth),

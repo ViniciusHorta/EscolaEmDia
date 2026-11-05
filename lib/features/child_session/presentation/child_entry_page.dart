@@ -357,6 +357,7 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
           try {await next;} catch (_) {}
         },
         child: ListView(
+          key: ValueKey('child-tab-$childTab'),
           padding: EdgeInsets.fromLTRB(gutter(context), 20, gutter(context), 28),
           children: [Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 720),
             child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: childTab == 0 ? [

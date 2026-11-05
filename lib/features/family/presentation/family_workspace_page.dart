@@ -253,6 +253,7 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
     if (reviewingAttemptId != null) return ParentReviewPage(
       key: ValueKey(reviewingAttemptId), attemptId: reviewingAttemptId!, service: pendingReviews,
       onClose: () => setState(() => reviewingAttemptId = null),
+      onPrepareWorksheet: children.isEmpty ? null : () => setState(() {reviewingAttemptId = null; progressChildId = null; preparing = true;}),
     );
     if (progressChildId != null) return ChildProgressPage(
       key: ValueKey(progressChildId), childId: progressChildId!, service: progressService,
