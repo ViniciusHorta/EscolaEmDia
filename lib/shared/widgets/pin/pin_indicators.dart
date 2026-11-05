@@ -15,12 +15,14 @@ class PinIndicators extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ExcludeSemantics(
-        child: Row(children: [
+        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
           for (var i = 0; i < length; i++) ...[
-            if (i > 0) const SizedBox(width: 12),
-            Expanded(
-                child: Container(
-              height: 64,
+            if (i > 0) const SizedBox(width: 14),
+            Flexible(
+                child: AnimatedContainer(
+              duration: const Duration(milliseconds: 120),
+              width: 66,
+              height: 66,
               decoration: BoxDecoration(
                 color: !enabled
                     ? AppColors.softBlue
@@ -31,14 +33,14 @@ class PinIndicators extends StatelessWidget {
                 border: Border.all(
                     color: hasError
                         ? AppColors.error
-                        : i < filled
+                        : i < filled || i == filled
                             ? AppColors.primary
                             : AppColors.outline,
-                    width: 2),
+                    width: i == filled && !hasError && enabled ? 2.5 : 2),
               ),
               alignment: Alignment.center,
               child: i < filled
-                  ? const Icon(Icons.circle, size: 16, color: AppColors.primary)
+                  ? const Icon(Icons.circle, size: 18, color: AppColors.primary)
                   : null,
             )),
           ],

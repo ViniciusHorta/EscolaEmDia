@@ -4,7 +4,6 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../shared/widgets/app_badge.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_card.dart';
-import '../../../shared/widgets/layout/app_page.dart';
 import '../../../shared/widgets/pin/app_pin_input.dart';
 import '../../family/data/family_service.dart';
 import '../../family/domain/family_models.dart';
@@ -46,6 +45,7 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
   AssignedWorksheet? activeAssignment;
   AssignedWorksheet? repeatCandidate;
   String? repeatFromAttemptId;
+  int childTab = 0;
 
   @override
   void initState() {super.initState(); WidgetsBinding.instance.addObserver(this); load();}
@@ -93,7 +93,7 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
     try {
       final child = await widget.sessions.login(selected!.id, pin);
       if (!mounted) return;
-      setState(() {authenticated = child; activeAssignment=null;feedbackAttemptId=null;repeatCandidate=null;repeatFromAttemptId=null; pin = ''; inputVersion++; assignedWorksheets=fetchAssignments(child.id);});
+      setState(() {authenticated = child; childTab = 0; activeAssignment=null;feedbackAttemptId=null;repeatCandidate=null;repeatFromAttemptId=null; pin = ''; inputVersion++; assignedWorksheets=fetchAssignments(child.id);});
       scheduleExpiry();
     } on ChildSessionException catch (failure) {
       if (!mounted) return;
@@ -157,10 +157,26 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
         Text('Ainda não tens fichas para fazer.',textAlign:TextAlign.center,style:TextStyle(fontSize:20,fontWeight:FontWeight.w700)),
         SizedBox(height:10),Text('Quando os teus pais prepararem uma ficha, ela vai aparecer aqui.',textAlign:TextAlign.center),
       ]));
-      return Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[for(final item in items)
-        Padding(padding:const EdgeInsets.only(bottom:20),child:AssignedWorksheetCard(assignment:item,onStart:busy?null:()=>openAssignment(item),
+      Widget card(AssignedWorksheet item,{bool featured=false})=>Padding(padding:const EdgeInsets.only(bottom:16),
+        child:(featured?AssignedWorksheetCard.new:AssignedWorksheetTile.new)(assignment:item,onStart:busy?null:()=>openAssignment(item),
           onRepeat:busy||!item.canRepeat?null:()=>prepareRepeat(item,item.latestAttemptId!),
-          onViewFeedback:busy?null:()=>showFeedback(item)))]);
+          onViewFeedback:busy?null:()=>showFeedback(item)));
+      final todo=items.where((item)=>item.stage==AssignmentStage.todo).toList();
+      final paused=items.where((item)=>item.stage==AssignmentStage.paused).toList();
+      final delivered=items.where((item)=>item.stage==AssignmentStage.delivered).toList();
+      return Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+        for(final item in todo)card(item,featured:true),
+        if(paused.isNotEmpty)...[
+          if(todo.isNotEmpty)const SizedBox(height:12),
+          const _SectionLabel(icon:Icons.pause_circle_outline_rounded,label:'Em pausa'),
+          for(final item in paused)card(item),
+        ],
+        if(delivered.isNotEmpty)...[
+          const SizedBox(height:12),
+          const _SectionLabel(icon:Icons.task_alt_rounded,label:'Já entregues'),
+          for(final item in delivered)card(item),
+        ],
+      ]);
     },
   );
 
@@ -241,73 +257,332 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
       title:repeatCandidate!.worksheet.title,onConfirm:beginRepeat,onCancel:cancelRepeat,onParents:widget.onOpenParents,
     );
     if (authenticated != null) return studySpace(authenticated!);
-    return PopScope(canPop: false, child: AppPage(
-      title: 'Quem vai aprender hoje?', subtitle: 'Toca no teu perfil para começar.',
-      children: [
-        LayoutBuilder(builder: (context, constraints) {
-          final width = constraints.maxWidth >= 600 ? (constraints.maxWidth - 20) / 2 : constraints.maxWidth;
-          return Wrap(spacing: 20, runSpacing: 20, children: [for (final child in children)
-            SizedBox(width: width, child: AppCard(selected: selected?.id == child.id,
-              onTap: busy ? null : () => choose(child),
-              child: Column(children: [
-                ExcludeSemantics(child: Text(ChildAvatars.emoji(child.avatarId), style: const TextStyle(fontSize: 64))),
-                const SizedBox(height: 12),
-                Text(child.displayName, style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 6), Text('${child.schoolYear}.º Ano'),
-                const SizedBox(height: 10),
-                Icon(selected?.id == child.id ? Icons.check_circle_rounded : Icons.lock_outline_rounded,
-                  color: AppColors.primary, semanticLabel: selected?.id == child.id ? 'Selecionado' : 'Selecionar perfil'),
-              ]))),
-          ]);
-        }),
-        if (selected != null) ...[
-          const SizedBox(height: 28),
-          AppCard(child: Column(children: [
-            AppPinInput(key: ValueKey(inputVersion), label: 'PIN de ${selected!.displayName}',
-              enabled: !busy && waitSeconds == 0,
-              onChanged: (value) => setState(() {pin = value; error = null;})),
-            feedback(),
-            if (waitSeconds > 0) Padding(padding: const EdgeInsets.only(bottom: 16), child: Text('Tenta novamente dentro de $waitSeconds segundos.')),
-            const SizedBox(height: 20),
-            AppButton(label: 'Entrar', icon: Icons.rocket_launch_rounded, loading: busy,
-              onPressed: busy || waitSeconds > 0 || pin.length != 4 ? null : login),
-          ])),
-        ] else ...[
-          feedback(),
-          const SizedBox(height: 20),
-          const Text('Ainda não há perfis disponíveis nesta família.'),
-          AppButton(label: 'Atualizar perfis', onPressed: busy ? null : load),
-        ],
-        const SizedBox(height: 24),
-        TextButton.icon(onPressed: busy ? null : widget.onOpenParents,
-          icon: const Icon(Icons.lock_outline_rounded), label: const Text('Área dos pais')),
-        TextButton.icon(onPressed: busy ? null : exitDevice,
-          icon: const Icon(Icons.logout_rounded), label: const Text('Sair do dispositivo')),
-      ],
+    return PopScope(canPop: false, child: Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(child: SingleChildScrollView(child: Center(child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 640),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(gutter(context), 28, gutter(context), 24),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Semantics(header: true, child: const Text('Quem vai aprender hoje?', textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 36, height: 1.15, fontWeight: FontWeight.w800, color: AppColors.text))),
+            const SizedBox(height: 10),
+            const Text('Toca no teu perfil para começar', textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 17, color: AppColors.muted)),
+            const SizedBox(height: 28),
+            LayoutBuilder(builder: (context, constraints) {
+              final columns = constraints.maxWidth >= 520 ? 3 : 2;
+              final width = (constraints.maxWidth - 16 * (columns - 1)) / columns;
+              return Wrap(spacing: 16, runSpacing: 16, alignment: WrapAlignment.center, children: [for (final child in children)
+                SizedBox(width: width, child: _ProfileCard(child: child, selected: selected?.id == child.id,
+                  onTap: busy ? null : () => choose(child))),
+              ]);
+            }),
+            if (selected != null) ...[
+              const SizedBox(height: 28),
+              Container(
+                padding: const EdgeInsets.fromLTRB(20, 28, 20, 24),
+                decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(36),
+                  boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.07), blurRadius: 24, offset: const Offset(0, 10))]),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  Center(child: AppPinInput(key: ValueKey(inputVersion), label: 'PIN de ${selected!.displayName}',
+                    enabled: !busy && waitSeconds == 0,
+                    onHelp: () => showDialog<void>(context: context, builder: (dialog) => AlertDialog(
+                      icon: const Icon(Icons.help_rounded, color: Color(0xFFFBBF24), size: 40),
+                      title: const Text('Esqueceste o teu PIN?'),
+                      content: const Text('Não faz mal! Pede ajuda à mãe ou ao pai. Se te enganaste num número, toca em «Apagar» e tenta outra vez.'),
+                      actions: [TextButton(onPressed: () => Navigator.pop(dialog), child: const Text('Está bem'))],
+                    )),
+                    onChanged: (value) => setState(() {pin = value; error = null;}))),
+                  feedback(),
+                  if (waitSeconds > 0) Padding(padding: const EdgeInsets.only(bottom: 16),
+                    child: Text('Tenta novamente dentro de $waitSeconds segundos.', textAlign: TextAlign.center)),
+                  const SizedBox(height: 20),
+                  AppButton(label: 'Entrar 🚀', loading: busy,
+                    onPressed: busy || waitSeconds > 0 || pin.length != 4 ? null : login),
+                ]),
+              ),
+            ] else ...[
+              feedback(),
+              const SizedBox(height: 20),
+              const Text('Ainda não há perfis disponíveis nesta família.', textAlign: TextAlign.center),
+              const SizedBox(height: 12),
+              AppButton(label: 'Atualizar perfis', onPressed: busy ? null : load),
+            ],
+            const SizedBox(height: 24),
+            Center(child: TextButton.icon(onPressed: busy ? null : widget.onOpenParents,
+              icon: const Icon(Icons.lock_outline_rounded), label: const Text('Área dos Pais'),
+              style: TextButton.styleFrom(foregroundColor: AppColors.muted))),
+            Center(child: TextButton(onPressed: busy ? null : exitDevice,
+              style: TextButton.styleFrom(foregroundColor: AppColors.muted),
+              child: const Text('Sair do dispositivo'))),
+          ]),
+        ),
+      )))),
     ));
   }
 
-  Widget studySpace(ChildProfile child) => PopScope(canPop: false, child: AppPage(
-    title: 'Olá, ${child.displayName}!', subtitle: 'O meu espaço de estudo',
-    children: [
-      AppCard(color: AppColors.lavender, child: Row(children: [
-        ExcludeSemantics(child: Text(ChildAvatars.emoji(child.avatarId), style: const TextStyle(fontSize: 64))),
-        const SizedBox(width: 20),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(child.displayName, style: Theme.of(context).textTheme.headlineMedium),
-          const SizedBox(height: 10), AppBadge(label: '${child.schoolYear}.º Ano', icon: Icons.star_rounded),
-        ])),
-      ])),
-      const SizedBox(height: 28),
-      assignmentsSection(child),
-      feedback(),
-      const SizedBox(height: 20),
-      AppButton(label: 'Mudar de utilizador', variant: AppButtonVariant.secondary,
-        loading: busy, icon: Icons.switch_account_outlined, onPressed: busy ? null : changeUser),
-      const SizedBox(height: 16),
-      TextButton.icon(onPressed: busy ? null : widget.onOpenParents,
-        icon: const Icon(Icons.lock_outline_rounded), label: const Text('Área dos pais')),
-      TextButton(onPressed: busy ? null : exitDevice, child: const Text('Sair do dispositivo')),
-    ],
+  double gutter(BuildContext context) => MediaQuery.sizeOf(context).width < 640 ? 16 : 32;
+
+  void showAccountSheet() => showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    backgroundColor: Colors.white,
+    builder: (sheet) => SafeArea(child: Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        ListTile(leading: const Icon(Icons.switch_account_rounded, color: AppColors.primary),
+          title: const Text('Mudar de utilizador'),
+          onTap: () {Navigator.pop(sheet); changeUser();}),
+        ListTile(leading: const Icon(Icons.lock_outline_rounded, color: AppColors.primary),
+          title: const Text('Área dos Pais'),
+          onTap: () {Navigator.pop(sheet); widget.onOpenParents();}),
+        ListTile(leading: const Icon(Icons.logout_rounded, color: AppColors.muted),
+          title: const Text('Sair do dispositivo'),
+          onTap: () {Navigator.pop(sheet); exitDevice();}),
+      ]),
+    )),
+  );
+
+  Widget studySpace(ChildProfile child) => PopScope(canPop: false, child: Scaffold(
+    backgroundColor: AppColors.background,
+    body: Column(children: [
+      _StudyTopBar(child: child, busy: busy, onParents: widget.onOpenParents, onAccount: showAccountSheet),
+      Expanded(child: RefreshIndicator(
+        onRefresh: () async {
+          final next = fetchAssignments(child.id);
+          setState(() => assignedWorksheets = next);
+          try {await next;} catch (_) {}
+        },
+        child: ListView(
+          padding: EdgeInsets.fromLTRB(gutter(context), 20, gutter(context), 28),
+          children: [Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 720),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: childTab == 0 ? [
+              _StudyHero(child: child, assignments: assignedWorksheets),
+              const SizedBox(height: 28),
+              assignmentsSection(child),
+              feedback(),
+              const SizedBox(height: 12),
+              Center(child: TextButton.icon(onPressed: busy ? null : changeUser,
+                icon: const Icon(Icons.lock_outline_rounded), label: const Text('Mudar de utilizador'),
+                style: TextButton.styleFrom(foregroundColor: AppColors.muted))),
+            ] : familyTab(child))))],
+        ),
+      )),
+    ]),
+    bottomNavigationBar: NavigationBarTheme(
+      data: NavigationBarThemeData(
+        backgroundColor: Colors.white,
+        indicatorColor: AppColors.lavender,
+        surfaceTintColor: Colors.transparent,
+        labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(fontSize: 15,
+          fontWeight: FontWeight.w700, color: states.contains(WidgetState.selected) ? AppColors.primary : AppColors.muted)),
+        iconTheme: WidgetStateProperty.resolveWith((states) => IconThemeData(size: 28,
+          color: states.contains(WidgetState.selected) ? AppColors.primary : AppColors.muted)),
+      ),
+      child: NavigationBar(
+        selectedIndex: childTab,
+        onDestinationSelected: busy ? null : (index) => setState(() => childTab = index),
+        destinations: const [
+          NavigationDestination(icon: Icon(Icons.auto_stories_outlined), selectedIcon: Icon(Icons.auto_stories_rounded), label: 'Fichas'),
+          NavigationDestination(icon: Icon(Icons.family_restroom_outlined), selectedIcon: Icon(Icons.family_restroom_rounded), label: 'Família'),
+        ],
+      ),
+    ),
   ));
+
+  List<Widget> familyTab(ChildProfile current) => [
+    const Text('A minha família', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: AppColors.text)),
+    const SizedBox(height: 6),
+    const Text('Para estudar com outro perfil, muda de utilizador. Vai ser preciso o PIN dessa pessoa.',
+      style: TextStyle(fontSize: 15, color: AppColors.muted)),
+    const SizedBox(height: 20),
+    for (final member in children) Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: AppCard(
+        padding: const EdgeInsets.all(18),
+        selected: member.id == current.id,
+        onTap: busy || member.id == current.id ? null : () async {
+          await changeUser();
+          if (mounted && authenticated == null) {setState(() => childTab = 0); choose(member);}
+        },
+        child: Row(children: [
+          ExcludeSemantics(child: CircleAvatar(radius: 28, backgroundColor: AppColors.lavender,
+            child: Text(ChildAvatars.emoji(member.avatarId), style: const TextStyle(fontSize: 30)))),
+          const SizedBox(width: 14),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(member.displayName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+            Text('${member.schoolYear}.º Ano', style: const TextStyle(color: AppColors.muted)),
+          ])),
+          member.id == current.id
+            ? const AppBadge(label: 'Sou eu', icon: Icons.check_rounded)
+            : const Icon(Icons.chevron_right_rounded, color: AppColors.primary),
+        ]),
+      ),
+    ),
+    const SizedBox(height: 16),
+    AppButton(label: 'Área dos Pais', icon: Icons.lock_outline_rounded, variant: AppButtonVariant.neutral,
+      onPressed: busy ? null : widget.onOpenParents),
+    const SizedBox(height: 8),
+    Center(child: TextButton(onPressed: busy ? null : exitDevice,
+      style: TextButton.styleFrom(foregroundColor: AppColors.muted), child: const Text('Sair do dispositivo'))),
+  ];
+}
+
+class _ProfileCard extends StatelessWidget {
+  const _ProfileCard({required this.child, required this.selected, required this.onTap});
+  final ChildProfile child;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true, selected: selected, excludeSemantics: true,
+    label: '${child.displayName}, ${child.schoolYear}.º Ano${selected ? ', selecionado' : ''}',
+    child: AnimatedContainer(
+      duration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : const Duration(milliseconds: 150),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: [BoxShadow(color: selected ? AppColors.primary : AppColors.outline, offset: const Offset(0, 6))],
+      ),
+      child: Material(
+        color: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32),
+          side: BorderSide(color: selected ? AppColors.lavender : Colors.transparent, width: 2)),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(onTap: onTap, child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 24, 12, 22),
+          child: Column(children: [
+            SizedBox(width: 104, height: 100, child: Stack(children: [
+              Positioned(left: 0, top: 0, child: Container(
+                width: 96, height: 96, alignment: Alignment.center,
+                decoration: BoxDecoration(color: AppColors.lavender, shape: BoxShape.circle,
+                  border: Border.all(color: selected ? const Color(0xFFC7BFFF) : AppColors.softBlue, width: 4)),
+                child: Text(ChildAvatars.emoji(child.avatarId), style: const TextStyle(fontSize: 50)),
+              )),
+              Positioned(right: 0, bottom: 0, child: CircleAvatar(
+                radius: 18,
+                backgroundColor: selected ? AppColors.primary : AppColors.softBlue,
+                child: Icon(selected ? Icons.check_rounded : Icons.lock_outline_rounded,
+                  size: 20, color: selected ? Colors.white : AppColors.muted),
+              )),
+            ])),
+            const SizedBox(height: 14),
+            Text(child.displayName, maxLines: 1, overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.text)),
+            const SizedBox(height: 4),
+            Text('${child.schoolYear}.º Ano', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700,
+              color: selected ? AppColors.primary : AppColors.muted)),
+          ]),
+        )),
+      ),
+    ),
+  );
+}
+
+class _StudyTopBar extends StatelessWidget {
+  const _StudyTopBar({required this.child, required this.busy, required this.onParents, required this.onAccount});
+  final ChildProfile child;
+  final bool busy;
+  final VoidCallback onParents;
+  final VoidCallback onAccount;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    decoration: BoxDecoration(color: AppColors.background, boxShadow: [
+      BoxShadow(color: AppColors.primary.withValues(alpha: 0.05), blurRadius: 14, offset: const Offset(0, 6)),
+    ]),
+    child: SafeArea(bottom: false, child: Center(child: ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 760),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+        child: Row(children: [
+          ExcludeSemantics(child: Container(
+            width: 52, height: 52, alignment: Alignment.center,
+            decoration: BoxDecoration(color: AppColors.lavender, shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFFC7BFFF), width: 3)),
+            child: Text(ChildAvatars.emoji(child.avatarId), style: const TextStyle(fontSize: 26)),
+          )),
+          const SizedBox(width: 12),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Olá, ${child.displayName}! 👋', maxLines: 1, overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.text)),
+            Semantics(header: true, child: const FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft,
+              child: Text('O Meu Espaço de Estudo',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.primary)))),
+          ])),
+          const SizedBox(width: 8),
+          IconButton.filledTonal(
+            onPressed: busy ? null : onParents, tooltip: 'Área dos Pais',
+            style: IconButton.styleFrom(backgroundColor: AppColors.softBlue, minimumSize: const Size(52, 52)),
+            icon: const Icon(Icons.lock_outline_rounded, color: AppColors.amber)),
+          const SizedBox(width: 8),
+          IconButton.filled(
+            onPressed: busy ? null : onAccount, tooltip: 'Mudar de utilizador ou sair',
+            style: IconButton.styleFrom(backgroundColor: AppColors.primary, minimumSize: const Size(52, 52)),
+            icon: const Icon(Icons.person_outline_rounded)),
+        ]),
+      ),
+    ))),
+  );
+}
+
+class _StudyHero extends StatelessWidget {
+  const _StudyHero({required this.child, required this.assignments});
+  final ChildProfile child;
+  final Future<List<AssignedWorksheet>>? assignments;
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<List<AssignedWorksheet>>(
+    future: assignments,
+    builder: (context, snapshot) {
+      final items = snapshot.data ?? const <AssignedWorksheet>[];
+      final todo = items.where((item) => item.stage == AssignmentStage.todo).length;
+      final paused = items.where((item) => item.stage == AssignmentStage.paused).length;
+      final message = snapshot.connectionState != ConnectionState.done
+          ? 'A preparar o teu dia…'
+          : todo > 0
+              ? (todo == 1 ? 'A tua missão de hoje está pronta!' : 'Tens $todo missões prontas para hoje!')
+              : paused > 0 ? 'Há uma ficha à tua espera para continuar.' : 'Hoje não há fichas novas. Bom descanso!';
+      return Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: AppColors.lavender,
+          borderRadius: BorderRadius.circular(36),
+          boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.08), blurRadius: 20, offset: const Offset(0, 8))],
+        ),
+        child: Row(children: [
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            AppBadge(label: '${child.schoolYear}.º Ano', icon: Icons.star_rounded, background: Colors.white, color: AppColors.primary),
+            const SizedBox(height: 12),
+            Text('Olá, ${child.displayName}! 👋',
+              style: const TextStyle(fontSize: 28, height: 1.15, fontWeight: FontWeight.w800, color: AppColors.primary)),
+            const SizedBox(height: 8),
+            Semantics(liveRegion: true, child: Text(message, style: const TextStyle(fontSize: 18, height: 1.4, color: AppColors.text))),
+          ])),
+          const SizedBox(width: 12),
+          ExcludeSemantics(child: SizedBox(width: 96, height: 96, child: Stack(children: [
+            Positioned(left: 0, bottom: 0, child: Container(
+              width: 88, height: 88, alignment: Alignment.center,
+              decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle,
+                boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.12), blurRadius: 16)]),
+              child: Text(ChildAvatars.emoji(child.avatarId), style: const TextStyle(fontSize: 46)),
+            )),
+            const Positioned(right: 0, top: 0, child: CircleAvatar(radius: 17, backgroundColor: Color(0xFF10B981),
+              child: Icon(Icons.bolt_rounded, color: Colors.white, size: 22))),
+          ]))),
+        ]),
+      );
+    },
+  );
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel({required this.icon,required this.label});
+  final IconData icon;
+  final String label;
+  @override Widget build(BuildContext context)=>Padding(padding:const EdgeInsets.only(left:4,bottom:12),child:Row(children:[
+    Icon(icon,color:AppColors.muted,size:24),const SizedBox(width:10),
+    Semantics(header:true,child:Text(label,style:const TextStyle(fontSize:20,fontWeight:FontWeight.w700,color:AppColors.muted))),
+  ]));
 }

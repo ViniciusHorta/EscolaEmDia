@@ -10,6 +10,7 @@ class AppPinInput extends StatefulWidget {
       required this.label,
       required this.onChanged,
       this.onCompleted,
+      this.onHelp,
       this.errorText,
       this.length = 4,
       this.enabled = true})
@@ -17,6 +18,8 @@ class AppPinInput extends StatefulWidget {
   final String label;
   final ValueChanged<String> onChanged;
   final ValueChanged<String>? onCompleted;
+  /// Mostra a tecla «?» no teclado (ajuda para crianças).
+  final VoidCallback? onHelp;
   final String? errorText;
   final int length;
   final bool enabled;
@@ -51,13 +54,14 @@ class _AppPinInputState extends State<AppPinInput> {
 
   @override
   Widget build(BuildContext context) => ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 360),
+        constraints: const BoxConstraints(maxWidth: 400),
         child:
             Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Text(widget.label, style: Theme.of(context).textTheme.titleMedium),
+          Text(widget.label, textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.muted)),
           const SizedBox(height: 16),
           SizedBox(
-              height: 64,
+              height: 70,
               child: Stack(children: [
                 Positioned.fill(
                     child: IgnorePointer(
@@ -87,10 +91,8 @@ class _AppPinInputState extends State<AppPinInput> {
                           decoration: InputDecoration(
                             border: InputBorder.none,
                             enabledBorder: InputBorder.none,
-                            focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(18),
-                                borderSide: const BorderSide(
-                                    color: AppColors.primary, width: 2)),
+                            // A caixa atual (contorno lilás) já mostra onde entra o próximo dígito.
+                            focusedBorder: InputBorder.none,
                             disabledBorder: InputBorder.none,
                             filled: false,
                             labelText: null,
@@ -111,6 +113,7 @@ class _AppPinInputState extends State<AppPinInput> {
           const SizedBox(height: 20),
           PinKeypad(
             enabled: widget.enabled,
+            onHelp: widget.onHelp,
             onDigit: (digit) {
               if (controller.text.length < widget.length) {
                 update(controller.text + digit);

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_tokens.dart';
+import '../../../core/utils/subject_icons.dart';
 import '../../../shared/widgets/app_badge.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_card.dart';
@@ -249,17 +250,6 @@ String relativeDay(DateTime value) {
 }
 
 String _capitalize(String text) => text.isEmpty ? text : '${text[0].toUpperCase()}${text.substring(1)}';
-
-/// Ícone por disciplina; nomes desconhecidos usam um livro.
-IconData subjectIcon(String subject) {
-  final name = subject.toLowerCase();
-  if (name.contains('matem')) return Icons.calculate_rounded;
-  if (name.contains('portugu')) return Icons.menu_book_rounded;
-  if (name.contains('meio') || name.contains('ciên') || name.contains('cien')) return Icons.science_rounded;
-  if (name.contains('inglês') || name.contains('ingles')) return Icons.translate_rounded;
-  if (name.contains('hist') || name.contains('geogr')) return Icons.public_rounded;
-  return Icons.auto_stories_rounded;
-}
 
 class _ChildTab extends StatelessWidget {
   const _ChildTab({required this.child, required this.pending, required this.selected, required this.onTap});
