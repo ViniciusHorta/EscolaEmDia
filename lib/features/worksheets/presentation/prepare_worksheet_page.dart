@@ -296,7 +296,7 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
           const SizedBox(width:12),
           Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
             Text('${questions[i]['prompt']}',style:const TextStyle(fontSize:15,height:1.4)),
-            Text(questions[i]['type']=='written'?'Resposta aberta':'Escolha múltipla',
+            Text(questions[i]['type']=='written'?'Resposta aberta':questions[i]['type']=='true_false'?'Verdadeiro ou falso':'Escolha múltipla',
               style:const TextStyle(fontSize:13,color:AppColors.muted)),
           ])),
         ])),

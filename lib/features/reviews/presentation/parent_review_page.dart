@@ -117,7 +117,7 @@ class _ParentReviewPageState extends State<ParentReviewPage> {
 
   bool get blocked => loading || saving || needsRefresh || unconfirmed != null;
   List<ParentReviewQuestion> get openQuestions =>
-      detail!.questions.where((q) => q.type != 'multiple-choice' && q.reviewable).toList();
+      detail!.questions.where((q) => !q.automatic && q.reviewable).toList();
   int numberOf(ParentReviewQuestion q) => detail!.questions.indexOf(q) + 1;
 
   void openReview(ParentReviewQuestion question) =>
@@ -252,8 +252,8 @@ class _ParentReviewPageState extends State<ParentReviewPage> {
   // ---------- 2. Resumo da ficha entregue ----------
   Widget summaryStage(ParentAttemptReview data) {
     final s = data.summary;
-    final choices = data.questions.where((q) => q.type == 'multiple-choice').toList();
-    final written = data.questions.where((q) => q.type != 'multiple-choice').toList();
+    final choices = data.questions.where((q) => q.automatic).toList();
+    final written = data.questions.where((q) => !q.automatic).toList();
     final pending = s.pendingReview;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       _WorksheetHeader(data: data),
@@ -289,7 +289,7 @@ class _ParentReviewPageState extends State<ParentReviewPage> {
           child: Icon(Icons.format_list_bulleted_rounded, color: AppColors.primary)),
         title: choices.length == 1 ? 'Pergunta ${numberOf(choices.first)}'
           : 'Perguntas ${numberOf(choices.first)} a ${numberOf(choices.last)}',
-        subtitle: 'Escolha múltipla • correção automática',
+        subtitle: '${choices.every((q) => q.type == 'true_false') ? 'Verdadeiro ou falso' : choices.any((q) => q.type == 'true_false') ? 'Escolha múltipla e V/F' : 'Escolha múltipla'} • correção automática',
         trailing: _PillButton(label: showChoices ? 'Ocultar' : 'Detalhes',
           icon: showChoices ? Icons.expand_less_rounded : Icons.expand_more_rounded,
           onPressed: () => setState(() => showChoices = !showChoices)),
@@ -634,8 +634,8 @@ class _ParentReviewPageState extends State<ParentReviewPage> {
     ]);
   }
 
-  bool isCorrect(ParentReviewQuestion q) => q.type == 'multiple-choice'
-      ? q.answerType == 'multiple-choice' && q.selectedOptionId == q.correctOptionId
+  bool isCorrect(ParentReviewQuestion q) => q.automatic
+      ? q.answeredAutomatic && q.selectedOptionId == q.correctOptionId
       : q.review?.classification == ReviewClassification.correct;
 }
 
@@ -785,7 +785,7 @@ class _ChoiceDetail extends StatelessWidget {
   final bool reported;
   @override
   Widget build(BuildContext context) {
-    final answered = question.answerType == 'multiple-choice';
+    final answered = question.answeredAutomatic;
     final right = answered && question.selectedOptionId == question.correctOptionId;
     return Container(
       margin: const EdgeInsets.only(top: 8),

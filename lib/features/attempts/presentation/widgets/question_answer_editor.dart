@@ -23,6 +23,20 @@ class _QuestionAnswerEditorState extends State<QuestionAnswerEditor> {
   @override void dispose(){text.dispose();super.dispose();}
   void write(String value)=>widget.onChanged(value.trim().isEmpty?{'mode':'unanswered'}:{'mode':'typed','text':value});
   @override Widget build(BuildContext context){
+    if(widget.question.type=='true_false'){
+      final selected=widget.value['mode']=='true_false'?widget.value['value']:null;
+      return Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+        for(final (value,label,icon) in const [(true,'Verdadeiro',Icons.check_rounded),(false,'Falso',Icons.close_rounded)])
+          Padding(padding:const EdgeInsets.only(bottom:16),child:_ChoiceOption(
+            text:label,icon:icon,
+            selected:selected==value,
+            onTap:widget.enabled?()=>widget.onChanged({'mode':'true_false','value':value}):null,
+          )),
+        if(selected!=null)Align(alignment:Alignment.center,child:TextButton.icon(
+          onPressed:widget.enabled?()=>widget.onChanged({'mode':'unanswered'}):null,
+          icon:const Icon(Icons.refresh_rounded),label:const Text('Limpar resposta'))),
+      ]);
+    }
     if(widget.question.type=='multiple-choice')return Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
       for(var i=0;i<widget.question.options.length;i++)Padding(padding:const EdgeInsets.only(bottom:16),child:_ChoiceOption(
         letter:String.fromCharCode(65+i),
@@ -80,14 +94,16 @@ class _QuestionAnswerEditorState extends State<QuestionAnswerEditor> {
   }
 }
 
-/// Opção de escolha múltipla em pílula tátil, com letra e marca de seleção.
+/// Opção em pílula tátil (escolha múltipla com letra; Verdadeiro/Falso com ícone) e marca de seleção.
 class _ChoiceOption extends StatelessWidget {
-  const _ChoiceOption({required this.letter,required this.text,required this.selected,required this.onTap});
-  final String letter,text;
+  const _ChoiceOption({this.letter,this.icon,required this.text,required this.selected,required this.onTap});
+  final String? letter;
+  final IconData? icon;
+  final String text;
   final bool selected;
   final VoidCallback? onTap;
   @override Widget build(BuildContext context)=>Semantics(
-    button:true,selected:selected,inMutuallyExclusiveGroup:true,label:'Opção $letter: $text',excludeSemantics:true,
+    button:true,selected:selected,inMutuallyExclusiveGroup:true,label:letter==null?text:'Opção $letter: $text',excludeSemantics:true,
     child:AnimatedContainer(
       duration:MediaQuery.disableAnimationsOf(context)?Duration.zero:const Duration(milliseconds:120),
       decoration:BoxDecoration(
@@ -101,7 +117,8 @@ class _ChoiceOption extends StatelessWidget {
         clipBehavior:Clip.antiAlias,
         child:InkWell(onTap:onTap,child:Padding(padding:const EdgeInsets.symmetric(horizontal:18,vertical:16),child:Row(children:[
           CircleAvatar(radius:26,backgroundColor:selected?AppColors.primary:AppColors.softBlue,
-            child:Text(letter,style:TextStyle(color:selected?Colors.white:AppColors.text,fontSize:20,fontWeight:FontWeight.w800))),
+            child:icon!=null?Icon(icon,color:selected?Colors.white:AppColors.text,size:26)
+              :Text(letter!,style:TextStyle(color:selected?Colors.white:AppColors.text,fontSize:20,fontWeight:FontWeight.w800))),
           const SizedBox(width:16),
           Expanded(child:Text(text,style:TextStyle(fontSize:19,fontWeight:FontWeight.w700,height:1.3,
             color:selected?AppColors.primary:AppColors.text))),

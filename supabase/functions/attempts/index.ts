@@ -235,7 +235,7 @@ Deno.serve(async (req: Request) => {
         )
           return fail(400, "INVALID_REQUEST");
         const a = body.answer;
-        let normalized: Record<string, string>;
+        let normalized: Record<string, string | boolean>;
         if (a.mode === "unanswered" && Object.keys(a).length === 1)
           normalized = { mode: "unanswered" };
         else if (a.mode === "paper" && Object.keys(a).length === 1)
@@ -249,6 +249,12 @@ Deno.serve(async (req: Request) => {
             mode: "multiple-choice",
             selectedOptionId: a.selectedOptionId,
           };
+        else if (
+          a.mode === "true_false" &&
+          typeof a.value === "boolean" &&
+          Object.keys(a).every((k) => k === "mode" || k === "value")
+        )
+          normalized = { mode: "true_false", value: a.value };
         else if (
           a.mode === "typed" &&
           typeof a.text === "string" &&

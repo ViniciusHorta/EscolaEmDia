@@ -23,10 +23,10 @@ class ChildFeedbackCard extends StatelessWidget {
       const SizedBox(height: 18), Text('A tua resposta', style: Theme.of(context).textTheme.titleMedium),
       const SizedBox(height: 8),
       if (question.outcome == 'unanswered') const Text('Esta pergunta ficou sem resposta.')
-      else if (question.type == 'multiple-choice') SelectableText(question.selectedOptionText ?? 'Não foi possível ler a opção escolhida.')
+      else if (question.automatic) SelectableText(question.selectedOptionText ?? 'Não foi possível ler a opção escolhida.')
       else if (question.answerType == 'paper') const Text('Respondeste no caderno. Podes olhar para a tua resolução enquanto vês a correção.')
       else SelectableText(question.answerText),
-      if (question.type == 'multiple-choice' && question.needsPractice && question.correctOptionText != null) ...[
+      if (question.automatic && question.needsPractice && question.correctOptionText != null) ...[
         const SizedBox(height: 18), Text('Resposta correta', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8), Container(padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(color: AppColors.successSoft, borderRadius: BorderRadius.circular(AppRadii.input)),

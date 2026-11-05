@@ -39,7 +39,7 @@ class AttemptController extends ChangeNotifier {
   String get key=>'attempt-draft-$childId-${snapshot!.id}';
   AttemptQuestion get question=>snapshot!.questions[index];
   bool get writable=>snapshot?.writable==true&&result==null&&!deliveryPending&&!refreshBeforeSubmit;
-  int get answered=>snapshot!.questions.where((q){final a=values[q.id];return a?['mode']=='multiple-choice'||a?['mode']=='paper'||(a?['mode']=='typed'&&(a?['text'] as String? ?? '').trim().isNotEmpty);}).length;
+  int get answered=>snapshot!.questions.where((q){final a=values[q.id];return a?['mode']=='multiple-choice'||a?['mode']=='true_false'||a?['mode']=='paper'||(a?['mode']=='typed'&&(a?['text'] as String? ?? '').trim().isNotEmpty);}).length;
   void emit(){if(!disposed)notifyListeners();}
 
   Future<void> open() async {

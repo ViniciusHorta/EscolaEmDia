@@ -48,6 +48,11 @@ class ParentReviewQuestion {
     options: (value['options'] as List).map((item) => ReviewOption(item['id'] as String, item['text'] as String)).toList(),
     review: value['review'] is Map ? AnswerReview.fromJson(value['review'] as Map) : null,
   );
+  /// Correção automática: escolha múltipla ou Verdadeiro/Falso.
+  bool get automatic => type == 'multiple-choice' || type == 'true_false';
+  /// Para perguntas automáticas, a resposta foi dada com o modo do próprio tipo.
+  bool get answeredAutomatic => automatic && answerType == type;
+
   String optionText(String? id) {
     for (final option in options) { if (option.id == id) return option.text; }
     return 'Sem resposta';

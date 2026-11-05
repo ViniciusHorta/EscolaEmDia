@@ -155,7 +155,7 @@ class _WorksheetAttemptPageState extends State<WorksheetAttemptPage> {
                   Text(data.instructions,style:const TextStyle(color:AppColors.muted,fontSize:16,height:1.45)),
                   const SizedBox(height:14),
                 ],
-                HighlightedPrompt(q.prompt,fontSize:q.type=='multiple-choice'?26:22),
+                HighlightedPrompt(q.prompt,fontSize:q.type=='written'?22:26),
                 if(data.text.isNotEmpty)...[
                   const SizedBox(height:12),
                   Theme(data:Theme.of(context).copyWith(dividerColor:Colors.transparent),child:ExpansionTile(
@@ -198,7 +198,7 @@ class _WorksheetAttemptPageState extends State<WorksheetAttemptPage> {
   }));
 }
 
-bool _isAnswered(Map<String,dynamic>? value)=>value?['mode']=='multiple-choice'||value?['mode']=='paper'
+bool _isAnswered(Map<String,dynamic>? value)=>value?['mode']=='multiple-choice'||value?['mode']=='true_false'||value?['mode']=='paper'
   ||(value?['mode']=='typed'&&(value?['text'] as String? ?? '').trim().isNotEmpty);
 
 /// Barra fixa inferior com «Anterior» e «Seguinte», acima da área segura.

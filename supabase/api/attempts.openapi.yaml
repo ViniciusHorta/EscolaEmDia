@@ -100,12 +100,12 @@ paths:
                           minimum: 1
                         type:
                           type: string
-                          enum: [multiple-choice, written]
+                          enum: [multiple-choice, written, true_false]
                         prompt:
                           type: string
                         answerType:
                           type: string
-                          enum: [multiple-choice, typed, paper, unanswered]
+                          enum: [multiple-choice, typed, paper, unanswered, true_false]
                         answerText:
                           type: string
                         outcome:
@@ -183,6 +183,16 @@ paths:
                           enum: [multiple-choice]
                         selectedOptionId:
                           type: string
+                    - type: object
+                      additionalProperties: false
+                      required: [mode, value]
+                      properties:
+                        mode:
+                          type: string
+                          enum: [true_false]
+                        value:
+                          type: boolean
+                          description: Verdadeiro (true) ou Falso (false)
                     - type: object
                       additionalProperties: false
                       required: [mode, text]

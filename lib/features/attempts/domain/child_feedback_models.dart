@@ -8,6 +8,8 @@ class ChildFeedbackQuestion {
   final String? selectedOptionText, correctOptionText;
   final int number;
   bool get needsPractice => outcome != 'correct';
+  /// Correção automática: escolha múltipla ou Verdadeiro/Falso.
+  bool get automatic => type == 'multiple-choice' || type == 'true_false';
   factory ChildFeedbackQuestion.fromJson(Map value) {
     final outcome = value['outcome'] as String;
     if (!['correct', 'partially_correct', 'incorrect', 'unanswered', 'pending_review'].contains(outcome)) {
