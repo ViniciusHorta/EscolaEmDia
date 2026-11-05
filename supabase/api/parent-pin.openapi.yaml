@@ -1,0 +1,219 @@
+openapi: 3.0.3
+info:
+  title: Escola em Dia — PIN parental
+  version: 1.1.0
+  description: >-
+    Configuração inicial e consulta do PIN adulto. Adições ao contrato de API.
+    Rotas lógicas: GET /v1/parent-pin/status e POST /v1/parent-pin/setup.
+    A função Supabase parent-pin acrescenta o prefixo /functions/v1/parent-pin.
+    Verificação implementada; recuperação com reautenticação ainda pendente.
+servers:
+  - url: https://hhgxxvvreyhigxynrgmv.supabase.co/functions/v1/parent-pin
+security:
+  - adultSession: []
+    projectKey: []
+paths:
+  /v1/status:
+    get:
+      operationId: getParentPinStatus
+      summary: Consultar se o adulto autenticado já definiu o PIN
+      description: Exige sessão adulta válida e e-mail confirmado. Nunca devolve o hash.
+      responses:
+        '200':
+          description: Estado consultado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PinStatus'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/setup:
+    post:
+      operationId: setupParentPin
+      summary: Definir o primeiro PIN do adulto autenticado
+      description: >-
+        Exige sessão adulta válida e e-mail confirmado. Não aceita identificador
+        de utilizador, não altera um PIN existente e não regista o corpo nos logs.
+        O pepper e o hash são tratados exclusivamente no servidor.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [pin]
+              properties:
+                pin:
+                  type: string
+                  pattern: '^[0-9]{4}$'
+                  minLength: 4
+                  maxLength: 4
+                  writeOnly: true
+      responses:
+        '201':
+          description: PIN guardado; configured é true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PinStatus'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '409':
+          description: PIN já configurado; nenhuma alteração efetuada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/verify:
+    post:
+      operationId: verifyParentPin
+      summary: Validar o PIN parental e emitir autorização temporária
+      description: >-
+        Rota lógica POST /v1/parent-pin/verify. Exige JWT adulto válido, e-mail
+        confirmado e session_id do JWT. Cinco tentativas por janela de 15 minutos,
+        bloqueio de cinco minutos. Desafios são reservados antes do cálculo do hash.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [pin]
+              properties:
+                pin:
+                  type: string
+                  pattern: '^[0-9]{4}$'
+                  writeOnly: true
+      responses:
+        '200':
+          description: Autorização opaca ligada ao adulto, sessão Auth e versão do PIN
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [unlockToken, expiresAt]
+                properties:
+                  unlockToken:
+                    type: string
+                    pattern: '^par_[0-9a-f]{64}$'
+                  expiresAt:
+                    type: string
+                    format: date-time
+        '429':
+          $ref: '#/components/responses/Error'
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/unlock-status:
+    get:
+      operationId: getParentUnlockStatus
+      summary: Validar autorização sem prolongar o prazo
+      parameters:
+        - $ref: '#/components/parameters/ParentUnlock'
+      responses:
+        '200':
+          description: expiresAt da autorização válida
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/touch:
+    post:
+      operationId: touchParentUnlock
+      summary: Renovar prazo após atividade real na área parental
+      description: >-
+        Expira após cinco minutos sem utilização no servidor. Prazo absoluto de
+        doze horas desde a criação. Não renovar autorizações expiradas ou revogadas.
+      parameters:
+        - $ref: '#/components/parameters/ParentUnlock'
+      responses:
+        '200':
+          description: Novo expiresAt
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/revoke:
+    post:
+      operationId: revokeParentUnlock
+      summary: Encerrar a própria autorização de desbloqueio
+      parameters:
+        - $ref: '#/components/parameters/ParentUnlock'
+      responses:
+        '200':
+          description: revoked é true
+        default:
+          $ref: '#/components/responses/Error'
+components:
+  parameters:
+    ParentUnlock:
+      name: X-Parent-Unlock
+      in: header
+      required: true
+      schema:
+        type: string
+        pattern: '^par_[0-9a-f]{64}$'
+      description: Autorização de desbloqueio em memória; exige também o JWT do mesmo adulto e sessão
+  securitySchemes:
+    adultSession:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token Supabase Auth validado no servidor com auth.getUser.
+    projectKey:
+      type: apiKey
+      in: header
+      name: apikey
+      description: Chave pública do projeto, enviada pelo SDK Flutter.
+  schemas:
+    PinStatus:
+      type: object
+      required: [configured]
+      properties:
+        configured:
+          type: boolean
+    ApiError:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, requestId]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            requestId:
+              type: string
+              format: uuid
+            details:
+              type: object
+              properties:
+                retryAfter:
+                  type: integer
+  responses:
+    Error:
+      description: Erro padronizado com mensagem pública e identificador do pedido
+      headers:
+        X-Request-Id:
+          schema:
+            type: string
+            format: uuid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'

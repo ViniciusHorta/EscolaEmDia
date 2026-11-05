@@ -1,0 +1,229 @@
+openapi: 3.0.3
+info:
+  title: Escola em Dia — Famílias e crianças
+  version: 1.1.0
+  description: >-
+    Subconjunto inicial do contrato acordado. GET/POST /v1/families e
+    GET/POST /v1/families/{id}/children. Adultos usam Supabase Auth.
+    Nenhuma resposta inclui PINs ou hashes. Convites, edição, encerramento
+    e autenticação infantil ainda não estão implementados.
+servers:
+  - url: https://hhgxxvvreyhigxynrgmv.supabase.co/functions/v1/families
+security:
+  - adultSession: []
+    projectKey: []
+paths:
+  /v1/families:
+    get:
+      summary: Listar famílias ativas das quais o adulto é membro ativo
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: items contém famílias; nextCursor é UUID ou null, máximo 50 itens
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, nextCursor]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Family'
+                  nextCursor:
+                    type: string
+                    format: uuid
+                    nullable: true
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      security:
+        - adultSession: []
+          projectKey: []
+          parentUnlock: []
+      summary: Criar família e associar o adulto numa única transação
+      description: >-
+        Exige e-mail confirmado e PIN parental configurado. Repetir o mesmo
+        clientRequestId para o mesmo adulto devolve a mesma família sem
+        criar outra associação ou evento. Um adulto pode ter várias famílias.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [clientRequestId]
+              properties:
+                clientRequestId:
+                  type: string
+                  format: uuid
+      responses:
+        '201':
+          description: Família criada ou pedido repetido de forma idempotente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Family'
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/families/{id}/children:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Listar crianças da família autorizada
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Lista paginada de perfis, máximo 50 itens
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, nextCursor]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Child'
+                  nextCursor:
+                    type: string
+                    format: uuid
+                    nullable: true
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      security:
+        - adultSession: []
+          projectKey: []
+          parentUnlock: []
+      summary: Criar perfil e credencial infantil numa única transação
+      description: >-
+        Requer adulto membro ativo e família ativa, e-mail confirmado e PIN
+        parental configurado. clientRequestId é também o UUID do perfil.
+        Repetir o mesmo pedido não duplica o perfil. Reutilizar o identificador
+        com outros dados devolve 409 REQUEST_CONFLICT. O PIN só é enviado
+        por HTTPS à função e não é devolvido ou persistido no Flutter.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [clientRequestId, displayName, schoolYear, avatarId, pin]
+              properties:
+                clientRequestId:
+                  type: string
+                  format: uuid
+                displayName:
+                  type: string
+                  minLength: 1
+                  maxLength: 40
+                schoolYear:
+                  type: integer
+                  minimum: 1
+                  maximum: 4
+                avatarId:
+                  type: string
+                  enum: [fox, owl, bear, lynx, dolphin, rabbit]
+                pin:
+                  type: string
+                  pattern: '^[0-9]{4}$'
+                  writeOnly: true
+      responses:
+        '201':
+          description: Perfil guardado ou pedido repetido de forma idempotente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Child'
+        default:
+          $ref: '#/components/responses/Error'
+components:
+  parameters:
+    Cursor:
+      name: cursor
+      in: query
+      schema:
+        type: string
+        format: uuid
+      description: Usar nextCursor da página anterior; ordenação por UUID crescente
+  securitySchemes:
+    parentUnlock:
+      type: apiKey
+      in: header
+      name: X-Parent-Unlock
+      description: Autorização temporária emitida após validar o PIN parental
+    adultSession:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    projectKey:
+      type: apiKey
+      in: header
+      name: apikey
+  schemas:
+    Family:
+      type: object
+      required: [id, status, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [active]
+        createdAt:
+          type: string
+          format: date-time
+    Child:
+      type: object
+      required: [id, familyId, displayName, schoolYear, avatarId, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        familyId:
+          type: string
+          format: uuid
+        displayName:
+          type: string
+        schoolYear:
+          type: integer
+        avatarId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+  responses:
+    Error:
+      description: >-
+        Erro padronizado. 400 pedido inválido; 401 sessão inválida;
+        403 e-mail/PIN parental em falta; 404 família inacessível;
+        409 identificador reutilizado; 413 pedido demasiado grande;
+        422 perfil inválido; 503 serviço indisponível; 500 erro interno.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [error]
+            properties:
+              error:
+                type: object
+                required: [code, message, requestId]
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  requestId:
+                    type: string
+                    format: uuid

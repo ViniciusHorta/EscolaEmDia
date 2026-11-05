@@ -1,0 +1,131 @@
+<!DOCTYPE html><html lang="pt-PT"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><meta content="mobile_blank" name="shell-type"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;700;800&amp;family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,600,0,0&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&amp;display=swap" rel="stylesheet"><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "lavender-subtle": "#EDE9FE", "primary-fixed-dim": "#c7bfff", "inverse-primary": "#c7bfff", "tertiary-fixed": "#87fe45", "outline-variant": "#c9c4d6", "lavender-press": "#6454D6", "on-background": "#0d1c2e", "tertiary-container": "#378500", "cream-bg": "#FBF9FF", "secondary-fixed-dim": "#ffb95f", "surface-container-highest": "#d5e3fc", "inverse-on-surface": "#eaf1ff", "surface": "#f8f9ff", "outline": "#787585", "mint-green": "#10B981", "surface-container-low": "#eff4ff", "secondary": "#855300", "surface-container-lowest": "#ffffff", "on-surface": "#0d1c2e", "tertiary-fixed-dim": "#6be026", "surface-container-high": "#dce9ff", "surface-container": "#e6eeff", "secondary-container": "#fea619", "inverse-surface": "#233144", "error-container": "#ffdad6", "surface-dim": "#ccdbf3", "on-secondary-container": "#684000", "on-primary-fixed": "#180065", "primary": "#5845ca", "on-tertiary-fixed-variant": "#1f5100", "on-error": "#ffffff", "on-primary-container": "#fffbff", "duo-green-dark": "#46A302", "peach-coral": "#FF7A59", "on-error-container": "#93000a", "on-primary-fixed-variant": "#432bb4", "surface-bright": "#f8f9ff", "surface-variant": "#d5e3fc", "surface-tint": "#5b48cd", "on-tertiary-container": "#f8ffed", "sky-blue": "#1CB0F6", "on-primary": "#ffffff", "on-secondary-fixed-variant": "#653e00", "on-secondary": "#ffffff", "background": "#f8f9ff", "secondary-fixed": "#ffddb8", "card-bg": "#FFFFFF", "on-surface-variant": "#474554", "coral-subtle": "#FFE5DF", "on-secondary-fixed": "#2a1700", "yellow-press": "#D97706", "on-tertiary-fixed": "#082100", "on-tertiary": "#ffffff", "primary-fixed": "#e5deff", "sun-yellow": "#FBBF24", "error": "#ba1a1a", "tertiary": "#2a6900", "primary-container": "#7260e5" }, borderRadius: { "DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px" }, spacing: { "space-md": "1rem", "space-sm": "0.625rem", "margin-tablet": "2rem", "margin": "1rem", "margin-desktop": "3rem", "space-xs": "0.375rem", "gutter": "1rem", "space-xl": "2.25rem", "space-lg": "1.5rem", "gutter-desktop": "1.5rem", "gutter-tablet": "1.25rem" }, fontFamily: { "label-sm": ["Lexend"], "label-md": ["Lexend"], "body-lg": ["Lexend"], "headline-xl": ["Lexend"], "headline-lg-mobile": ["Lexend"], "label-lg": ["Lexend"], "headline-sm": ["Lexend"], "headline-xl-mobile": ["Lexend"], "headline-md": ["Lexend"], "body-md": ["Lexend"], "headline-lg": ["Lexend"], "body-sm": ["Lexend"] }, fontSize: { "label-sm": ["12px", { "lineHeight": "16px", "fontWeight": "600" }], "label-md": ["14px", { "lineHeight": "18px", "fontWeight": "700" }], "body-lg": ["17px", { "lineHeight": "26px", "fontWeight": "400" }], "headline-xl": ["36px", { "lineHeight": "44px", "fontWeight": "800" }], "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "700" }], "label-lg": ["16px", { "lineHeight": "20px", "fontWeight": "700" }], "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "600" }], "headline-xl-mobile": ["28px", { "lineHeight": "36px", "fontWeight": "800" }], "headline-md": ["22px", { "lineHeight": "28px", "fontWeight": "700" }], "body-md": ["15px", { "lineHeight": "22px", "fontWeight": "400" }], "headline-lg": ["30px", { "lineHeight": "38px", "fontWeight": "700" }], "body-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }] } } } };</script><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style></head><body class="bg-cream-bg text-on-surface flex flex-col min-h-screen pt-safe pb-safe"><main class="flex flex-col relative w-full bg-cream-bg min-h-screen"><div class="flex flex-col w-full px-4 pb-8 space-y-5">
+<!-- Greeting Header -->
+<div class="flex flex-col items-center text-center pt-2"><h1 class="font-headline-xl-mobile text-headline-xl-mobile text-on-surface pt-1">Quem vai aprender hoje?</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Toca no teu perfil para começar</p></div>
+<!-- Profiles Selector (Cards táteis) -->
+<div class="grid grid-cols-2 gap-3 w-full max-w-sm mx-auto">
+<!-- Active Profile: Martim -->
+<div class="relative bg-card-bg rounded-2xl p-3.5 shadow-md flex flex-col items-center text-center cursor-pointer transition-transform transform active:scale-95 border-b-[5px] border-primary" id="card-martim"><div class="relative w-16 h-16 my-1.5">
+  <img class="w-16 h-16 rounded-full object-cover shadow-sm bg-lavender-subtle ring-4 ring-primary/20" data-alt="Martim avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDVPk3MJkMta3Wv_YqpjD0ctRfldrDPX3-z6BqxlOyFzptzZP4EE-bUCqUBKBX-92P36zeCXFQNqsS6vm6QViV6tu94EMnNLfcsPWNjyg0JEtnrdww4E_WW2f5uwYgTMbh6t4gohms3dPalFFo2CQx2X8YUTaME8ruXIIDnaES2Yrs3XOqxDlAjXYZDmOQmrENfmgngUy4zeBRt8tNmmijT-oThB4Tlr2OOszi8hv05">
+  <div class="absolute -bottom-1 -right-1 bg-primary text-on-primary rounded-full w-6 h-6 flex items-center justify-center shadow">
+    <span class="material-symbols-outlined text-[15px]" style="font-variation-settings: 'FILL' 1;">check</span>
+  </div>
+</div>
+<span class="font-headline-sm text-headline-sm text-on-surface mt-1">Martim</span>
+<span class="font-label-md text-label-md text-primary font-bold mt-0.5">3.º Ano</span></div>
+<!-- Secondary Profile: Leonor -->
+<div class="relative bg-card-bg/80 rounded-2xl p-3.5 shadow-sm flex flex-col items-center text-center opacity-85 hover:opacity-100 cursor-pointer transition-transform transform active:scale-95 border-b-[4px] border-outline-variant" id="card-leonor"><div class="relative w-16 h-16 my-1.5">
+  <img class="w-16 h-16 rounded-full object-cover shadow-sm bg-coral-subtle opacity-90" data-alt="Leonor avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBNX5W4jXX3zlgplC2rbLRDjiYcT9CHiqwwWO8T2CDRPH2D_XzaMcl-x-LUMe9M2y-l_OoNrFhokgYcyqy1kwYe2EyCDid15ocYDEG8XjF-9E9PIFq3M9GuwAACCKFqkQTVq3i2MzWN6XNAzcLNnMFR5IKHiewRxGXeoduWiXXG-CkLFueL9Q8WHiJi12Oluv_Q3Q6_dW4OAOWig5wG-GgBbLcPBqnsPTKmfKSiLqra">
+  <div class="absolute -bottom-1 -right-1 bg-surface-container-high text-on-surface-variant rounded-full w-6 h-6 flex items-center justify-center shadow-sm">
+    <span class="material-symbols-outlined text-[14px]">lock</span>
+  </div>
+</div>
+<span class="font-headline-sm text-headline-sm text-on-surface mt-1">Leonor</span>
+<span class="font-label-md text-label-md text-on-surface-variant mt-0.5">4.º Ano</span></div>
+</div>
+<!-- PIN Entry Panel -->
+<div class="bg-card-bg rounded-3xl p-5 shadow-lg max-w-sm mx-auto w-full flex flex-col items-center">
+<!-- Friendly Mascot Prompt -->
+<div class="text-center mb-4">
+  <p class="font-label-md text-label-md text-on-surface-variant font-bold">PIN do Martim</p>
+</div>
+<!-- PIN Visual Indicators (Dots) -->
+<div class="flex items-center justify-center gap-3.5 mb-5" id="pin-dots-container"><div class="pin-slot w-14 h-14 rounded-2xl border-2 shadow-sm flex items-center justify-center transition-all duration-200 border-primary bg-lavender-subtle"><div class="pin-dot w-4 h-4 rounded-full bg-primary transition-transform duration-200 scale-100"></div></div><div class="pin-slot w-14 h-14 rounded-2xl bg-card-bg border-2 border-outline-variant/60 shadow-sm flex items-center justify-center transition-all duration-200"><div class="pin-dot w-4 h-4 rounded-full bg-primary scale-0 transition-transform duration-200"></div></div><div class="pin-slot w-14 h-14 rounded-2xl bg-card-bg border-2 border-outline-variant/60 shadow-sm flex items-center justify-center transition-all duration-200"><div class="pin-dot w-4 h-4 rounded-full bg-primary scale-0 transition-transform duration-200"></div></div><div class="pin-slot w-14 h-14 rounded-2xl bg-card-bg border-2 border-outline-variant/60 shadow-sm flex items-center justify-center transition-all duration-200"><div class="pin-dot w-4 h-4 rounded-full bg-primary scale-0 transition-transform duration-200"></div></div></div>
+<!-- Keypad -->
+<div class="grid grid-cols-3 gap-2.5 w-full mb-4">
+<button class="num-key h-12 rounded-xl bg-surface-container-low active:bg-lavender-subtle text-on-surface font-headline-sm text-headline-sm flex items-center justify-center shadow-sm border-b-[3px] border-surface-container-high active:translate-y-[2px] transition-all" type="button">1</button>
+<button class="num-key h-12 rounded-xl bg-surface-container-low active:bg-lavender-subtle text-on-surface font-headline-sm text-headline-sm flex items-center justify-center shadow-sm border-b-[3px] border-surface-container-high active:translate-y-[2px] transition-all" type="button">2</button>
+<button class="num-key h-12 rounded-xl bg-surface-container-low active:bg-lavender-subtle text-on-surface font-headline-sm text-headline-sm flex items-center justify-center shadow-sm border-b-[3px] border-surface-container-high active:translate-y-[2px] transition-all" type="button">3</button>
+<button class="num-key h-12 rounded-xl bg-surface-container-low active:bg-lavender-subtle text-on-surface font-headline-sm text-headline-sm flex items-center justify-center shadow-sm border-b-[3px] border-surface-container-high active:translate-y-[2px] transition-all" type="button">4</button>
+<button class="num-key h-12 rounded-xl bg-surface-container-low active:bg-lavender-subtle text-on-surface font-headline-sm text-headline-sm flex items-center justify-center shadow-sm border-b-[3px] border-surface-container-high active:translate-y-[2px] transition-all" type="button">5</button>
+<button class="num-key h-12 rounded-xl bg-surface-container-low active:bg-lavender-subtle text-on-surface font-headline-sm text-headline-sm flex items-center justify-center shadow-sm border-b-[3px] border-surface-container-high active:translate-y-[2px] transition-all" type="button">6</button>
+<button class="num-key h-12 rounded-xl bg-surface-container-low active:bg-lavender-subtle text-on-surface font-headline-sm text-headline-sm flex items-center justify-center shadow-sm border-b-[3px] border-surface-container-high active:translate-y-[2px] transition-all" type="button">7</button>
+<button class="num-key h-12 rounded-xl bg-surface-container-low active:bg-lavender-subtle text-on-surface font-headline-sm text-headline-sm flex items-center justify-center shadow-sm border-b-[3px] border-surface-container-high active:translate-y-[2px] transition-all" type="button">8</button>
+<button class="num-key h-12 rounded-xl bg-surface-container-low active:bg-lavender-subtle text-on-surface font-headline-sm text-headline-sm flex items-center justify-center shadow-sm border-b-[3px] border-surface-container-high active:translate-y-[2px] transition-all" type="button">9</button>
+<button class="h-12 rounded-xl bg-coral-subtle active:bg-peach-coral text-peach-coral active:text-on-primary font-label-md text-label-md flex items-center justify-center gap-1 shadow-sm border-b-[3px] border-[#f8b4a5] active:translate-y-[2px] transition-all" id="btn-clear" type="button">
+<span class="material-symbols-outlined text-[18px]">backspace</span>
+<span class="">Limpar</span>
+</button>
+<button class="num-key h-12 rounded-xl bg-surface-container-low active:bg-lavender-subtle text-on-surface font-headline-sm text-headline-sm flex items-center justify-center shadow-sm border-b-[3px] border-surface-container-high active:translate-y-[2px] transition-all" type="button">0</button>
+<button class="h-12 rounded-xl bg-surface-container-low active:bg-surface-container text-on-surface-variant font-label-sm text-label-sm flex items-center justify-center shadow-sm border-b-[3px] border-surface-container-high active:translate-y-[2px] transition-all" id="btn-hint" type="button">
+<span class="material-symbols-outlined text-[20px] text-sun-yellow" style="font-variation-settings: 'FILL' 1;">help</span>
+</button>
+</div>
+<!-- Main Enter Button -->
+<button class="w-full h-12 rounded-full bg-primary text-on-primary font-label-lg text-label-lg flex items-center justify-center gap-2 border-b-4 border-lavender-press active:translate-y-[3px] active:border-b-0 shadow-md transition-all" id="btn-submit" type="button"><span class="">Entrar</span> <span class="text-lg">🚀</span></button>
+</div>
+<!-- Parent Gate Link -->
+<div class="flex flex-col items-center justify-center pt-1"><button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-on-surface-variant hover:text-primary transition-colors font-label-sm text-label-sm active:bg-surface-container-high" type="button">
+  <span class="">Área dos Pais 🔒</span>
+</button></div>
+</div>
+<script>
+  (function() {
+    let pinCode = '';
+    const maxDigits = 4;
+    const dots = document.querySelectorAll('.pin-dot');
+    const submitBtn = document.getElementById('btn-submit');
+    const clearBtn = document.getElementById('btn-clear');
+    const hintBtn = document.getElementById('btn-hint');
+    const numKeys = document.querySelectorAll('.num-key');
+    const dotColors = ['bg-primary', 'bg-sky-blue', 'bg-mint-green', 'bg-sun-yellow'];
+
+    function updateDots() {
+      dots.forEach((dot, idx) => {
+        dot.className = 'pin-dot w-5 h-5 rounded-full transition-all duration-200';
+        if (idx < pinCode.length) {
+          dot.classList.add(dotColors[idx % dotColors.length], 'scale-110', 'shadow-sm');
+        } else {
+          dot.classList.add('bg-surface-container-high');
+        }
+      });
+
+      if (pinCode.length === maxDigits) {
+        submitBtn.classList.remove('bg-primary', 'border-lavender-press');
+        submitBtn.classList.add('bg-tertiary-container', 'border-duo-green-dark');
+      } else {
+        submitBtn.classList.add('bg-primary', 'border-lavender-press');
+        submitBtn.classList.remove('bg-tertiary-container', 'border-duo-green-dark');
+      }
+    }
+
+    numKeys.forEach(button => {
+      button.addEventListener('click', () => {
+        if (pinCode.length < maxDigits) {
+          pinCode += button.innerText.trim();
+          updateDots();
+        }
+      });
+    });
+
+    clearBtn.addEventListener('click', () => {
+      pinCode = '';
+      updateDots();
+    });
+
+    hintBtn.addEventListener('click', () => {
+      alert('Pede ajuda a um adulto se não te lembrares do teu número secreto!');
+    });
+
+    submitBtn.addEventListener('click', () => {
+      if (pinCode.length === maxDigits) {
+        submitBtn.innerHTML = '<span>A abrir...</span> <span class="animate-spin text-lg">⭐</span>';
+        setTimeout(() => {
+          submitBtn.innerHTML = '<span>Boa! Bem-vindo Martim!</span> <span>🎉</span>';
+        }, 600);
+      } else {
+        const container = document.getElementById('pin-dots-container');
+        container.classList.add('translate-x-2');
+        setTimeout(() => container.classList.remove('translate-x-2'), 100);
+        setTimeout(() => container.classList.add('-translate-x-2'), 200);
+        setTimeout(() => container.classList.remove('-translate-x-2'), 300);
+      }
+    });
+  })();
+</script></main>
+
+
+
+</body></html>

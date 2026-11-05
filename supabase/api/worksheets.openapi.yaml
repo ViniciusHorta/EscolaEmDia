@@ -1,0 +1,200 @@
+openapi: 3.0.3
+info:
+  title: Escola em Dia — Catálogo e atribuições
+  version: 1.0.0
+  description: >-
+    Subconjunto do contrato acordado. Não gera perguntas nem versões a partir
+    do cliente: propõe fichas publicadas cujos temas correspondem exatamente
+    à seleção. As versões publicadas e as suas associações a temas são imutáveis.
+    Todas as listas são paginadas (50 itens) por UUID crescente e nextCursor.
+servers:
+  - url: https://hhgxxvvreyhigxynrgmv.supabase.co/functions/v1/worksheets
+security:
+  - adultJwt: []
+    parentUnlock: []
+    projectKey: []
+paths:
+  /v1/subjects:
+    get:
+      summary: Listar disciplinas do catálogo
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: items com id e name; nextCursor UUID ou null
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/topics:
+    get:
+      summary: Listar temas por disciplina e ano escolar
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - name: subjectId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: schoolYear
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 4
+      responses:
+        '200':
+          description: items com id, name, subjectId e schoolYear; nextCursor UUID ou null
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/worksheets:
+    get:
+      summary: Procurar propostas no catálogo publicado
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - name: subjectId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: schoolYear
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 4
+        - name: topicIds
+          in: query
+          description: UUIDs separados por vírgulas, máximo 20; correspondência exata dos temas
+          schema:
+            type: string
+      responses:
+        '200':
+          description: items com metadados da última versão publicada de cada ficha; nextCursor UUID ou null
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/worksheets/{id}:
+    get:
+      summary: Pré-visualizar uma versão publicada, exclusivamente para adultos desbloqueados
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: versionId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Versão exata da proposta; na ausência, utiliza a última publicada
+      responses:
+        '200':
+          description: Metadados e content JSONB completo. Nunca permitido a sessão infantil.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/children/{id}/assignments:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Listar atribuições ativas da criança
+      security:
+        - adultJwt: []
+          parentUnlock: []
+          projectKey: []
+        - childToken: []
+          projectKey: []
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: >-
+            items com id, childId, worksheetVersionId, assignedAt, status e worksheet
+            (metadados apenas); nextCursor UUID ou null. Adulto deve ser membro da família.
+            Sessão infantil só pode consultar o próprio id. Não inclui perguntas,
+            soluções, explicações ou critérios de classificação.
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      summary: Disponibilizar uma versão de ficha à criança
+      description: >-
+        Transação valida autorização parental, membro/família ativos e ano escolar,
+        grava a atribuição e auditoria em conjunto. Repetir o mesmo clientRequestId
+        não duplica a atribuição. Uma versão só pode estar ativa uma vez por criança.
+        A realização e repetição da ficha serão representadas por tentativas futuras.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [clientRequestId, worksheetVersionId]
+              properties:
+                clientRequestId:
+                  type: string
+                  format: uuid
+                worksheetVersionId:
+                  type: string
+                  format: uuid
+      responses:
+        '201':
+          description: id, childId, worksheetVersionId, assignedAt e status da atribuição confirmada
+        default:
+          $ref: '#/components/responses/Error'
+components:
+  parameters:
+    Cursor:
+      name: cursor
+      in: query
+      schema:
+        type: string
+        format: uuid
+      description: nextCursor da página anterior
+  securitySchemes:
+    adultJwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    parentUnlock:
+      type: apiKey
+      in: header
+      name: X-Parent-Unlock
+    projectKey:
+      type: apiKey
+      in: header
+      name: apikey
+    childToken:
+      type: http
+      scheme: bearer
+      description: Token opaco chd_, validado pela API
+  responses:
+    Error:
+      description: >-
+        error com code/message/requestId. 400 pedido inválido, 401 sessão inválida,
+        403 área parental bloqueada, 404 perfil/ficha inacessível, 409 pedido reutilizado
+        ou atribuição já ativa, 422 ano escolar incompatível, 503 indisponibilidade,
+        500 erro interno. Não devolve detalhes da base de dados.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [error]
+            properties:
+              error:
+                type: object
+                required: [code, message, requestId]
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  requestId:
+                    type: string
+                    format: uuid

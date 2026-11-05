@@ -1,0 +1,10 @@
+{
+  "name": "Escola em Dia",
+  "short_name": "Escola em Dia",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#FBF9FF",
+  "theme_color": "#5845CA",
+  "description": "Estudo em família",
+  "lang": "pt-PT"
+}

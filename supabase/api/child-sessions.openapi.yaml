@@ -1,0 +1,128 @@
+openapi: 3.0.3
+info:
+  title: Escola em Dia — entrada infantil em dispositivo partilhado
+  version: 1.0.0
+  description: >-
+    Sessões infantis opacas, separadas de Supabase Auth. O adulto autenticado
+    autoriza a entrada apenas em perfis da sua família ativa. O PIN é validado
+    no servidor. Sessões de uma hora, sem renovação automática nesta etapa.
+    Emparelhamento e refresh tokens rotativos serão acrescentados posteriormente.
+servers:
+  - url: https://hhgxxvvreyhigxynrgmv.supabase.co/functions/v1/child-sessions
+paths:
+  /v1/child-sessions:
+    post:
+      summary: Criar sessão infantil após validar PIN e pertença à família
+      security:
+        - adultJwt: []
+          projectKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [childId, pin]
+              properties:
+                childId:
+                  type: string
+                  format: uuid
+                pin:
+                  type: string
+                  pattern: '^[0-9]{4}$'
+                  writeOnly: true
+      responses:
+        '201':
+          description: Sessão criada; guardar o token apenas em memória no cliente
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [sessionId, accessToken, expiresAt]
+                properties:
+                  sessionId:
+                    type: string
+                    format: uuid
+                  accessToken:
+                    type: string
+                    pattern: '^chd_[0-9a-f]{64}$'
+                  expiresAt:
+                    type: string
+                    format: date-time
+        '429':
+          description: Cinco tentativas em 15 minutos; bloqueio de cinco minutos por criança
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/child-sessions/me:
+    get:
+      summary: Consultar apenas o perfil identificado pela sessão infantil
+      description: >-
+        Extensão ao catálogo inicial de contratos. Não aceita childId.
+        JWTs adultos não são aceites. Valida validade/revogação da sessão,
+        família ativa, autorização adulta e versão da credencial infantil.
+      security:
+        - childToken: []
+          projectKey: []
+      responses:
+        '200':
+          description: sessionId, expiresAt e child com id, familyId, displayName, schoolYear, avatarId
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/child-sessions/revoke:
+    post:
+      summary: Revogar a própria sessão antes de mudar de utilizador ou sair
+      security:
+        - childToken: []
+          projectKey: []
+      responses:
+        '200':
+          description: revoked é true; revogação idempotente, incluindo sessões expiradas
+        default:
+          $ref: '#/components/responses/Error'
+components:
+  securitySchemes:
+    adultJwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    childToken:
+      type: http
+      scheme: bearer
+      description: Token opaco chd_, não é um JWT Supabase Auth
+    projectKey:
+      type: apiKey
+      in: header
+      name: apikey
+  responses:
+    Error:
+      description: >-
+        error inclui code, message e requestId. Quando bloqueado, inclui
+        details.retryAfter em segundos. PIN errado e sessão expirada são 401,
+        perfil inacessível 404, tentativa em curso/expirada 409,
+        indisponibilidade 503, erro interno 500.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: object
+                required: [code, message, requestId]
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  requestId:
+                    type: string
+                    format: uuid
+                  details:
+                    type: object
+                    properties:
+                      retryAfter:
+                        type: integer

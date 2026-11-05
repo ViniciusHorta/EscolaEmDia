@@ -1,0 +1,18 @@
+project_id = "hhgxxvvreyhigxynrgmv"
+
+[functions.parent-pin]
+# Validation is performed explicitly with auth.getUser(token) in the handler.
+# This supports the project's current signing keys without relying on the legacy gateway check.
+verify_jwt = false
+
+[functions.families]
+# Every request is authenticated by auth.getUser(token) in the handler.
+verify_jwt = false
+
+[functions.child-sessions]
+# Adult login validates Auth server-side; child endpoints validate opaque session tokens.
+verify_jwt = false
+
+[functions.worksheets]
+# Adult routes require Auth + parental unlock; child listing validates opaque sessions.
+verify_jwt = false
