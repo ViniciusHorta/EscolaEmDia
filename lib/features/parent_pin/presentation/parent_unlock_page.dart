@@ -9,11 +9,12 @@ import '../data/parent_pin_service.dart';
 import 'parent_pin_reset_page.dart';
 
 class ParentUnlockPage extends StatefulWidget {
-  const ParentUnlockPage({super.key, required this.access, required this.onUnlocked, required this.onExit, this.onCancel});
+  const ParentUnlockPage({super.key, required this.access, required this.onUnlocked, required this.onExit, this.onCancel, this.cancelLabel = 'Voltar ao espaço infantil'});
   final ParentAccessService access;
   final Future<void> Function() onUnlocked;
   final Future<void> Function() onExit;
   final VoidCallback? onCancel;
+  final String cancelLabel;
   @override
   State<ParentUnlockPage> createState() => _ParentUnlockPageState();
 }
@@ -110,7 +111,8 @@ class _ParentUnlockPageState extends State<ParentUnlockPage> {
           style: TextStyle(color: AppColors.muted, fontSize: 13)),
         if (widget.onCancel != null) ...[
           const SizedBox(height: 16),
-          TextButton(onPressed: busy ? null : widget.onCancel, child: const Text('Voltar ao espaço infantil')),
+          AppButton(label: widget.cancelLabel, icon: Icons.switch_account_rounded, variant: AppButtonVariant.neutral,
+            onPressed: busy ? null : widget.onCancel),
         ],
         const SizedBox(height: 12),
         TextButton(onPressed: busy ? null : exit, child: const Text('Sair da conta')),

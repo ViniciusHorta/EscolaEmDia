@@ -16,13 +16,15 @@ import '../../worksheets/domain/worksheet_models.dart';
 import '../../worksheets/presentation/widgets/assigned_worksheet_card.dart';
 
 class ChildEntryPage extends StatefulWidget {
-  const ChildEntryPage({super.key, required this.familyId, required this.families, required this.sessions, required this.onExitDevice, required this.onOpenParents, this.initialChildId});
+  const ChildEntryPage({super.key, required this.familyId, required this.families, required this.sessions, required this.onExitDevice, required this.onOpenParents, this.initialChildId, this.onChildSignedIn});
   final String familyId;
   final String? initialChildId;
   final FamilyService families;
   final ChildSessionService sessions;
   final Future<void> Function() onExitDevice;
   final VoidCallback onOpenParents;
+  /// Chamado após o PIN correto, para lembrar este perfil no dispositivo.
+  final ValueChanged<ChildProfile>? onChildSignedIn;
 
   @override
   State<ChildEntryPage> createState() => _ChildEntryPageState();
@@ -93,6 +95,7 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
     try {
       final child = await widget.sessions.login(selected!.id, pin);
       if (!mounted) return;
+      widget.onChildSignedIn?.call(child);
       setState(() {authenticated = child; childTab = 0; activeAssignment=null;feedbackAttemptId=null;repeatCandidate=null;repeatFromAttemptId=null; pin = ''; inputVersion++; assignedWorksheets=fetchAssignments(child.id);});
       scheduleExpiry();
     } on ChildSessionException catch (failure) {
@@ -278,6 +281,8 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
                   onTap: busy ? null : () => choose(child))),
               ]);
             }),
+            const SizedBox(height: 14),
+            _ParentsCard(onTap: busy ? null : widget.onOpenParents),
             if (selected != null) ...[
               const SizedBox(height: 28),
               Container(
@@ -310,9 +315,6 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
               AppButton(label: 'Atualizar perfis', onPressed: busy ? null : load),
             ],
             const SizedBox(height: 24),
-            Center(child: TextButton.icon(onPressed: busy ? null : widget.onOpenParents,
-              icon: const Icon(Icons.lock_outline_rounded), label: const Text('Área dos Pais'),
-              style: TextButton.styleFrom(foregroundColor: AppColors.muted))),
             Center(child: TextButton(onPressed: busy ? null : exitDevice,
               style: TextButton.styleFrom(foregroundColor: AppColors.muted),
               child: const Text('Sair do dispositivo'))),
@@ -585,4 +587,39 @@ class _SectionLabel extends StatelessWidget {
     Icon(icon,color:AppColors.muted,size:24),const SizedBox(width:10),
     Semantics(header:true,child:Text(label,style:const TextStyle(fontSize:20,fontWeight:FontWeight.w700,color:AppColors.muted))),
   ]));
+}
+
+/// Perfil «Pais» no seletor: abre o pedido de PIN parental.
+class _ParentsCard extends StatelessWidget {
+  const _ParentsCard({required this.onTap});
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true, excludeSemantics: true, label: 'Perfil Pais. Pede o PIN parental.',
+    child: Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadii.pill),
+        boxShadow: const [BoxShadow(color: AppColors.outline, offset: Offset(0, 4))],
+      ),
+      child: Material(
+        color: AppColors.surface,
+        shape: const StadiumBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(onTap: onTap, child: Padding(
+          padding: const EdgeInsets.fromLTRB(10, 10, 20, 10),
+          child: Row(children: [
+            const CircleAvatar(radius: 24, backgroundColor: AppColors.amberSoft,
+              child: Icon(Icons.family_restroom_rounded, color: AppColors.amber)),
+            const SizedBox(width: 14),
+            const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Pais', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.text)),
+              Text('Entrar com o PIN parental', style: TextStyle(fontSize: 14, color: AppColors.muted)),
+            ])),
+            const Icon(Icons.lock_outline_rounded, color: AppColors.muted),
+          ]),
+        )),
+      ),
+    ),
+  );
 }

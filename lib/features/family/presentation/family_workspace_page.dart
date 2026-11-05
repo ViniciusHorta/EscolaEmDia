@@ -20,6 +20,7 @@ import '../../reviews/presentation/parent_review_page.dart';
 import '../../progress/data/child_progress_service.dart';
 import '../../progress/presentation/child_progress_page.dart';
 import '../data/family_service.dart';
+import '../data/last_profile_store.dart';
 import '../domain/family_models.dart';
 import 'child_profile_page.dart';
 import 'parent_shell.dart';
@@ -47,6 +48,10 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
   String? preferredChildId;
   String? returnFamilyId;
   bool requestingParent = false;
+  /// O pedido de PIN parental veio do espaço infantil («Área dos Pais»), e não
+  /// do arranque/bloqueio com o perfil Pais como último perfil usado.
+  bool parentRequestFromChild = false;
+  bool enteringChildMode = false;
   bool parentViewReady = false;
   String? childModeFamilyId;
   bool modeLoaded = false;
@@ -83,6 +88,9 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
         parentViewReady = false; preparing = false; reviewingAttemptId = null; progressChildId = null;
         if (childModeFamilyId == null && returnFamilyId != null) {
           childModeFamilyId = returnFamilyId;
+          // Bloqueio da área dos pais: o último perfil continua a ser «Pais»,
+          // por isso volta a pedir o PIN parental (com opção de alterar perfil).
+          if (!enteringChildMode) {requestingParent = true; parentRequestFromChild = false;}
           ChildModeStore.enter(widget.auth.user!.id, returnFamilyId!).catchError((Object _) {
             // Reload still requires a fresh parental PIN if this preference cannot be saved.
           });
@@ -100,6 +108,12 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
       savedChild = null; editing = false; preparing = false; reviewingAttemptId = null; progressChildId = null;
     });
     await load(familyId: returnFamilyId);
+    LastProfileStore.remember(widget.auth.user!.id, LastProfile.parent(selectedFamily?.id ?? returnFamilyId));
+  }
+
+  void childSignedIn(ChildProfile child) {
+    preferredChildId = child.id;
+    LastProfileStore.remember(widget.auth.user!.id, LastProfile.child(child.familyId, child.id));
   }
 
   Future<void> cancelParentUnlock() async {
@@ -110,9 +124,20 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
   Future<void> initializeWorkspace() async {
     setState(() {loading = true; error = null;});
     try {
-      final stored = await ChildModeStore.read(widget.auth.user!.id);
+      final adultId = widget.auth.user!.id;
+      final stored = await ChildModeStore.read(adultId);
+      final last = await LastProfileStore.read(adultId);
       if (!mounted) return;
-      setState(() {childModeFamilyId = stored; returnFamilyId = stored; modeLoaded = true; loading = false;});
+      // Pede sempre o PIN do último perfil usado neste dispositivo: o teclado da
+      // criança (já selecionada) ou o PIN parental por cima do seletor de perfis.
+      final familyId = stored ?? last?.familyId;
+      setState(() {
+        childModeFamilyId = familyId; returnFamilyId = familyId;
+        preferredChildId = last?.childId;
+        requestingParent = familyId != null && (last?.isParent ?? false);
+        parentRequestFromChild = false;
+        modeLoaded = true; loading = false;
+      });
     } catch (_) {
       if (mounted) setState(() {loading = false; error = 'Não foi possível recuperar o modo de acesso deste dispositivo.';});
     }
@@ -123,10 +148,15 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
     if (family == null || exiting) return;
     setState(() {exiting = true; error = null;});
     try {
-      await ChildModeStore.enter(widget.auth.user!.id, family.id);
+      final adultId = widget.auth.user!.id;
+      await ChildModeStore.enter(adultId, family.id);
       returnFamilyId = family.id;
-      await parentAccess.lock();
-      if (mounted) setState(() => childModeFamilyId = family.id);
+      // O espaço infantil abre com a criança indicada (ou a primeira) já selecionada.
+      final childId = preferredChildId ?? (children.isEmpty ? null : children.first.id);
+      if (childId != null) await LastProfileStore.remember(adultId, LastProfile.child(family.id, childId));
+      enteringChildMode = true;
+      try {await parentAccess.lock();} finally {enteringChildMode = false;}
+      if (mounted) setState(() {childModeFamilyId = family.id; requestingParent = false;});
     } catch (_) {
       if (mounted) setState(() => error = 'Não foi possível abrir o espaço infantil. Tenta novamente.');
     } finally {if (mounted) setState(() => exiting = false);}
@@ -204,11 +234,13 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
       Offstage(offstage: requestingParent, child: ChildEntryPage(
         key: ValueKey(childModeFamilyId), familyId: childModeFamilyId!, initialChildId: preferredChildId,
         families: service, sessions: childSessions, onExitDevice: exitChildDevice,
-        onOpenParents: () {FocusScope.of(context).unfocus(); setState(() => requestingParent = true);},
+        onChildSignedIn: childSignedIn,
+        onOpenParents: () {FocusScope.of(context).unfocus(); setState(() {requestingParent = true; parentRequestFromChild = true;});},
       )),
       if (requestingParent) Positioned.fill(child: ParentUnlockPage(
         access: parentAccess, onUnlocked: openParents, onExit: exitChildDevice,
         onCancel: cancelParentUnlock,
+        cancelLabel: parentRequestFromChild ? 'Voltar ao espaço infantil' : 'Alterar perfil',
       )),
     ]);
     if (modeLoaded && (!parentAccess.unlocked || !parentViewReady)) return ParentUnlockPage(
