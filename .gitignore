@@ -7,3 +7,9 @@ build/
 coverage/
 .idea/
 *.iml
+
+# Local Edge Function configuration and CLI state
+supabase/functions/.env
+supabase/functions/.env.*
+!supabase/functions/.env.example
+supabase/.temp/

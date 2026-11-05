@@ -1,5 +1,5 @@
+import { createCors } from "../_shared/cors.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-const origins = new Set(["http://localhost:8081","http://127.0.0.1:8081","http://localhost:8080","http://127.0.0.1:8080"]);
 const encoder = new TextEncoder();
 const hex = (data:Uint8Array) => Array.from(data,b=>b.toString(16).padStart(2,"0")).join("");
 const sha256 = async (text:string) => hex(new Uint8Array(await crypto.subtle.digest("SHA-256",encoder.encode(text))));
@@ -15,17 +15,15 @@ const messages:Record<string,string> = {
   INVALID_REQUEST:"O pedido é inválido.",
   SERVICE_NOT_CONFIGURED:"A entrada infantil está temporariamente indisponível.",
   STORAGE_UNAVAILABLE:"Não foi possível consultar a sessão. Tenta novamente.",
-  ORIGIN_NOT_ALLOWED:"Origem não autorizada.",
+  CORS_NOT_CONFIGURED: "A configuração de acesso está temporariamente indisponível.", ORIGIN_NOT_ALLOWED:"Origem não autorizada.",
   ROUTE_NOT_FOUND:"Endereço não encontrado.",
   METHOD_NOT_ALLOWED:"Método não permitido.",
   INTERNAL_ERROR:"Não foi possível concluir o pedido. Tenta novamente.",
 };
 Deno.serve(async (req:Request) => {
   const requestId = crypto.randomUUID();
-  const origin = req.headers.get("origin");
-  const cors:Record<string,string> = {"Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type",
-    "Access-Control-Allow-Methods":"GET, POST, OPTIONS","Access-Control-Expose-Headers":"X-Request-Id, Retry-After","Vary":"Origin"};
-  if (origin && origins.has(origin)) cors["Access-Control-Allow-Origin"] = origin;
+  const corsPolicy = createCors(req, { methods: "GET, POST, OPTIONS", parentUnlock: false, retryAfter: true });
+  const cors = corsPolicy.headers;
   const path = new URL(req.url).pathname.replace(/^\/functions\/v1(?=\/)/,"").replace(/^\/child-sessions(?=\/|$)/,"");
   const operation = path === "/v1/child-sessions" ? "login" : path === "/v1/child-sessions/me" ? "me" : path === "/v1/child-sessions/revoke" ? "revoke" : "unknown";
   const reply = (status:number,body:unknown,code?:string,retryAfter?:number) => {
@@ -38,8 +36,9 @@ Deno.serve(async (req:Request) => {
     const status = code === "PIN_LOCKED" ? 429 : code === "INVALID_PIN" || code === "CHILD_SESSION_EXPIRED" ? 401 : code === "CHILD_NOT_FOUND" ? 404 : code === "PIN_BUSY" || code === "LOGIN_EXPIRED" ? 409 : 503;
     return fail(status,code,typeof data.retryAfter === "number" ? data.retryAfter : undefined);
   };
-  if (origin && !origins.has(origin)) return fail(403,"ORIGIN_NOT_ALLOWED");
-  if (req.method === "OPTIONS") return new Response(null,{status:204,headers:cors});
+  if (!corsPolicy.configured) return fail(503, "CORS_NOT_CONFIGURED");
+  if (!corsPolicy.allowed) return fail(403, "ORIGIN_NOT_ALLOWED");
+  if (corsPolicy.preflightResponse) return corsPolicy.preflightResponse;
   if (operation === "unknown") return fail(404,"ROUTE_NOT_FOUND");
   if (req.method !== (operation === "me" ? "GET" : "POST")) return fail(405,"METHOD_NOT_ALLOWED");
   try {

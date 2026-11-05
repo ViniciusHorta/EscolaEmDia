@@ -13,6 +13,26 @@ A página inicial apresenta a conta familiar do Stitch: criação de conta e ent
 
 A galeria interativa continua acessível em `/#/components` e pelo botão «Ver componentes» em desenvolvimento. Os dados da galeria são exemplos.
 
+## Configuração central de CORS e publicação das funções
+
+Todas as seis Edge Functions importam `supabase/functions/_shared/cors.ts`. As origens deixam de estar fixas no código e passam a ser lidas de `ALLOWED_ORIGINS`, em **Edge Functions → Secrets** no painel Supabase. Valor de desenvolvimento:
+
+```text
+http://localhost:8081,http://127.0.0.1:8081,http://localhost:8080,http://127.0.0.1:8080
+```
+
+Separar origens por vírgula, sem caminhos nem barra final. Em produção, configurar os domínios HTTPS efetivos. Não aceita `*`, `null`, lista vazia nem entradas inválidas; configuração ausente ou inválida devolve 503 `CORS_NOT_CONFIGURED`. Origem não autorizada devolve 403. Pedidos nativos sem Origin continuam sujeitos à autenticação e autorização de cada rota. Não há alteração da configuração de redirecionamento do Supabase Auth.
+
+**Configurar a variável antes de publicar esta versão.** As versões já publicadas só passam a usar esta configuração depois de atualizadas. Para desenvolvimento com Supabase local, copiar `supabase/functions/.env.example` para `.env` na mesma pasta. O ficheiro `.env` está ignorado pelo Git.
+
+**Publicação atual:** as instruções históricas abaixo que mandam copiar apenas `index.ts` foram substituídas pela publicação via Supabase CLI, incluindo o módulo partilhado. Na raiz do projeto, depois de instalar e autenticar a CLI (`supabase login`), publicar todas as funções:
+
+```sh
+supabase functions deploy --project-ref hhgxxvvreyhigxynrgmv
+```
+
+O `supabase/config.toml` já desativa a verificação JWT legada nas seis funções; cada rota mantém a sua própria validação. O módulo `_shared` é incluído pelas importações e não é uma função independente. Alterações no módulo exigem republicar todas as funções que o usam. Alterações apenas ao valor de um Secret não exigem republicação: https://supabase.com/docs/guides/functions/secrets . Publicação pela CLI: https://supabase.com/docs/guides/functions/deploy .
+
 ## Supabase — preparação para testar
 
 O projeto está configurado em `lib/core/config/supabase_config.dart` com o URL e a chave pública fornecidos. Esses valores são públicos e podem ser substituídos por `--dart-define=SUPABASE_URL=...` e `--dart-define=SUPABASE_PUBLISHABLE_KEY=...`. Nunca colocar uma chave secret ou service_role no Flutter.
@@ -42,6 +62,7 @@ Referência: https://supabase.com/docs/reference/dart/auth-signup
 - `lib/features/family/`: famílias, perfis infantis e conclusão da configuração.
 - `lib/features/worksheets/`: catálogo, preparação, proposta, atribuição e cards infantis.
 - `lib/features/attempts/`: perguntas, respostas, pausa, recuperação e conflitos de revisão.
+- `lib/features/reviews/`: resumos das fichas com respostas abertas pendentes.
 - `lib/features/component_gallery/`: demonstração dos componentes.
 - `assets/fonts/`: fonte Lexend local e respetiva licença.
 - `test/`: testes de interação.
@@ -150,7 +171,7 @@ A publicação exige temas coerentes com disciplina e ano. JSONB valida os tipos
 
 A atribuição usa clientRequestId, mantém a versão exata e é confirmada pelo servidor. A transação valida novamente o desbloqueio parental, pertença familiar e ano escolar, guarda a atribuição e o evento de auditoria. Pedidos repetidos não duplicam a atribuição; a mesma versão não pode ter duas atribuições ativas para a mesma criança. Uma realização futura usará worksheet_attempts, sem criar uma atribuição nova para cada repetição.
 
-A listagem infantil usa o cliente HTTP de sessão infantil, sem JWT adulto. A API valida a sessão opaca e só permite o próprio childId. Devolve título, disciplina, temas, ano, contagens e identificação da versão/atribuição; nunca perguntas, soluções, explicações ou critérios de correção. O card apresenta «Por começar». O início e a gravação de respostas são instalados na etapa abaixo. Entrega e classificação continuam pendentes.
+A listagem infantil usa o cliente HTTP de sessão infantil, sem JWT adulto. A API valida a sessão opaca e só permite o próprio childId. Devolve título, disciplina, temas, ano, contagens e identificação da versão/atribuição; nunca perguntas, soluções, explicações ou critérios de correção. O card apresenta «Por começar». O início e a gravação de respostas são instalados na etapa abaixo. A entrega e a correção objetiva são instaladas na etapa abaixo; classificação manual das respostas abertas continua pendente.
 
 Rotas sob `/functions/v1/worksheets`: GET `/v1/subjects`, GET `/v1/topics`, GET `/v1/worksheets`, GET `/v1/worksheets/{id}`, POST/GET `/v1/children/{id}/assignments`. Listas são paginadas por cursor; erros seguem code/message/requestId. O contrato está em `supabase/api/worksheets.openapi.yaml`. As tabelas têm RLS e não permitem acesso direto ao Flutter; escritas de atribuição e auditoria são exclusivas da RPC autorizada ao servidor.
 
@@ -162,7 +183,7 @@ Validação manual pelo utilizador: disponibilizar uma ficha para uma criança e
 1. Executar uma vez `supabase/migrations/202611050004_create_attempts_and_answers.sql` depois das migrações anteriores. Cria worksheet_attempts, answers e sync_operations. A chave estrangeira composta garante que a criança e a versão da tentativa são as da atribuição; há no máximo uma tentativa em progresso por atribuição e uma resposta por pergunta/tentativa. Não elimina as fichas ou atribuições existentes.
 2. Publicar a função `attempts` com `supabase/functions/attempts/index.ts`, mantendo a verificação de JWT com segredo legado desativada nessa função. Só aceita tokens infantis opacos, validados dentro de cada transação. Não há segredos novos.
 3. Atualizar a função `worksheets` com o conteúdo atual de `supabase/functions/worksheets/index.ts`. A lista passa a incluir activeAttemptId, para apresentar «Começar» ou «Continuar». As outras funções mantêm-se.
-4. Reiniciar o Flutter. Entrar numa criança, abrir uma ficha, responder e usar Seguinte/Anterior. «Pausar» ou «Guardar e pausar» guardam as respostas antes de regressar ao espaço de estudo. Não entregam nem classificam a tentativa nesta etapa.
+4. Reiniciar o Flutter. Entrar numa criança, abrir uma ficha, responder e usar Seguinte/Anterior. «Pausar» ou «Guardar e pausar» guardam as respostas antes de regressar ao espaço de estudo. A entrega e a correção automática são instaladas na etapa abaixo.
 
 O aluno vê uma pergunta de cada vez, com opções de escolha múltipla ou resposta aberta. Pode escrever até 5000 caracteres, indicar explicitamente que resolveu no caderno ou deixar sem resposta. A contagem de progresso mede perguntas respondidas, não acertos. Não há feedback de correção, nota ou contagem decrescente. A API constrói o payload por lista de campos permitidos; exclui correctAnswer, explanation, critérios e campos extra das opções. Mantém a ordem e os IDs das perguntas da versão publicada.
 
@@ -179,3 +200,38 @@ As perguntas são renderizadas dentro do modo infantil, sem uma rota independent
 Rotas sob `/functions/v1/attempts`: POST `/v1/assignments/{id}/attempts`, GET `/v1/attempts/{id}`, PUT `/v1/attempts/{id}/answers/{questionId}`. Os contratos estão em `supabase/api/attempts.openapi.yaml`. As consultas adultas, entrega, resultados, revisão parental, novas tentativas após conclusão e sincronização em lote serão implementadas nos seus passos próprios. Ao implementar a repetição, remover ou substituir o identificador local de início de uma tentativa já concluída, em vez de reutilizá-lo.
 
 Validação manual pelo utilizador: responder, navegar, pausar e continuar; sair/entrar e confirmar recuperação; testar resposta escrita, caderno e limpar resposta. Confirmar que o progresso não aparece na outra criança. Para conflito, abrir a mesma criança/ficha em dois navegadores e alterar a mesma pergunta a partir de revisões diferentes. Nenhum teste automático foi executado nesta etapa.
+
+
+## Entregar ficha e encaminhar revisão parental — instalação
+
+1. Executar `supabase/migrations/202611050005_submit_attempts_and_pending_reviews.sql` uma vez após as migrações anteriores. Preserva tentativas e respostas. Acrescenta o tipo submit_attempt à idempotência, cria answer_reviews e answer_review_events conforme o ERD e prepara entrega/consulta por RPC. Não cria classificações fictícias nem modifica as respostas já guardadas.
+2. Atualizar a função `attempts` com o conteúdo atual de `supabase/functions/attempts/index.ts`, mantendo a verificação de JWT com segredo legado desativada. Acrescenta POST `/v1/attempts/{id}/submit` e GET `/v1/attempts/{id}/result` ao domínio existente.
+3. Atualizar também `worksheets` com `supabase/functions/worksheets/index.ts`, na mesma configuração de JWT. A listagem inclui a tentativa mais recente e o estado; o card passa de «Continuar» para «Ver entrega», sem iniciar automaticamente outra tentativa.
+4. Publicar a nova função `reviews` com `supabase/functions/reviews/index.ts`, com verificação de JWT legado desativada. Usa JWT adulto confirmado e autorização parental em cada consulta. Não necessita de segredos novos.
+5. Reiniciar o Flutter. Na última pergunta, «Terminar ficha» guarda primeiro as pendências e abre uma confirmação com a quantidade de perguntas respondidas. «Confirmar entrega» só mostra sucesso após a resposta do servidor. Respostas em branco são permitidas após confirmação explícita e aparecem no resumo, sem classificação parental inventada.
+
+A submissão inclui operationId e expectedRevisions de todas as perguntas. O identificador/intenção é persistido antes do pedido, depois de confirmar todas as gravações anteriores. O servidor bloqueia a tentativa e compara as revisões de cada resposta; se houve alteração noutro dispositivo, rejeita a entrega e pede revisão dos dados atuais. Só depois confirma submittedAt, transição de estado, auditoria e idempotência em conjunto. Uma repetição do mesmo pedido não repete a entrega nem o evento. Após entrega, o RPC de gravação continua a rejeitar alterações.
+
+A correção objetiva é calculada no servidor a partir das respostas congeladas e correctAnswer da versão imutável. Não há tabela de notas globais. O resumo infantil mostra contagens agregadas de escolhas múltiplas e de respostas abertas por rever, sem devolver as soluções. Respostas abertas typed com texto não vazio e paper entram na revisão; ausentes/unanswered/brancas não entram. O estado passa a pending_review se há respostas abertas por classificar e a completed se não há revisão necessária. A classificação manual será implementada no passo seguinte, usando as tabelas já criadas.
+
+Uma falha ou perda da confirmação não aparece como «entregue»: a intenção mantém-se e os campos ficam bloqueados até repetir o mesmo pedido ou consultar o estado do servidor. Reabrir uma tentativa que o servidor já recebeu consulta o resumo real. Rascunhos locais que não entraram numa entrega feita por outra sessão são preservados e podem ser consultados em modo de leitura; não são apagados nem apresentados como parte da entrega. A ficha não é considerada entregue offline só por ter sido terminada localmente.
+
+A área dos pais mostra «Revisões pendentes» agrupadas pela criança e ordenadas pelas entregas mais antigas dentro de cada criança. O endpoint GET `/v1/families/{id}/pending-reviews` está publicado sob `/functions/v1/reviews`, com paginação por cursor de tentativa (ordem criança/data/id). Devolve resumo e perfil mínimo apenas após validar o desbloqueio e a pertença familiar; nenhum endpoint desta etapa permite classificar manualmente. A atualização do painel é explícita ou ocorre ao reabrir a área, sem monitorização periódica.
+
+Validação manual pelo utilizador: entregar uma ficha mista preenchida, conferir contagem das escolhas e pendências abertas, sair/entrar e abrir «Ver entrega», confirmar que as respostas já não mudam; na área dos pais, conferir o resumo pendente para a criança correta. Entregar outra com respostas abertas em branco deve excluir essas perguntas da revisão. Testar perda de ligação na confirmação não pode mostrar sucesso falso. Não foram executados testes automáticos.
+
+## Classificação parental de respostas abertas — instalação
+
+1. Executar uma vez `supabase/migrations/202611050006_parent_answer_reviews.sql`, após a migração 005. Preserva fichas, tentativas, respostas e revisões existentes. Acrescenta RPCs de detalhe/classificação/listagem de revisões concluídas e o tipo review_answer à idempotência. As contagens agregadas passam a incluir writtenCorrect/writtenPartial/writtenIncorrect, calculadas a partir das revisões.
+2. Publicar a função atualizada com `supabase functions deploy reviews --project-ref hhgxxvvreyhigxynrgmv` na raiz do projeto. Mantém o CORS partilhado e a configuração ALLOWED_ORIGINS; não há segredos novos nem alteração da autenticação. Os outros endpoints de resultados recebem as novas contagens através da função SQL atualizada, sem nova publicação.
+3. Reiniciar o Flutter. Área dos pais → Pendentes → Rever respostas. Os cards reutilizáveis mostram pergunta, resposta escrita ou indicação para consultar o caderno. O seletor apresenta Correta, Parcialmente correta e Incorreta, sem pré-selecionar uma classificação. Escolhas múltiplas mostram a correção automática em leitura; respostas abertas em branco não oferecem classificação.
+
+Cada toque no seletor guarda imediatamente no servidor e só atualiza a classificação visível após confirmação. A gravação é uma transação: valida desbloqueio e pertença familiar, bloqueia a tentativa, compara baseRevision (0 para primeira classificação), insere/atualiza a avaliação, regista adulto/data/histórico/auditoria e muda a tentativa para completed quando não restam abertas pendentes. A resposta entregue pela criança permanece congelada. Não cria uma nota global nem pontos/medalhas fictícios. O resumo infantil passa a mostrar contagens das classificações parentais quando é consultado novamente.
+
+operationId e o conteúdo do pedido mantêm-se em memória enquanto a confirmação é incerta. Falhas não mostram sucesso: pode repetir o mesmo pedido sem duplicar o histórico ou consultar o estado no servidor. Outras classificações ficam bloqueadas durante essa confirmação. Cada gravação devolve também o detalhe atualizado da ficha para alinhar os cards com eventuais decisões de outro adulto. Um conflito com outro adulto exige atualizar e escolher novamente; nunca sobrescreve silenciosamente. Não há fila offline de revisões parentais nem armazenamento local das respostas consultadas. Se a página for fechada ou o acesso bloquear, a reabertura consulta novamente o servidor.
+
+É possível pausar após qualquer classificação confirmada. A secção Revistas permite reabrir tentativas concluídas e alterar classificações, mantendo histórico. O botão de voltar no fim não executa outra gravação: a última classificação necessária já concluiu a revisão. O conteúdo é integrado no espaço parental, sem rota independente; bloqueio por inatividade ou perda de autorização desmonta a página e exige novo PIN. Só adultos com sessão confirmada e desbloqueio válido recebem o detalhe com soluções; o resultado infantil continua agregado.
+
+Rotas da função reviews: GET `/v1/families/{id}/pending-reviews`, GET `/v1/families/{id}/reviewed-attempts`, GET `/v1/attempts/{id}/review`, PUT `/v1/answers/{id}/review`. Contrato em `supabase/api/reviews.openapi.yaml`. Funções internas não são executáveis por clientes e as RPCs de negócio são exclusivas de service_role, com search_path vazio e verificações próprias de autorização. Referência: https://supabase.com/docs/guides/database/functions . As decisões simultâneas são serializadas pelo bloqueio da tentativa: https://www.postgresql.org/docs/current/explicit-locking.html .
+
+Validação manual pelo utilizador: abrir a ficha pendente já entregue; classificar uma resposta, voltar e reabrir para conferir persistência; classificar a última e conferir que sai de Pendentes e aparece em Revistas; alterar uma classificação e reabrir para confirmar; consultar novamente o resultado infantil; conferir que brancas e escolhas múltiplas não aceitam avaliação manual. Em dois navegadores com acesso parental, alterar a mesma resposta a partir da mesma revisão deve gerar conflito no segundo. Uma falha de ligação não deve mostrar uma classificação como guardada; repetir a confirmação não duplica o evento. Conferir bloqueio por inatividade e isolamento entre famílias. Não foram executados testes automáticos, análise estática, build nem publicação nesta etapa; a execução fica a cargo do utilizador.

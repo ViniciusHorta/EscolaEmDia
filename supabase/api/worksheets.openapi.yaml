@@ -115,7 +115,7 @@ paths:
       responses:
         '200':
           description: >-
-            items com id, childId, worksheetVersionId, assignedAt, status, activeAttemptId (UUID ou null) e worksheet
+            items com id, childId, worksheetVersionId, assignedAt, status, activeAttemptId, latestAttemptId, latestAttemptStatus (ou null) e worksheet
             (metadados apenas); nextCursor UUID ou null. Adulto deve ser membro da família.
             Sessão infantil só pode consultar o próprio id. Não inclui perguntas,
             soluções, explicações ou critérios de classificação.

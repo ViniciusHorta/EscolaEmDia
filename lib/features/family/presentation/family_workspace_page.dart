@@ -13,6 +13,9 @@ import '../../child_session/data/child_session_service.dart';
 import '../../child_session/presentation/child_entry_page.dart';
 import '../../worksheets/data/worksheet_service.dart';
 import '../../worksheets/presentation/prepare_worksheet_page.dart';
+import '../../reviews/data/pending_reviews_service.dart';
+import '../../reviews/presentation/pending_reviews_panel.dart';
+import '../../reviews/presentation/parent_review_page.dart';
 import '../data/family_service.dart';
 import '../domain/family_models.dart';
 import 'child_profile_page.dart';
@@ -30,7 +33,9 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
   late final ChildSessionService childSessions;
   late final ParentAccessService parentAccess;
   late final WorksheetService worksheets;
+  late final PendingReviewsService pendingReviews;
   bool preparing = false;
+  String? reviewingAttemptId;
   String? preferredChildId;
   String? returnFamilyId;
   bool requestingParent = false;
@@ -54,6 +59,7 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
     parentAccess.addListener(parentAccessChanged);
     service = FamilyService(widget.auth.client, parentToken: () => parentAccess.token, onParentLocked: parentAccess.forget);
     childSessions = ChildSessionService(widget.auth.client);
+    pendingReviews=PendingReviewsService(widget.auth.client,parentToken:()=>parentAccess.token,onParentLocked:parentAccess.forget);
     worksheets = WorksheetService(widget.auth.client,parentToken:()=>parentAccess.token,onParentLocked:parentAccess.forget);
     initializeWorkspace();
   }
@@ -65,7 +71,7 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
     if (!mounted) return;
     setState(() {
       if (!parentAccess.unlocked) {
-        parentViewReady = false; preparing = false;
+        parentViewReady = false; preparing = false; reviewingAttemptId = null;
         if (childModeFamilyId == null && returnFamilyId != null) {
           childModeFamilyId = returnFamilyId;
           ChildModeStore.enter(widget.auth.user!.id, returnFamilyId!).catchError((Object _) {
@@ -82,7 +88,7 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
     setState(() {
       returnFamilyId = childModeFamilyId ?? selectedFamily?.id;
       childModeFamilyId = null; requestingParent = false; parentViewReady = true;
-      savedChild = null; editing = false; preparing = false;
+      savedChild = null; editing = false; preparing = false; reviewingAttemptId = null;
     });
     await load(familyId: returnFamilyId);
   }
@@ -198,6 +204,10 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
       AppButton(label: 'Tentar novamente', onPressed: exiting ? null : () {if (modeLoaded) {load();} else {initializeWorkspace();}}),
       const SizedBox(height: 16), exitButton(),
     ]);
+    if (reviewingAttemptId != null) return ParentReviewPage(
+      key: ValueKey(reviewingAttemptId), attemptId: reviewingAttemptId!, service: pendingReviews,
+      onClose: () => setState(() => reviewingAttemptId = null),
+    );
     if (preparing) return PrepareWorksheetPage(children: List<ChildProfile>.unmodifiable(children),service:worksheets,
       onClose:()=>setState(()=>preparing=false),onViewChild:(childId) async {
         setState((){preferredChildId=childId;preparing=false;});
@@ -225,6 +235,8 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
     return AppPage(title: 'As tuas crianças',
       subtitle: 'Cada criança tem o seu perfil e o seu PIN independente.',
       children: [
+        PendingReviewsPanel(key:ValueKey(selectedFamily!.id),familyId:selectedFamily!.id,service:pendingReviews,
+          onReview:(attemptId)=>setState(()=>reviewingAttemptId=attemptId)),
         const Wrap(children: [AppBadge(label: 'Perfis da família', icon: Icons.family_restroom_rounded)]),
         const SizedBox(height: 24),
         LayoutBuilder(builder: (context, constraints) {

@@ -1,0 +1,165 @@
+openapi: 3.0.3
+info:
+  title: Escola em Dia — Revisão parental
+  version: 1.1.0
+  description: >-
+    Consulta e classificação de respostas abertas entregues. Cada pedido valida JWT
+    adulto confirmado, desbloqueio ligado à sessão e pertença ativa à família.
+    Classificações são guardadas imediatamente, com histórico e revisão otimista.
+servers:
+  - url: https://hhgxxvvreyhigxynrgmv.supabase.co/functions/v1/reviews
+security:
+  - adultJwt: []
+    parentUnlock: []
+    projectKey: []
+paths:
+  /v1/families/{id}/pending-reviews:
+    get:
+      summary: Consultar entregas com respostas abertas pendentes
+      description: Até 50 resumos por página, ordenados por childId/submittedAt/id; brancas não contam como pendentes.
+      parameters:
+        - $ref: '#/components/parameters/id'
+        - $ref: '#/components/parameters/cursor'
+      responses:
+        '200':
+          $ref: '#/components/responses/page'
+        default:
+          $ref: '#/components/responses/error'
+  /v1/families/{id}/reviewed-attempts:
+    get:
+      summary: Consultar fichas concluídas com pelo menos uma classificação parental
+      description: Mesmo formato e paginação da lista pendente; permite reabrir e alterar classificações.
+      parameters:
+        - $ref: '#/components/parameters/id'
+        - $ref: '#/components/parameters/cursor'
+      responses:
+        '200':
+          $ref: '#/components/responses/page'
+        default:
+          $ref: '#/components/responses/error'
+  /v1/attempts/{id}/review:
+    get:
+      summary: Consultar contexto, perguntas, respostas e classificações de uma entrega
+      description: >-
+        Devolve resumo agregado, child mínimo, instructions/text/audioText e questions
+        na ordem da versão imutável. Cada pergunta contém id/type/prompt/options,
+        correctOptionId (só escolha múltipla), explanation, answerId, answerType,
+        text (só typed), selectedOptionId, reviewable e review (null ou avaliação).
+        A avaliação tem answerReviewId/classification/revision/reviewedAt.
+        Soluções são exclusivas deste endpoint adulto desbloqueado.
+      parameters:
+        - $ref: '#/components/parameters/id'
+      responses:
+        '200':
+          description: Resumo, perfil mínimo, contexto e perguntas com respostas e revisões.
+        default:
+          $ref: '#/components/responses/error'
+  /v1/answers/{id}/review:
+    put:
+      summary: Classificar ou alterar a classificação de uma resposta aberta
+      description: >-
+        Apenas perguntas written com resposta typed não vazia ou paper, de tentativas
+        entregues. baseRevision é 0 antes da primeira avaliação; depois usar revision
+        devolvida. operationId é gerado antes do pedido e reutilizado em tentativas de
+        confirmação após falha de ligação. Uma repetição idêntica devolve o resultado
+        original sem duplicar histórico nem auditoria, acompanhado de detail atualizado. A mesma operação com dados ou
+        ator diferentes é rejeitada. Conflitos exigem consulta atualizada e nova operação.
+        A última resposta pendente muda a tentativa para completed atomicamente.
+        Não altera a resposta infantil, correções objetivas nem cria uma nota global.
+      parameters:
+        - $ref: '#/components/parameters/id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [classification, baseRevision, operationId]
+              properties:
+                classification:
+                  type: string
+                  enum: [correct, partially_correct, incorrect]
+                baseRevision:
+                  type: integer
+                  minimum: 0
+                  maximum: 2147483646
+                operationId:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Classificação confirmada e resumo atualizado.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [answerReviewId, classification, revision, reviewedAt, attemptStatus, summary, detail]
+                properties:
+                  answerReviewId:
+                    type: string
+                    format: uuid
+                  classification:
+                    type: string
+                    enum: [correct, partially_correct, incorrect]
+                  revision:
+                    type: integer
+                    minimum: 1
+                  reviewedAt:
+                    type: string
+                    format: date-time
+                  attemptStatus:
+                    type: string
+                    enum: [pending_review, completed]
+                  summary:
+                    type: object
+                    description: Resumo agregado da entrega, incluindo contagens de classificações abertas.
+                  detail:
+                    type: object
+                    description: Detalhe atual completo da revisão, no formato de GET attempts/{id}/review.
+        default:
+          $ref: '#/components/responses/error'
+components:
+  parameters:
+    id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    cursor:
+      name: cursor
+      in: query
+      description: nextCursor anterior; tentativa da mesma família com data de entrega.
+      schema:
+        type: string
+        format: uuid
+  responses:
+    page:
+      description: >-
+        items com child (id/familyId/displayName/schoolYear/avatarId), attemptId,
+        assignmentId, childId, title, subjectName, status, submittedAt, questionCount,
+        choiceTotal/choiceCorrect/choiceUnanswered, writtenTotal/writtenAnswered,
+        writtenCorrect/writtenPartial/writtenIncorrect, pendingReview e unansweredTotal.
+        nextCursor UUID ou null. Não inclui respostas ou soluções.
+    error:
+      description: >-
+        error com code/message/requestId. 400 INVALID_REQUEST; 401 AUTH_REQUIRED;
+        403 PARENT_LOCKED ou ORIGIN_NOT_ALLOWED; 404 FAMILY_NOT_FOUND,
+        ATTEMPT_NOT_FOUND ou ANSWER_NOT_FOUND (também para recurso de outra família);
+        409 REVIEW_REVISION_CONFLICT, OPERATION_REUSED ou ATTEMPT_NOT_SUBMITTED;
+        422 ANSWER_NOT_REVIEWABLE; 503 CORS_NOT_CONFIGURED ou STORAGE_UNAVAILABLE.
+  securitySchemes:
+    adultJwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    parentUnlock:
+      type: apiKey
+      in: header
+      name: X-Parent-Unlock
+    projectKey:
+      type: apiKey
+      in: header
+      name: apikey

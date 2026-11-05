@@ -20,3 +20,7 @@ verify_jwt = false
 [functions.attempts]
 # All routes require an opaque child token, validated atomically inside the RPC.
 verify_jwt = false
+
+[functions.reviews]
+# Parent-only routes validate adult Auth and the temporary parental unlock inside RPC.
+verify_jwt = false

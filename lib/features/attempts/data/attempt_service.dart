@@ -3,12 +3,14 @@ import '../../../core/utils/request_id.dart';
 import '../../child_session/data/child_session_service.dart';
 import '../../worksheets/domain/worksheet_models.dart';
 import '../domain/attempt_models.dart';
+import '../domain/submission_summary.dart';
 
 class AttemptService {
   const AttemptService(this.sessions);
   final ChildSessionService sessions;
   Future<AttemptSnapshot> open(AssignedWorksheet assignment,String childId,SharedPreferences preferences) async {
-    if(assignment.activeAttemptId!=null)return get(assignment.activeAttemptId!);
+    final knownAttempt=assignment.activeAttemptId??assignment.latestAttemptId;
+    if(knownAttempt!=null)return get(knownAttempt);
     final key='attempt-start-$childId-${assignment.id}';
     var requestId=preferences.getString(key);
     if(requestId==null){requestId=newRequestId();if(!await preferences.setString(key,requestId)){
@@ -22,4 +24,12 @@ class AttemptService {
     if(response['syncStatus']!='confirmed'||response['revision'] is! int)throw const ChildSessionException('Não foi possível confirmar a gravação. Tenta novamente.');
     return response['revision'] as int;
   }
+  Future<SubmissionSummary> submit(String attemptId,String operationId,Map<String,int> revisions) async {
+    final result=await sessions.attemptRequest('/v1/attempts/$attemptId/submit',method:'POST',
+      body:{'operationId':operationId,'expectedRevisions':revisions});
+    return SubmissionSummary.fromJson(result);
+  }
+  Future<SubmissionSummary> result(String id) async=>SubmissionSummary.fromJson(
+    await sessions.attemptRequest('/v1/attempts/$id/result'));
+
 }

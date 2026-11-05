@@ -1,12 +1,12 @@
 openapi: 3.0.3
 info:
   title: Escola em Dia — Tentativas e respostas
-  version: 1.0.0
+  version: 1.1.0
   description: >-
-    Iniciar/retomar, consultar e guardar respostas da própria criança.
-    Apenas tokens infantis opacos são aceites nesta etapa. Não inclui entrega,
-    classificação, repetição após conclusão, consultas parentais ou sincronização
-    em lote, que serão acrescentadas aos respetivos contratos posteriormente.
+    Iniciar/retomar, guardar respostas, entregar e consultar o resumo da própria criança.
+    Apenas tokens infantis opacos são aceites. Correção objetiva feita no servidor;
+    respostas abertas preenchidas aguardam revisão. A classificação parental manual,
+    a repetição pela interface e a sincronização em lote serão acrescentadas posteriormente.
 servers:
   - url: https://hhgxxvvreyhigxynrgmv.supabase.co/functions/v1/attempts
 security:
@@ -126,6 +126,59 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiError'
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/attempts/{id}/submit:
+    post:
+      summary: Confirmar entrega e congelar respostas numa transação
+      description: >-
+        Exige sessão infantil válida e atribuição ativa. Valida que as revisões
+        de TODAS as perguntas ainda são as que a criança confirmou. Classifica
+        escolhas múltiplas a partir da versão imutável, define submittedAt e status
+        pending_review ou completed, regista auditoria e idempotência atomicamente.
+        As respostas abertas em branco não recebem revisão. Não armazena nota global.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [operationId, expectedRevisions]
+              properties:
+                operationId:
+                  type: string
+                  format: uuid
+                expectedRevisions:
+                  type: object
+                  minProperties: 1
+                  maxProperties: 50
+                  additionalProperties:
+                    type: integer
+                    minimum: 0
+                    maximum: 2147483647
+                  description: Mapa de questionId para revisão; 0 quando não existe resposta gravada
+      responses:
+        '200':
+          description: Entrega confirmada com resumo calculado no servidor
+        '409':
+          description: ATTEMPT_REVISION_CONFLICT, tentativa já fechada ou identificador reutilizado
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/attempts/{id}/result:
+    get:
+      summary: Consultar resumo de entrega já confirmada da própria criança
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: >-
+            attemptId, assignmentId, childId, status, submittedAt, title,
+            subjectName, questionCount, choiceTotal, choiceCorrect, choiceUnanswered,
+            writtenTotal, writtenAnswered, writtenCorrect, writtenPartial, writtenIncorrect, pendingReview e unansweredTotal.
+            Não inclui soluções, critérios ou respostas corretas por pergunta.
         default:
           $ref: '#/components/responses/Error'
 components:

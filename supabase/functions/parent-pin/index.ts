@@ -1,9 +1,6 @@
+import { createCors } from "../_shared/cors.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const allowedOrigins = new Set([
-  "http://localhost:8081", "http://127.0.0.1:8081",
-  "http://localhost:8080", "http://127.0.0.1:8080",
-]);
 const iterations = 600_000;
 const encoder = new TextEncoder();
 const sha256 = async (value: string) => hex(new Uint8Array(await crypto.subtle.digest("SHA-256", encoder.encode(value))));
@@ -22,14 +19,8 @@ Deno.serve(async (req: Request) => {
     : route === "/v1/unlock-status" ? "unlock-status"
     : route === "/v1/touch" ? "touch"
     : route === "/v1/revoke" ? "revoke" : "unknown";
-  const origin = req.headers.get("origin");
-  const cors: Record<string, string> = {
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-parent-unlock",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Expose-Headers": "X-Request-Id, Retry-After",
-    "Vary": "Origin",
-  };
-  if (origin && allowedOrigins.has(origin)) cors["Access-Control-Allow-Origin"] = origin;
+  const corsPolicy = createCors(req, { methods: "GET, POST, OPTIONS", parentUnlock: true, retryAfter: true });
+  const cors = corsPolicy.headers;
   const reply = (status: number, value: unknown, code?: string) => {
     // Fixed operation names and correlation IDs only: no bodies or credentials.
     console.info(JSON.stringify({ requestId, domain: "parent-pin", operation, status, ...(code ? { code } : {}) }));
@@ -39,7 +30,7 @@ Deno.serve(async (req: Request) => {
     });
   };
   const messages: Record<string, string> = {
-    ORIGIN_NOT_ALLOWED: "Origem não autorizada.",
+    CORS_NOT_CONFIGURED: "A configuração de acesso está temporariamente indisponível.", ORIGIN_NOT_ALLOWED: "Origem não autorizada.",
     ROUTE_NOT_FOUND: "Endereço não encontrado.",
     METHOD_NOT_ALLOWED: "Método não permitido para este endereço.",
     SERVICE_NOT_CONFIGURED: "A configuração do PIN está temporariamente indisponível.",
@@ -74,8 +65,9 @@ Deno.serve(async (req: Request) => {
     return fail(status, code, typeof data.retryAfter === "number" ? data.retryAfter : undefined);
   };
 
-  if (origin && !allowedOrigins.has(origin)) return fail(403, "ORIGIN_NOT_ALLOWED");
-  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
+  if (!corsPolicy.configured) return fail(503, "CORS_NOT_CONFIGURED");
+  if (!corsPolicy.allowed) return fail(403, "ORIGIN_NOT_ALLOWED");
+  if (corsPolicy.preflightResponse) return corsPolicy.preflightResponse;
   if (operation === "unknown") return fail(404, "ROUTE_NOT_FOUND");
   if (req.method !== ((operation === "status" || operation === "unlock-status") ? "GET" : "POST")) {
     return fail(405, "METHOD_NOT_ALLOWED");

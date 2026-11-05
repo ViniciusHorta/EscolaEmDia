@@ -1,6 +1,6 @@
+import { createCors } from "../_shared/cors.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const origins = new Set(["http://localhost:8081", "http://127.0.0.1:8081", "http://localhost:8080", "http://127.0.0.1:8080"]);
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const avatars = new Set(["fox", "owl", "bear", "lynx", "dolphin", "rabbit"]);
 const encoder = new TextEncoder();
@@ -16,7 +16,7 @@ const messages: Record<string, string> = {
   REQUEST_CONFLICT: "Este pedido já foi usado com outros dados. Volta à lista de perfis antes de continuar.",
   SERVICE_NOT_CONFIGURED: "A criação de perfis está temporariamente indisponível.",
   STORAGE_UNAVAILABLE: "Não foi possível guardar ou consultar os perfis. Tenta novamente.",
-  ORIGIN_NOT_ALLOWED: "Origem não autorizada.",
+  CORS_NOT_CONFIGURED: "A configuração de acesso está temporariamente indisponível.", ORIGIN_NOT_ALLOWED: "Origem não autorizada.",
   ROUTE_NOT_FOUND: "Endereço não encontrado.",
   METHOD_NOT_ALLOWED: "Método não permitido.",
   REQUEST_TOO_LARGE: "O pedido excede o tamanho permitido.",
@@ -25,13 +25,8 @@ const messages: Record<string, string> = {
 
 Deno.serve(async (req: Request) => {
   const requestId = crypto.randomUUID();
-  const origin = req.headers.get("origin");
-  const cors: Record<string,string> = {
-    "Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type, x-parent-unlock",
-    "Access-Control-Allow-Methods":"GET, POST, OPTIONS",
-    "Access-Control-Expose-Headers":"X-Request-Id", "Vary":"Origin",
-  };
-  if (origin && origins.has(origin)) cors["Access-Control-Allow-Origin"] = origin;
+  const corsPolicy = createCors(req, { methods: "GET, POST, OPTIONS", parentUnlock: true, retryAfter: false });
+  const cors = corsPolicy.headers;
   const url = new URL(req.url);
   const path = url.pathname.replace(/^\/functions\/v1(?=\/)/, "").replace(/^\/families(?=\/|$)/, "");
   const childRoute = /^\/v1\/families\/([^/]+)\/children$/.exec(path);
@@ -42,8 +37,9 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify(data),{status,headers:{...cors,"Content-Type":"application/json","Cache-Control":"no-store","X-Request-Id":requestId}});
   };
   const fail = (status:number, code:string) => reply(status,{error:{code,message:messages[code] ?? messages.INTERNAL_ERROR,requestId}},code);
-  if (origin && !origins.has(origin)) return fail(403,"ORIGIN_NOT_ALLOWED");
-  if (req.method === "OPTIONS") return new Response(null,{status:204,headers:cors});
+  if (!corsPolicy.configured) return fail(503, "CORS_NOT_CONFIGURED");
+  if (!corsPolicy.allowed) return fail(403, "ORIGIN_NOT_ALLOWED");
+  if (corsPolicy.preflightResponse) return corsPolicy.preflightResponse;
   if (operation === "unknown") return fail(404,"ROUTE_NOT_FOUND");
   if (req.method !== "GET" && req.method !== "POST") return fail(405,"METHOD_NOT_ALLOWED");
   const familyId = childRoute?.[1];

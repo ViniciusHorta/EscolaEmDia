@@ -1,22 +1,23 @@
+import { createCors } from "../_shared/cors.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-const origins=new Set(["http://localhost:8081","http://127.0.0.1:8081","http://localhost:8080","http://127.0.0.1:8080"]);
 const uuid=/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const encoder=new TextEncoder();
 const hash=async(value:string)=>Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",encoder.encode(value))),b=>b.toString(16).padStart(2,"0")).join("");
-const messages:Record<string,string>={AUTH_REQUIRED:"A tua sessão terminou. Entra novamente na conta.",PARENT_LOCKED:"Desbloqueia a área dos pais para continuar.",EMAIL_NOT_CONFIRMED:"Confirma o teu e-mail antes de continuar.",CHILD_NOT_FOUND:"Este perfil não está disponível.",CHILD_SESSION_EXPIRED:"A tua sessão terminou. Entra novamente com o PIN.",WORKSHEET_NOT_FOUND:"Esta ficha já não está disponível no catálogo.",SCHOOL_YEAR_MISMATCH:"A ficha não corresponde ao ano escolar da criança.",ASSIGNMENT_ALREADY_ACTIVE:"Esta ficha já está disponível para esta criança.",REQUEST_CONFLICT:"Este pedido já foi usado para outra atribuição. Volta à proposta antes de continuar.",INVALID_REQUEST:"Verifica os dados do pedido.",STORAGE_UNAVAILABLE:"Não foi possível aceder às fichas. Tenta novamente.",ORIGIN_NOT_ALLOWED:"Origem não autorizada.",ROUTE_NOT_FOUND:"Endereço não encontrado.",METHOD_NOT_ALLOWED:"Método não permitido.",INTERNAL_ERROR:"Não foi possível concluir o pedido. Tenta novamente."};
+const messages:Record<string,string>={AUTH_REQUIRED:"A tua sessão terminou. Entra novamente na conta.",PARENT_LOCKED:"Desbloqueia a área dos pais para continuar.",EMAIL_NOT_CONFIRMED:"Confirma o teu e-mail antes de continuar.",CHILD_NOT_FOUND:"Este perfil não está disponível.",CHILD_SESSION_EXPIRED:"A tua sessão terminou. Entra novamente com o PIN.",WORKSHEET_NOT_FOUND:"Esta ficha já não está disponível no catálogo.",SCHOOL_YEAR_MISMATCH:"A ficha não corresponde ao ano escolar da criança.",ASSIGNMENT_ALREADY_ACTIVE:"Esta ficha já está disponível para esta criança.",REQUEST_CONFLICT:"Este pedido já foi usado para outra atribuição. Volta à proposta antes de continuar.",INVALID_REQUEST:"Verifica os dados do pedido.",STORAGE_UNAVAILABLE:"Não foi possível aceder às fichas. Tenta novamente.",CORS_NOT_CONFIGURED: "A configuração de acesso está temporariamente indisponível.", ORIGIN_NOT_ALLOWED:"Origem não autorizada.",ROUTE_NOT_FOUND:"Endereço não encontrado.",METHOD_NOT_ALLOWED:"Método não permitido.",INTERNAL_ERROR:"Não foi possível concluir o pedido. Tenta novamente."};
 const meta=(row:any)=>({id:row.worksheet_id,versionId:row.version_id,title:row.title,subjectId:row.subject_id,subjectName:row.subject_name,schoolYear:row.school_year,questionCount:row.question_count,choiceCount:row.choice_count,writtenCount:row.written_count,topicIds:row.topic_ids,topicNames:row.topic_names,isSample:row.is_sample,versionNumber:row.version_number});
 Deno.serve(async(req:Request)=>{
- const requestId=crypto.randomUUID(),origin=req.headers.get("origin"),url=new URL(req.url);
+ const requestId=crypto.randomUUID(),url=new URL(req.url);
  const path=url.pathname.replace(/^\/functions\/v1(?=\/)/,"").replace(/^\/worksheets(?=\/|$)/,"");
  const assignmentRoute=/^\/v1\/children\/([^/]+)\/assignments$/.exec(path);
  const detailRoute=/^\/v1\/worksheets\/([^/]+)$/.exec(path);
  const operation=assignmentRoute?"assignments":detailRoute?"detail":path==="/v1/subjects"?"subjects":path==="/v1/topics"?"topics":path==="/v1/worksheets"?"catalogue":"unknown";
- const cors:Record<string,string>={"Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type, x-parent-unlock","Access-Control-Allow-Methods":"GET, POST, OPTIONS","Access-Control-Expose-Headers":"X-Request-Id","Vary":"Origin"};
- if(origin&&origins.has(origin))cors["Access-Control-Allow-Origin"]=origin;
+ const corsPolicy = createCors(req, { methods: "GET, POST, OPTIONS", parentUnlock: true, retryAfter: false });
+  const cors = corsPolicy.headers;
  const reply=(status:number,body:unknown,code?:string)=>{console.info(JSON.stringify({requestId,domain:"worksheets",operation,status,...(code?{code}:{})}));return new Response(JSON.stringify(body),{status,headers:{...cors,"Content-Type":"application/json","Cache-Control":"no-store","X-Request-Id":requestId}});};
  const fail=(status:number,code:string)=>reply(status,{error:{code,message:messages[code]??messages.INTERNAL_ERROR,requestId}},code);
- if(origin&&!origins.has(origin))return fail(403,"ORIGIN_NOT_ALLOWED");
- if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors});
+ if (!corsPolicy.configured) return fail(503, "CORS_NOT_CONFIGURED");
+  if (!corsPolicy.allowed) return fail(403, "ORIGIN_NOT_ALLOWED");
+ if (corsPolicy.preflightResponse) return corsPolicy.preflightResponse;
  if(operation==="unknown")return fail(404,"ROUTE_NOT_FOUND");
  if(req.method!=="GET"&&!(operation==="assignments"&&req.method==="POST"))return fail(405,"METHOD_NOT_ALLOWED");
  const cursor=url.searchParams.get("cursor"),subjectId=url.searchParams.get("subjectId"),versionId=url.searchParams.get("versionId");
@@ -82,13 +83,15 @@ Deno.serve(async(req:Request)=>{
    const rows=(data??[]).slice(0,50);if(!rows.length)return reply(200,{items:[],nextCursor:null});
    const {data:catalogue,error:catalogueError}=await admin.from("worksheet_catalogue").select("*").in("version_id",[...new Set(rows.map(r=>r.worksheet_version_id))]);
    if(catalogueError)return fail(503,"STORAGE_UNAVAILABLE");
-   const {data:attempts,error:attemptError}=await admin.from("worksheet_attempts").select("id,assignment_id")
-     .eq("child_id",childId!).eq("status","in_progress").in("assignment_id",rows.map(r=>r.id));
+   const {data:attempts,error:attemptError}=await admin.from("worksheet_attempts").select("id,assignment_id,status,started_at")
+     .eq("child_id",childId!).in("status",["in_progress","submitted","pending_review","completed"]).in("assignment_id",rows.map(r=>r.id)).order("started_at",{ascending:false}).order("id",{ascending:false});
    if(attemptError)return fail(503,"STORAGE_UNAVAILABLE");
-   const activeAttempts=new Map((attempts??[]).map(a=>[a.assignment_id,a.id]));
+   const activeAttempts=new Map((attempts??[]).filter(a=>a.status==="in_progress").map(a=>[a.assignment_id,a.id]));
+   const latestAttempts=new Map<string,{id:string,status:string}>();
+   for(const attempt of attempts??[]){if(!latestAttempts.has(attempt.assignment_id))latestAttempts.set(attempt.assignment_id,{id:attempt.id,status:attempt.status});}
    const byVersion=new Map((catalogue??[]).map(v=>[v.version_id,v]));
    if(rows.some(r=>!byVersion.has(r.worksheet_version_id)))return fail(503,"STORAGE_UNAVAILABLE");
-   return reply(200,{items:rows.map(r=>({id:r.id,childId:r.child_id,worksheetVersionId:r.worksheet_version_id,assignedAt:r.assigned_at,status:r.status,activeAttemptId:activeAttempts.get(r.id)??null,worksheet:meta(byVersion.get(r.worksheet_version_id))})),nextCursor:(data?.length??0)>50?rows[49].id:null});
+   return reply(200,{items:rows.map(r=>({id:r.id,childId:r.child_id,worksheetVersionId:r.worksheet_version_id,assignedAt:r.assigned_at,status:r.status,activeAttemptId:activeAttempts.get(r.id)??null,latestAttemptId:latestAttempts.get(r.id)?.id??null,latestAttemptStatus:latestAttempts.get(r.id)?.status??null,worksheet:meta(byVersion.get(r.worksheet_version_id))})),nextCursor:(data?.length??0)>50?rows[49].id:null});
   }
   if(operation==="detail"){
    let query=admin.from("worksheet_catalogue").select("*").eq("worksheet_id",detailRoute![1]);
