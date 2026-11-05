@@ -4,6 +4,7 @@ import '../../../core/config/supabase_config.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_card.dart';
+import '../../../shared/widgets/brand/app_logo.dart';
 import '../../../shared/widgets/layout/app_page.dart';
 import '../data/auth_service.dart';
 import 'family_account_page.dart';
@@ -63,9 +64,7 @@ class _AuthGateState extends State<AuthGate> {
         );
       }
       if (!snapshot.hasData) {
-        return const Scaffold(body: Center(child: CircularProgressIndicator(
-          semanticsLabel: 'A abrir a tua sessão',
-        )));
+        return const AppSplash();
       }
       final auth = snapshot.data!;
       return ListenableBuilder(

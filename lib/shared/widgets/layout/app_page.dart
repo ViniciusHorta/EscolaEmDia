@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_tokens.dart';
+import '../brand/app_logo.dart';
 
 class AppPage extends StatelessWidget {
   const AppPage(
@@ -25,11 +26,7 @@ class AppPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Row(children: [
-                    const CircleAvatar(
-                        radius: 25,
-                        backgroundColor: AppColors.lavender,
-                        child: Icon(Icons.extension_rounded,
-                            color: AppColors.primary)),
+                    const AppLogo(size: 50, semanticLabel: null),
                     const SizedBox(width: 12),
                     Expanded(
                         child: Text('Escola em Dia',

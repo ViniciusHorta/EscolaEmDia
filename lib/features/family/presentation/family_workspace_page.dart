@@ -4,6 +4,7 @@ import '../../../core/utils/request_id.dart';
 import '../../../shared/widgets/app_badge.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_card.dart';
+import '../../../shared/widgets/brand/app_logo.dart';
 import '../../../shared/widgets/layout/app_page.dart';
 import '../../auth/data/auth_service.dart';
 import '../../parent_pin/data/parent_access_service.dart';
@@ -198,7 +199,7 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
   Widget build(BuildContext context) => ParentActivityBoundary(access: parentAccess, child: buildWorkspace(context));
 
   Widget buildWorkspace(BuildContext context) {
-    if (loading) return const Scaffold(body: Center(child: CircularProgressIndicator(semanticsLabel: 'A carregar a família')));
+    if (loading) return const AppSplash(message: 'A carregar a família');
     if (childModeFamilyId != null) return Stack(children: [
       Offstage(offstage: requestingParent, child: ChildEntryPage(
         key: ValueKey(childModeFamilyId), familyId: childModeFamilyId!, initialChildId: preferredChildId,

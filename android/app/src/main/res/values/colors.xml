@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Lilás do logo Escola em Dia (fundo do ícone adaptativo e do splash 12+). -->
+    <color name="ic_launcher_background">#5845C9</color>
+    <!-- Fundo creme da app (AppColors.background). -->
+    <color name="splash_background">#FBF9FF</color>
+</resources>

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../../../shared/widgets/brand/app_logo.dart';
 import '../../../shared/widgets/layout/app_page.dart';
 import '../../auth/data/auth_service.dart';
 import '../data/parent_pin_service.dart';
@@ -56,7 +57,7 @@ class _ParentPinGateState extends State<ParentPinGate> {
           );
         }
         if (!snapshot.hasData) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator(semanticsLabel: 'A preparar o acesso parental')));
+          return const AppSplash(message: 'A preparar o acesso parental');
         }
         if (snapshot.data!) return widget.child;
         return ParentPinSetupPage(service: service, onSaved: () => setState(() => saved = true), onExit: widget.auth.signOut);
