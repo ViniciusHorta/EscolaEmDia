@@ -228,6 +228,7 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
     );
     if(authenticated!=null && activeAssignment!=null)return WorksheetAttemptPage(
       key:ValueKey('${activeAssignment!.id}-${repeatFromAttemptId??'open'}'),repeatFromAttemptId:repeatFromAttemptId,assignment:activeAssignment!,childId:authenticated!.id,sessions:widget.sessions,
+      childName:authenticated!.displayName,childEmoji:ChildAvatars.emoji(authenticated!.avatarId),
       onPause:()=>setState((){activeAssignment=null;feedbackAttemptId=null;repeatCandidate=null;repeatFromAttemptId=null;assignedWorksheets=fetchAssignments(authenticated!.id);}),
       onExpired:()=>setState((){activeAssignment=null;feedbackAttemptId=null;repeatCandidate=null;repeatFromAttemptId=null;authenticated=null;error='A tua sessão terminou. Introduz o PIN para continuar.';}),
       onOpenParents:widget.onOpenParents,

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_tokens.dart';
 
-enum AppButtonVariant { primary, secondary, success }
+/// neutral: botão branco com contorno lavanda (DESIGN.md «Ghost / Neutral Button»).
+enum AppButtonVariant { primary, secondary, success, neutral }
 
 class AppButton extends StatefulWidget {
   const AppButton(
@@ -50,6 +51,7 @@ class _AppButtonState extends State<AppButton> {
     final pressed = states.value.contains(WidgetState.pressed);
     final enabled = widget.onPressed != null && !widget.loading;
     final secondary = widget.variant == AppButtonVariant.secondary;
+    final neutral = widget.variant == AppButtonVariant.neutral;
     final (fill, shadow, foreground) = switch (widget.variant) {
       AppButtonVariant.primary => (
           AppColors.primary,
@@ -65,6 +67,11 @@ class _AppButtonState extends State<AppButton> {
           AppColors.success,
           AppColors.successPressed,
           Colors.white
+        ),
+      AppButtonVariant.neutral => (
+          AppColors.surface,
+          AppColors.blueBorder,
+          AppColors.text
         ),
     };
     final duration = MediaQuery.disableAnimationsOf(context)
@@ -96,7 +103,9 @@ class _AppButtonState extends State<AppButton> {
             shape: StadiumBorder(
                 side: secondary
                     ? const BorderSide(color: AppColors.blueBorder)
-                    : BorderSide.none),
+                    : neutral
+                        ? const BorderSide(color: AppColors.lavender, width: 2)
+                        : BorderSide.none),
             textStyle: Theme.of(context).textTheme.labelLarge,
           ),
           child: Row(

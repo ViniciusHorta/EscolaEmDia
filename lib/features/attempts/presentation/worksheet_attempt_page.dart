@@ -8,16 +8,18 @@ import '../../child_session/data/child_session_service.dart';
 import '../../worksheets/domain/worksheet_models.dart';
 import '../data/attempt_controller.dart';
 import '../data/attempt_service.dart';
+import 'widgets/attempt_chrome.dart';
 import 'widgets/question_answer_editor.dart';
 import 'submission_summary_page.dart';
 import 'child_feedback_page.dart';
 
 class WorksheetAttemptPage extends StatefulWidget {
   const WorksheetAttemptPage({super.key,required this.assignment,required this.childId,required this.sessions,
-    required this.onPause,required this.onExpired,required this.onOpenParents,required this.onRepeat,this.repeatFromAttemptId});
+    required this.onPause,required this.onExpired,required this.onOpenParents,required this.onRepeat,this.repeatFromAttemptId,this.childName,this.childEmoji});
   final AssignedWorksheet assignment;
   final String childId;
   final String? repeatFromAttemptId;
+  final String? childName,childEmoji;
   final ValueChanged<String> onRepeat;
   final ChildSessionService sessions;
   final VoidCallback onPause,onExpired,onOpenParents;
@@ -100,7 +102,7 @@ class _WorksheetAttemptPageState extends State<WorksheetAttemptPage> {
     if(controller.result!=null&&!controller.viewLocalDraft)return SubmissionSummaryPage(summary:controller.result!,
       onViewFeedback:controller.result!.status=='completed'?()=>setState((){showingFeedback=true;}):null,
       loadingResult:controller.busy,onRefreshResult:controller.busy?null:()=>run(controller.loadResult),
-      errorMessage:controller.problem,onClose:closeSummary,onParents:parents,onRepeat:controller.result!.status=='completed'?repeat:null,onViewLocalDraft:controller.pending.isEmpty?null:controller.showLocalDraft);
+      errorMessage:controller.problem,childName:widget.childName,childEmoji:widget.childEmoji,onClose:closeSummary,onParents:parents,onRepeat:controller.result!.status=='completed'?repeat:null,onViewLocalDraft:controller.pending.isEmpty?null:controller.showLocalDraft);
     if(controller.serverSubmitted&&controller.result==null)return AppPage(title:'Consultar entrega',
       subtitle:controller.problem??'Vamos carregar o resumo da tua ficha.',children:[
         AppButton(label:'Consultar resumo',loading:controller.busy,onPressed:controller.busy?null:()=>run(controller.loadResult)),
@@ -109,51 +111,103 @@ class _WorksheetAttemptPageState extends State<WorksheetAttemptPage> {
     if(controller.result==null&&(controller.deliveryPending||confirmingDelivery))return confirmation();
     final data=controller.snapshot!; final q=controller.question;
     final enabled=!controller.busy&&controller.writable&&controller.conflictQuestion==null;
-    return AppPage(title:'Pergunta ${controller.index+1} de ${data.questions.length}',subtitle:'${data.subjectName} • Sem pressa, com calma',children:[
-      AppBadge(label:'Tentativa ${data.attemptNumber}',icon:Icons.history_rounded),
-      const SizedBox(height:12),
-      if(controller.resumedExistingRepeat)...[
-        const AppCard(child:Text('Esta tentativa já tinha progresso guardado. Vamos continuar a partir daí.')),
-        const SizedBox(height:16),
-      ],
-      Row(children:[Expanded(child:Text(data.title,style:Theme.of(context).textTheme.titleMedium)),
-        const SizedBox(width:12),TextButton.icon(onPressed:controller.busy?null:(controller.result!=null?closeSummary:pause),icon:const Icon(Icons.pause_circle_outline_rounded),label:const Text('Pausar'))]),
-      const SizedBox(height:18),
-      Semantics(label:'${controller.answered} de ${data.questions.length} perguntas respondidas',child:LinearProgressIndicator(
-        value:controller.answered/data.questions.length,minHeight:10,borderRadius:BorderRadius.circular(20))),
-      const SizedBox(height:16),
-      Wrap(spacing:8,runSpacing:8,children:[AppBadge(label:'${controller.answered} respondidas'),
-        AppBadge(label:controller.busy?'A guardar…':controller.pending.isEmpty?'Progresso guardado':controller.diskSaved?'Alterações guardadas neste dispositivo':'A guardar neste dispositivo…',icon:Icons.save_outlined)]),
-      if(!controller.writable)...[const SizedBox(height:20),const Text('Esta tentativa está apenas disponível para consulta.')],
-      if(data.instructions.isNotEmpty)...[const SizedBox(height:20),Text(data.instructions)],
-      if(data.text.isNotEmpty)...[const SizedBox(height:16),ExpansionTile(title:const Text('Ler o texto'),children:[Padding(padding:const EdgeInsets.all(16),child:Text(data.text))])],
-      const SizedBox(height:28),
-      Text(q.prompt,style:Theme.of(context).textTheme.titleLarge),const SizedBox(height:24),
-      QuestionAnswerEditor(key:ValueKey('${data.id}-${q.id}-${controller.viewVersion}'),question:q,value:controller.values[q.id]??{'mode':'unanswered'},enabled:enabled,onChanged:controller.edit),
-      if(controller.problem!=null)...[
-        const SizedBox(height:20),Semantics(liveRegion:true,child:AppCard(color:AppColors.softBlue,child:Text(controller.problem!))),
-        const SizedBox(height:12),
-        if(controller.conflictQuestion!=null)...[
-          AppButton(label:'Manter a minha resposta',onPressed:controller.busy?null:()=>run(()=>controller.resolveConflict(keepMine:true))),
-          const SizedBox(height:12),AppButton(label:'Usar resposta do servidor',variant:AppButtonVariant.secondary,onPressed:controller.busy?null:()=>run(()=>controller.resolveConflict(keepMine:false))),
-        ]else AppButton(label:'Tentar guardar novamente',onPressed:controller.busy?null:()=>run(controller.saveAll)),
-        if(controller.pending.isNotEmpty&&controller.diskSaved)...[
-          const SizedBox(height:12),AppButton(label:'Pausar com alterações neste dispositivo',variant:AppButtonVariant.secondary,onPressed:controller.busy?null:pauseLocally),
-        ],
-      ],
-      const SizedBox(height:28),
-      if(controller.index>0)...[
-        AppButton(label:'Anterior',variant:AppButtonVariant.secondary,icon:Icons.arrow_back_rounded,
-          onPressed:controller.busy||controller.conflictQuestion!=null?null:()=>run(()=>controller.move(controller.index-1))),const SizedBox(height:14),
-      ],
-      if(controller.index<data.questions.length-1)
-        AppButton(label:'Seguinte',icon:Icons.arrow_forward_rounded,loading:controller.busy,
-          onPressed:controller.busy||controller.conflictQuestion!=null?null:()=>run(()=>controller.move(controller.index+1)))
-      else if(controller.result!=null)
-        AppButton(label:'Voltar ao resumo da entrega',onPressed:controller.busy?null:controller.showResult)
-      else AppButton(label:'Terminar ficha',icon:Icons.cloud_upload_outlined,loading:controller.busy,
-        onPressed:controller.busy||controller.conflictQuestion!=null||!controller.writable?null:finish),
-      const SizedBox(height:16),TextButton.icon(onPressed:controller.busy?null:parents,icon:const Icon(Icons.lock_outline_rounded),label:const Text('Área dos pais')),
-    ]);
+    final total=data.questions.length;
+    final last=controller.index==total-1;
+    final blocked=controller.busy||controller.conflictQuestion!=null;
+    final gutter=MediaQuery.sizeOf(context).width<640?16.0:32.0;
+    return Scaffold(
+      backgroundColor:AppColors.background,
+      body:Column(children:[
+        AttemptTopBar(
+          title:'Pergunta ${controller.index+1} de $total',
+          subtitle:data.subjectName,
+          leading:RoundActionButton(icon:Icons.pause_rounded,tooltip:'Pausar',
+            onPressed:controller.busy?null:(controller.result!=null?closeSummary:pause)),
+          trailing:RoundActionButton(icon:Icons.lock_outline_rounded,tooltip:'Área dos pais',filled:true,
+            onPressed:controller.busy?null:parents),
+        ),
+        Expanded(child:SingleChildScrollView(
+          keyboardDismissBehavior:ScrollViewKeyboardDismissBehavior.onDrag,
+          child:Center(child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:720),child:Padding(
+            padding:EdgeInsets.fromLTRB(gutter,18,gutter,24),
+            child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+              SegmentedProgress(current:controller.index,answered:[for(final question in data.questions)_isAnswered(controller.values[question.id])]),
+              const SizedBox(height:10),
+              Row(children:[
+                Icon(controller.pending.isEmpty?Icons.cloud_done_outlined:Icons.save_outlined,size:18,color:AppColors.muted),
+                const SizedBox(width:6),
+                Expanded(child:Text(controller.busy?'A guardar…':controller.pending.isEmpty?'Progresso guardado':controller.diskSaved?'Alterações guardadas neste dispositivo':'A guardar neste dispositivo…',
+                  style:const TextStyle(color:AppColors.muted,fontSize:13,fontWeight:FontWeight.w600))),
+                if(data.attemptNumber>1)AppBadge(label:'Tentativa ${data.attemptNumber}',icon:Icons.history_rounded),
+              ]),
+              if(controller.resumedExistingRepeat)...[
+                const SizedBox(height:16),
+                const AppCard(child:Text('Esta tentativa já tinha progresso guardado. Vamos continuar a partir daí.')),
+              ],
+              if(!controller.writable)...[
+                const SizedBox(height:16),
+                const AppCard(color:AppColors.softBlue,child:Text('Esta tentativa está apenas disponível para consulta.')),
+              ],
+              const SizedBox(height:20),
+              AppCard(padding:const EdgeInsets.all(28),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+                if(controller.index==0&&data.instructions.isNotEmpty)...[
+                  Text(data.instructions,style:const TextStyle(color:AppColors.muted,fontSize:16,height:1.45)),
+                  const SizedBox(height:14),
+                ],
+                HighlightedPrompt(q.prompt,fontSize:q.type=='multiple-choice'?26:22),
+                if(data.text.isNotEmpty)...[
+                  const SizedBox(height:12),
+                  Theme(data:Theme.of(context).copyWith(dividerColor:Colors.transparent),child:ExpansionTile(
+                    tilePadding:EdgeInsets.zero,
+                    leading:const Icon(Icons.auto_stories_rounded,color:AppColors.primary),
+                    title:const Text('Ler o texto',style:TextStyle(fontWeight:FontWeight.w700,color:AppColors.primary)),
+                    children:[Padding(padding:const EdgeInsets.only(bottom:8),child:Text(data.text,style:const TextStyle(fontSize:16,height:1.5)))])),
+                ],
+              ])),
+              const SizedBox(height:24),
+              QuestionAnswerEditor(key:ValueKey('${data.id}-${q.id}-${controller.viewVersion}'),question:q,value:controller.values[q.id]??{'mode':'unanswered'},enabled:enabled,onChanged:controller.edit),
+              if(controller.problem!=null)...[
+                const SizedBox(height:20),Semantics(liveRegion:true,child:AppCard(color:AppColors.softBlue,child:Text(controller.problem!))),
+                const SizedBox(height:12),
+                if(controller.conflictQuestion!=null)...[
+                  AppButton(label:'Manter a minha resposta',onPressed:controller.busy?null:()=>run(()=>controller.resolveConflict(keepMine:true))),
+                  const SizedBox(height:12),AppButton(label:'Usar resposta do servidor',variant:AppButtonVariant.secondary,onPressed:controller.busy?null:()=>run(()=>controller.resolveConflict(keepMine:false))),
+                ]else AppButton(label:'Tentar guardar novamente',onPressed:controller.busy?null:()=>run(controller.saveAll)),
+                if(controller.pending.isNotEmpty&&controller.diskSaved)...[
+                  const SizedBox(height:12),AppButton(label:'Pausar com alterações neste dispositivo',variant:AppButtonVariant.secondary,onPressed:controller.busy?null:pauseLocally),
+                ],
+              ],
+            ]),
+          ))),
+        )),
+        _BottomNavigation(children:[
+          if(controller.index>0)Expanded(child:AppButton(label:'Anterior',variant:AppButtonVariant.neutral,icon:Icons.arrow_back_rounded,
+            onPressed:blocked?null:()=>run(()=>controller.move(controller.index-1)))),
+          if(controller.index>0)const SizedBox(width:14),
+          Expanded(flex:controller.index>0?1:2,child:!last
+            ?AppButton(label:controller.index==total-2?'Última pergunta':'Seguinte',icon:Icons.arrow_forward_rounded,loading:controller.busy,
+              onPressed:blocked?null:()=>run(()=>controller.move(controller.index+1)))
+            :controller.result!=null
+              ?AppButton(label:'Ver resumo',icon:Icons.arrow_forward_rounded,onPressed:controller.busy?null:controller.showResult)
+              :AppButton(label:'Terminar ficha',icon:Icons.cloud_upload_outlined,variant:AppButtonVariant.success,loading:controller.busy,
+                onPressed:blocked||!controller.writable?null:finish)),
+        ]),
+      ]),
+    );
   }));
+}
+
+bool _isAnswered(Map<String,dynamic>? value)=>value?['mode']=='multiple-choice'||value?['mode']=='paper'
+  ||(value?['mode']=='typed'&&(value?['text'] as String? ?? '').trim().isNotEmpty);
+
+/// Barra fixa inferior com «Anterior» e «Seguinte», acima da área segura.
+class _BottomNavigation extends StatelessWidget {
+  const _BottomNavigation({required this.children});
+  final List<Widget> children;
+  @override Widget build(BuildContext context)=>Container(
+    decoration:BoxDecoration(color:AppColors.background,border:const Border(top:BorderSide(color:AppColors.lavender)),
+      boxShadow:[BoxShadow(color:AppColors.primary.withValues(alpha:0.05),blurRadius:14,offset:const Offset(0,-6))]),
+    child:SafeArea(top:false,child:Center(child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:720),
+      child:Padding(padding:const EdgeInsets.fromLTRB(16,14,16,8),child:Row(children:children))))),
+  );
 }
