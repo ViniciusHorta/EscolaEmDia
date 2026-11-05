@@ -41,6 +41,7 @@ Referência: https://supabase.com/docs/reference/dart/auth-signup
 - `lib/features/auth/`: ecrã de entrada e criação de conta familiar.
 - `lib/features/family/`: famílias, perfis infantis e conclusão da configuração.
 - `lib/features/worksheets/`: catálogo, preparação, proposta, atribuição e cards infantis.
+- `lib/features/attempts/`: perguntas, respostas, pausa, recuperação e conflitos de revisão.
 - `lib/features/component_gallery/`: demonstração dos componentes.
 - `assets/fonts/`: fonte Lexend local e respetiva licença.
 - `test/`: testes de interação.
@@ -149,8 +150,32 @@ A publicação exige temas coerentes com disciplina e ano. JSONB valida os tipos
 
 A atribuição usa clientRequestId, mantém a versão exata e é confirmada pelo servidor. A transação valida novamente o desbloqueio parental, pertença familiar e ano escolar, guarda a atribuição e o evento de auditoria. Pedidos repetidos não duplicam a atribuição; a mesma versão não pode ter duas atribuições ativas para a mesma criança. Uma realização futura usará worksheet_attempts, sem criar uma atribuição nova para cada repetição.
 
-A listagem infantil usa o cliente HTTP de sessão infantil, sem JWT adulto. A API valida a sessão opaca e só permite o próprio childId. Devolve título, disciplina, temas, ano, contagens e identificação da versão/atribuição; nunca perguntas, soluções, explicações ou critérios de correção. O card apresenta «Por começar». Resolver, guardar respostas e entregar a ficha continuam para a etapa seguinte, sem botões que simulem uma realização já disponível.
+A listagem infantil usa o cliente HTTP de sessão infantil, sem JWT adulto. A API valida a sessão opaca e só permite o próprio childId. Devolve título, disciplina, temas, ano, contagens e identificação da versão/atribuição; nunca perguntas, soluções, explicações ou critérios de correção. O card apresenta «Por começar». O início e a gravação de respostas são instalados na etapa abaixo. Entrega e classificação continuam pendentes.
 
 Rotas sob `/functions/v1/worksheets`: GET `/v1/subjects`, GET `/v1/topics`, GET `/v1/worksheets`, GET `/v1/worksheets/{id}`, POST/GET `/v1/children/{id}/assignments`. Listas são paginadas por cursor; erros seguem code/message/requestId. O contrato está em `supabase/api/worksheets.openapi.yaml`. As tabelas têm RLS e não permitem acesso direto ao Flutter; escritas de atribuição e auditoria são exclusivas da RPC autorizada ao servidor.
 
 Validação manual pelo utilizador: disponibilizar uma ficha para uma criança e conferir que aparece apenas no respetivo perfil; atribuir outra à segunda criança; testar mudança de disciplina/temas e impedir duplicar a mesma versão ativa. Verificar que cinco minutos de inatividade na preparação bloqueiam a área parental e impedem a gravação sem novo desbloqueio. Não enviar tokens ou PINs no chat.
+
+
+## Realizar ficha e guardar progresso — instalação
+
+1. Executar uma vez `supabase/migrations/202611050004_create_attempts_and_answers.sql` depois das migrações anteriores. Cria worksheet_attempts, answers e sync_operations. A chave estrangeira composta garante que a criança e a versão da tentativa são as da atribuição; há no máximo uma tentativa em progresso por atribuição e uma resposta por pergunta/tentativa. Não elimina as fichas ou atribuições existentes.
+2. Publicar a função `attempts` com `supabase/functions/attempts/index.ts`, mantendo a verificação de JWT com segredo legado desativada nessa função. Só aceita tokens infantis opacos, validados dentro de cada transação. Não há segredos novos.
+3. Atualizar a função `worksheets` com o conteúdo atual de `supabase/functions/worksheets/index.ts`. A lista passa a incluir activeAttemptId, para apresentar «Começar» ou «Continuar». As outras funções mantêm-se.
+4. Reiniciar o Flutter. Entrar numa criança, abrir uma ficha, responder e usar Seguinte/Anterior. «Pausar» ou «Guardar e pausar» guardam as respostas antes de regressar ao espaço de estudo. Não entregam nem classificam a tentativa nesta etapa.
+
+O aluno vê uma pergunta de cada vez, com opções de escolha múltipla ou resposta aberta. Pode escrever até 5000 caracteres, indicar explicitamente que resolveu no caderno ou deixar sem resposta. A contagem de progresso mede perguntas respondidas, não acertos. Não há feedback de correção, nota ou contagem decrescente. A API constrói o payload por lista de campos permitidos; exclui correctAnswer, explanation, critérios e campos extra das opções. Mantém a ordem e os IDs das perguntas da versão publicada.
+
+As respostas são guardadas no servidor ao navegar ou pausar. Alterações pendentes também são persistidas localmente, por criança e tentativa, para recuperação. A interface distingue progresso confirmado no servidor de alterações existentes apenas neste dispositivo. Uma falha não apresenta a resposta como sincronizada. Pode tentar novamente ou, depois da confirmação de persistência local, escolher pausar com alterações neste dispositivo.
+
+O identificador de início é persistido antes do pedido para permitir repetição após perda da resposta. Cada operação de resposta tem operationId e baseRevision; a operação e a alteração são confirmadas numa única transação. sync_operations é partilhada para início e gravação, sem limpeza automática nesta etapa. Um pedido repetido não cria outra tentativa nem duplica a gravação; um identificador reutilizado com outros dados é rejeitado.
+
+A fila local usa temporariamente shared_preferences para recuperação na Web, não uma implementação completa do Sync Manager previsto. Apenas pendências e posição da pergunta são persistidas; respostas confirmadas saem da fila. Não guarda PINs ou tokens. Não permite abrir fichas novas sem servidor, não sincroniza sem sessão e não faz background sync. Limpar dados do navegador pode perder respostas ainda não confirmadas. O armazenamento Web não é isolamento privado garantido contra quem controla o navegador; o isolamento da API é sempre validado no servidor.
+
+Se outra sessão modificar a mesma resposta, a revisão otimista rejeita a sobrescrita. A resposta local é preservada e a interface oferece «Manter a minha resposta» (nova operação baseada na revisão atual) ou «Usar resposta do servidor». As outras pendências são mantidas. Expiração de sessão exige novo PIN infantil; não descarta pendências. Tentativas submetidas/finalizadas ou atribuições retiradas não aceitam alterações. A consulta de uma tentativa própria retirada permanece disponível para recuperação, sem edição.
+
+As perguntas são renderizadas dentro do modo infantil, sem uma rota independente que permaneça visível após saída, troca de perfil ou desbloqueio parental. Ao pedir a área dos pais, a ficha aguarda a persistência local antes de abrir o PIN. Os rascunhos de outra criança não são carregados pela interface.
+
+Rotas sob `/functions/v1/attempts`: POST `/v1/assignments/{id}/attempts`, GET `/v1/attempts/{id}`, PUT `/v1/attempts/{id}/answers/{questionId}`. Os contratos estão em `supabase/api/attempts.openapi.yaml`. As consultas adultas, entrega, resultados, revisão parental, novas tentativas após conclusão e sincronização em lote serão implementadas nos seus passos próprios. Ao implementar a repetição, remover ou substituir o identificador local de início de uma tentativa já concluída, em vez de reutilizá-lo.
+
+Validação manual pelo utilizador: responder, navegar, pausar e continuar; sair/entrar e confirmar recuperação; testar resposta escrita, caderno e limpar resposta. Confirmar que o progresso não aparece na outra criança. Para conflito, abrir a mesma criança/ficha em dois navegadores e alterar a mesma pergunta a partir de revisões diferentes. Nenhum teste automático foi executado nesta etapa.

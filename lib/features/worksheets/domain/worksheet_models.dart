@@ -24,11 +24,12 @@ class WorksheetSummary {
     topicNames:(value['topicNames'] as List).cast<String>(),isSample:value['isSample']==true);
 }
 class AssignedWorksheet {
-  const AssignedWorksheet({required this.id,required this.childId,required this.worksheet,required this.assignedAt});
+  const AssignedWorksheet({required this.id,required this.childId,required this.worksheet,required this.assignedAt,this.activeAttemptId});
   final String id,childId;
+  final String? activeAttemptId;
   final WorksheetSummary worksheet;
   final DateTime assignedAt;
   factory AssignedWorksheet.fromJson(Map value) => AssignedWorksheet(id:value['id'] as String,
     childId:value['childId'] as String,worksheet:WorksheetSummary.fromJson(value['worksheet'] as Map),
-    assignedAt:DateTime.parse(value['assignedAt'] as String));
+    assignedAt:DateTime.parse(value['assignedAt'] as String),activeAttemptId:value['activeAttemptId'] as String?);
 }

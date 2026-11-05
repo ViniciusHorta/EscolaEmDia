@@ -1,0 +1,180 @@
+openapi: 3.0.3
+info:
+  title: Escola em Dia — Tentativas e respostas
+  version: 1.0.0
+  description: >-
+    Iniciar/retomar, consultar e guardar respostas da própria criança.
+    Apenas tokens infantis opacos são aceites nesta etapa. Não inclui entrega,
+    classificação, repetição após conclusão, consultas parentais ou sincronização
+    em lote, que serão acrescentadas aos respetivos contratos posteriormente.
+servers:
+  - url: https://hhgxxvvreyhigxynrgmv.supabase.co/functions/v1/attempts
+security:
+  - childToken: []
+    projectKey: []
+paths:
+  /v1/assignments/{id}/attempts:
+    post:
+      summary: Iniciar ou retomar a tentativa em progresso da atribuição
+      description: >-
+        A atribuição deve pertencer à criança da sessão. Um novo pedido só inicia
+        uma tentativa se não houver outra em progresso. Todos os clientRequestId
+        usados para iniciar/retomar ficam associados à tentativa em sync_operations,
+        de forma que uma repetição posterior nunca inicia outra tentativa.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [clientRequestId]
+              properties:
+                clientRequestId:
+                  type: string
+                  format: uuid
+      responses:
+        '201':
+          description: Tentativa iniciada ou retomada, com payload infantil sanitizado e respostas guardadas
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/attempts/{id}:
+    get:
+      summary: Consultar tentativa e respostas da própria criança
+      description: >-
+        Inclui id, assignmentId, childId, worksheetVersionId, status, startedAt,
+        writable, title, subjectName, instructions, text, audioText, questions e answers.
+        As perguntas incluem apenas id/type/prompt e opções id/text; não incluem
+        correctAnswer, explanation ou outros campos reservados.
+        Uma tentativa de atribuição retirada continua consultável, mas não editável.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Payload da tentativa sem soluções ou critérios de correção
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/attempts/{id}/answers/{questionId}:
+    put:
+      summary: Guardar resposta com idempotência e revisão otimista
+      description: >-
+        A operação e a resposta são confirmadas na mesma transação. Antes da
+        primeira gravação, baseRevision é 0. Cada gravação incrementa a revisão.
+        O mesmo operationId e conteúdo devolvem o resultado original; reutilizá-lo
+        com outros dados é um conflito. Respostas só mudam numa tentativa in_progress
+        e com atribuição ativa. Limpar a resposta usa mode unanswered e preserva a revisão.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - name: questionId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID da pergunta dentro da versão, codificado como segmento URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [operationId, baseRevision, answer]
+              properties:
+                operationId:
+                  type: string
+                  format: uuid
+                baseRevision:
+                  type: integer
+                  minimum: 0
+                  maximum: 2147483646
+                answer:
+                  oneOf:
+                    - type: object
+                      additionalProperties: false
+                      required: [mode, selectedOptionId]
+                      properties:
+                        mode:
+                          type: string
+                          enum: [multiple-choice]
+                        selectedOptionId:
+                          type: string
+                    - type: object
+                      additionalProperties: false
+                      required: [mode, text]
+                      properties:
+                        mode:
+                          type: string
+                          enum: [typed]
+                        text:
+                          type: string
+                          maxLength: 5000
+                    - type: object
+                      additionalProperties: false
+                      required: [mode]
+                      properties:
+                        mode:
+                          type: string
+                          enum: [paper, unanswered]
+      responses:
+        '200':
+          description: answerId, revision, syncStatus confirmed e updatedAt
+        '409':
+          description: Conflito de revisão/operação ou tentativa não editável; erro inclui currentRevision quando aplicável
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        default:
+          $ref: '#/components/responses/Error'
+components:
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  securitySchemes:
+    childToken:
+      type: http
+      scheme: bearer
+      description: Token opaco chd_, validado pelo RPC em cada transação; JWT adulto não aceite
+    projectKey:
+      type: apiKey
+      in: header
+      name: apikey
+  schemas:
+    ApiError:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, requestId]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            requestId:
+              type: string
+              format: uuid
+            details:
+              type: object
+              properties:
+                currentRevision:
+                  type: integer
+  responses:
+    Error:
+      description: >-
+        Erro code/message/requestId. 400 pedido inválido, 401 sessão infantil inválida,
+        404 tentativa/pergunta inacessível, 409 conflito ou tentativa só de leitura,
+        422 resposta inválida, 503 indisponibilidade e 500 erro interno.
+        Não inclui respostas completas nos logs ou erros.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'

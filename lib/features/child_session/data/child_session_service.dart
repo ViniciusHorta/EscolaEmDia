@@ -7,10 +7,12 @@ import '../../family/domain/family_models.dart';
 import '../../worksheets/domain/worksheet_models.dart';
 
 class ChildSessionException implements Exception {
-  const ChildSessionException(this.message, {this.ended = false, this.retryAfter});
+  const ChildSessionException(this.message, {this.ended = false, this.retryAfter, this.code, this.currentRevision});
   final String message;
   final bool ended;
   final int? retryAfter;
+  final String? code;
+  final int? currentRevision;
 }
 
 abstract final class ChildModeStore {
@@ -58,7 +60,9 @@ class ChildSessionService {
   }
 
   Future<ChildProfile> profile() async {
+    final requestedToken=_token;
     final data = await _childRequest('/me', 'GET');
+    if(requestedToken!=_token)throw const ChildSessionException('A sessão mudou. Tenta novamente.');
     if (data['child'] is! Map) throw const ChildSessionException('Não foi possível carregar o teu perfil.');
     final validUntil = data['expiresAt'] is String ? DateTime.tryParse(data['expiresAt'] as String) : null;
     if (validUntil == null || !validUntil.isAfter(DateTime.now())) {
@@ -71,9 +75,10 @@ class ChildSessionService {
 
   Future<void> endSession() async {
     if (_token == null) return;
+    final requestedToken=_token;
     try { await _childRequest('/revoke', 'POST'); }
     on ChildSessionException catch (error) { if (!error.ended) rethrow; }
-    _forget();
+    if(_token==requestedToken)_forget();
   }
 
   void forgetExpired() {
@@ -96,22 +101,26 @@ class ChildSessionService {
     return result;
   }
 
+  Future<Map> attemptRequest(String path,{String method='GET',Map<String,dynamic>? body}) => _sendChildRequest(
+    Uri.parse('${SupabaseConfig.url}/functions/v1/attempts$path'),method,body:body);
+
   Future<Map> _childRequest(String suffix,String method) => _sendChildRequest(
     Uri.parse('${SupabaseConfig.url}/functions/v1/child-sessions/v1/child-sessions$suffix'),method);
 
-  Future<Map> _sendChildRequest(Uri uri, String method) async {
+  Future<Map> _sendChildRequest(Uri uri, String method,{Map<String,dynamic>? body}) async {
     final token = _token;
     if (token == null) throw const ChildSessionException('Escolhe o teu perfil e entra novamente.', ended: true);
     final request = http.Request(method, uri)..headers.addAll({
       'apikey': SupabaseConfig.publishableKey, 'Authorization': 'Bearer $token',
     });
+    if(body!=null){request.headers['Content-Type']='application/json';request.body=jsonEncode(body);}
     // Separate HTTP client: no Supabase adult-session credentials or fallback.
     try {
       final response = await http.Response.fromStream(await _http.send(request).timeout(const Duration(seconds: 20))).timeout(const Duration(seconds: 20));
       final data = jsonDecode(utf8.decode(response.bodyBytes));
       if (response.statusCode >= 400) {
         final error = _error(data);
-        if (error.ended) _forget();
+        if (error.ended && _token==token) _forget();
         throw error;
       }
       if (data is! Map) throw const ChildSessionException('Não foi possível confirmar o pedido.');
@@ -127,7 +136,9 @@ class ChildSessionService {
     final wait = details is Map ? details['retryAfter'] : null;
     return ChildSessionException(message is String ? message : 'Não foi possível concluir o pedido. Tenta novamente.',
       ended: error is Map && error['code'] == 'CHILD_SESSION_EXPIRED',
-      retryAfter: wait is num && wait > 0 ? wait.ceil() : null);
+      retryAfter: wait is num && wait > 0 ? wait.ceil() : null,
+      code:error is Map && error['code'] is String?error['code'] as String:null,
+      currentRevision:details is Map && details['currentRevision'] is num?(details['currentRevision'] as num).toInt():null);
   }
 
   void _forget() { _token = null; expiresAt = null; }

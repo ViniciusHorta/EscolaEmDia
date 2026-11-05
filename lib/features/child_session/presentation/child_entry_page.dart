@@ -9,6 +9,7 @@ import '../../../shared/widgets/pin/app_pin_input.dart';
 import '../../family/data/family_service.dart';
 import '../../family/domain/family_models.dart';
 import '../data/child_session_service.dart';
+import '../../attempts/presentation/worksheet_attempt_page.dart';
 import '../../worksheets/domain/worksheet_models.dart';
 import '../../worksheets/presentation/widgets/assigned_worksheet_card.dart';
 
@@ -38,6 +39,7 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
   Timer? ticker;
   Timer? expiry;
   Future<List<AssignedWorksheet>>? assignedWorksheets;
+  AssignedWorksheet? activeAssignment;
 
   @override
   void initState() {super.initState(); WidgetsBinding.instance.addObserver(this); load();}
@@ -85,7 +87,7 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
     try {
       final child = await widget.sessions.login(selected!.id, pin);
       if (!mounted) return;
-      setState(() {authenticated = child; pin = ''; inputVersion++; assignedWorksheets=fetchAssignments(child.id);});
+      setState(() {authenticated = child; activeAssignment=null; pin = ''; inputVersion++; assignedWorksheets=fetchAssignments(child.id);});
       scheduleExpiry();
     } on ChildSessionException catch (failure) {
       if (!mounted) return;
@@ -109,7 +111,7 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
     final remaining = widget.sessions.expiresAt?.difference(DateTime.now()) ?? Duration.zero;
     expiry = Timer(remaining.isNegative ? Duration.zero : remaining, () {
       widget.sessions.forgetExpired();
-      if (mounted) setState(() {authenticated = null; error = 'A tua sessão terminou. Introduz o PIN para continuar.';});
+      if (mounted) setState(() {authenticated = null; activeAssignment=null; error = 'A tua sessão terminou. Introduz o PIN para continuar.';});
     });
   }
 
@@ -119,14 +121,14 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
       final child = await widget.sessions.profile();
       if (mounted) {setState(() {authenticated=child;assignedWorksheets=fetchAssignments(child.id);}); scheduleExpiry();}
     } on ChildSessionException catch (failure) {
-      if (mounted) setState(() {error = failure.message; if (failure.ended) authenticated = null;});
+      if (mounted) setState(() {error = failure.message; if (failure.ended) {authenticated = null; activeAssignment=null;}});
     } finally {if (mounted) setState(() => busy = false);}
   }
 
   Future<List<AssignedWorksheet>> fetchAssignments(String childId) async {
     try {return await widget.sessions.assignments(childId);}
     on ChildSessionException catch(failure){
-      if(failure.ended && mounted && authenticated?.id==childId)setState(()=>authenticated=null);
+      if(failure.ended && mounted && authenticated?.id==childId)setState((){authenticated=null;activeAssignment=null;});
       rethrow;
     }
   }
@@ -150,7 +152,7 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
         SizedBox(height:10),Text('Quando os teus pais prepararem uma ficha, ela vai aparecer aqui.',textAlign:TextAlign.center),
       ]));
       return Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[for(final item in items)
-        Padding(padding:const EdgeInsets.only(bottom:20),child:AssignedWorksheetCard(assignment:item))]);
+        Padding(padding:const EdgeInsets.only(bottom:20),child:AssignedWorksheetCard(assignment:item,onStart:busy?null:()=>setState(()=>activeAssignment=item)))]);
     },
   );
 
@@ -160,7 +162,7 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
     try {
       await widget.sessions.endSession();
       expiry?.cancel();
-      if (mounted) setState(() {authenticated = null; pin = ''; inputVersion++;});
+      if (mounted) setState(() {authenticated = null; activeAssignment=null; pin = ''; inputVersion++;});
     } on ChildSessionException catch (failure) {if (mounted) setState(() => error = failure.message);}
     finally {if (mounted) setState(() => busy = false);}
   }
@@ -179,6 +181,12 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
   @override
   Widget build(BuildContext context) {
     if (loading) return const Scaffold(body: Center(child: CircularProgressIndicator(semanticsLabel: 'A carregar os perfis')));
+    if(authenticated!=null && activeAssignment!=null)return WorksheetAttemptPage(
+      key:ValueKey(activeAssignment!.id),assignment:activeAssignment!,childId:authenticated!.id,sessions:widget.sessions,
+      onPause:()=>setState((){activeAssignment=null;assignedWorksheets=fetchAssignments(authenticated!.id);}),
+      onExpired:()=>setState((){activeAssignment=null;authenticated=null;error='A tua sessão terminou. Introduz o PIN para continuar.';}),
+      onOpenParents:widget.onOpenParents,
+    );
     if (authenticated != null) return studySpace(authenticated!);
     return PopScope(canPop: false, child: AppPage(
       title: 'Quem vai aprender hoje?', subtitle: 'Toca no teu perfil para começar.',

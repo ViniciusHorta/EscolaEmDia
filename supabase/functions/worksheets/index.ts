@@ -82,9 +82,13 @@ Deno.serve(async(req:Request)=>{
    const rows=(data??[]).slice(0,50);if(!rows.length)return reply(200,{items:[],nextCursor:null});
    const {data:catalogue,error:catalogueError}=await admin.from("worksheet_catalogue").select("*").in("version_id",[...new Set(rows.map(r=>r.worksheet_version_id))]);
    if(catalogueError)return fail(503,"STORAGE_UNAVAILABLE");
+   const {data:attempts,error:attemptError}=await admin.from("worksheet_attempts").select("id,assignment_id")
+     .eq("child_id",childId!).eq("status","in_progress").in("assignment_id",rows.map(r=>r.id));
+   if(attemptError)return fail(503,"STORAGE_UNAVAILABLE");
+   const activeAttempts=new Map((attempts??[]).map(a=>[a.assignment_id,a.id]));
    const byVersion=new Map((catalogue??[]).map(v=>[v.version_id,v]));
    if(rows.some(r=>!byVersion.has(r.worksheet_version_id)))return fail(503,"STORAGE_UNAVAILABLE");
-   return reply(200,{items:rows.map(r=>({id:r.id,childId:r.child_id,worksheetVersionId:r.worksheet_version_id,assignedAt:r.assigned_at,status:r.status,worksheet:meta(byVersion.get(r.worksheet_version_id))})),nextCursor:(data?.length??0)>50?rows[49].id:null});
+   return reply(200,{items:rows.map(r=>({id:r.id,childId:r.child_id,worksheetVersionId:r.worksheet_version_id,assignedAt:r.assigned_at,status:r.status,activeAttemptId:activeAttempts.get(r.id)??null,worksheet:meta(byVersion.get(r.worksheet_version_id))})),nextCursor:(data?.length??0)>50?rows[49].id:null});
   }
   if(operation==="detail"){
    let query=admin.from("worksheet_catalogue").select("*").eq("worksheet_id",detailRoute![1]);

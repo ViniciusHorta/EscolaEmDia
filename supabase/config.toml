@@ -16,3 +16,7 @@ verify_jwt = false
 [functions.worksheets]
 # Adult routes require Auth + parental unlock; child listing validates opaque sessions.
 verify_jwt = false
+
+[functions.attempts]
+# All routes require an opaque child token, validated atomically inside the RPC.
+verify_jwt = false
