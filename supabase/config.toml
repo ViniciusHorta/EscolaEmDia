@@ -24,3 +24,7 @@ verify_jwt = false
 [functions.reviews]
 # Parent-only routes validate adult Auth and the temporary parental unlock inside RPC.
 verify_jwt = false
+
+[functions.progress]
+# Adult Auth and parental unlock are validated explicitly in the handler and RPCs.
+verify_jwt = false

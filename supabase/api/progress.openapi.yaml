@@ -1,0 +1,200 @@
+openapi: 3.0.3
+info:
+  title: Escola em Dia — Acompanhamento por criança
+  version: 1.0.0
+  description: >-
+    Consultas parentais de acompanhamento e histórico. Exigem JWT adulto confirmado,
+    desbloqueio temporário ligado à sessão e pertença ativa à família da criança.
+    Não devolvem respostas individuais, soluções, PINs ou tokens. Não guardam nota global.
+servers:
+  - url: https://hhgxxvvreyhigxynrgmv.supabase.co/functions/v1/progress
+security:
+  - adultJwt: []
+    parentUnlock: []
+    projectKey: []
+paths:
+  /v1/children/{id}/progress:
+    get:
+      summary: Resumo geral e resultados por disciplina
+      description: >-
+        Cálculo sobre todos os dados atuais da criança. Sem filtro de datas.
+        assignedTotal conta atribuições ativas. toStart conta atribuições ativas sem
+        tentativa em curso ou entregue; tentativas abandonadas não impedem esta contagem.
+        inProgress conta tentativas em curso, incluindo histórico de atribuições retiradas.
+        delivered conta submitted/pending_review/completed; completed conta completed.
+        pendingAttempts conta entregas com revisão em falta e pendingAnswers conta abertas
+        não brancas ainda por classificar. Os resultados de perguntas só usam entregas,
+        incluindo tentativas de atribuições retiradas. Cada repetição contará separadamente.
+      parameters:
+        - $ref: '#/components/parameters/id'
+      responses:
+        '200':
+          description: Perfil mínimo, overview e subjects; contagens vazias são zero.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [child, overview, subjects]
+                properties:
+                  child:
+                    type: object
+                    description: id, familyId, displayName, schoolYear, avatarId.
+                  overview:
+                    $ref: '#/components/schemas/totals'
+                  subjects:
+                    type: array
+                    description: Disciplinas com atribuições ativas ou tentativas, ordenadas por nome/id.
+                    items:
+                      allOf:
+                        - $ref: '#/components/schemas/totals'
+                        - type: object
+                          properties:
+                            subjectId:
+                              type: string
+                              format: uuid
+                            subjectName:
+                              type: string
+                            choiceTotal:
+                              type: integer
+                              description: Todas as perguntas de escolha múltipla entregues, incluindo em branco.
+                            choiceCorrect:
+                              type: integer
+                            writtenAnswered:
+                              type: integer
+                            writtenCorrect:
+                              type: integer
+                            writtenPartial:
+                              type: integer
+                            writtenIncorrect:
+                              type: integer
+                            unansweredTotal:
+                              type: integer
+        default:
+          $ref: '#/components/responses/error'
+  /v1/children/{id}/attempts:
+    get:
+      summary: Histórico paginado de realizações
+      description: >-
+        Até 50 entradas por página, por startedAt/id decrescentes. Não altera dados.
+        O cursor é o UUID devolvido em nextCursor e deve pertencer à criança; mantém
+        o ponto de paginação mesmo se o estado da tentativa mudar. Reiniciar a paginação
+        ao mudar filtros. A lista não inclui atribuições nunca iniciadas.
+      parameters:
+        - $ref: '#/components/parameters/id'
+        - name: cursor
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: subjectId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [in_progress, submitted, pending_review, completed, abandoned]
+      responses:
+        '200':
+          description: Página do histórico.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, nextCursor]
+                properties:
+                  nextCursor:
+                    type: string
+                    format: uuid
+                    nullable: true
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      required: [attemptId, childId, title, subjectId, subjectName, status, startedAt, submittedAt, assignmentActive, questionCount, summary]
+                      properties:
+                        attemptId:
+                          type: string
+                          format: uuid
+                        childId:
+                          type: string
+                          format: uuid
+                        title:
+                          type: string
+                        subjectId:
+                          type: string
+                          format: uuid
+                        subjectName:
+                          type: string
+                        status:
+                          type: string
+                          enum: [in_progress, submitted, pending_review, completed, abandoned]
+                        startedAt:
+                          type: string
+                          format: date-time
+                        submittedAt:
+                          type: string
+                          format: date-time
+                          nullable: true
+                        assignmentActive:
+                          type: boolean
+                        questionCount:
+                          type: integer
+                        summary:
+                          type: object
+                          nullable: true
+                          description: >-
+                            Resumo agregado da entrega (contrato attempts/reviews), incluindo
+                            writtenCorrect/writtenPartial/writtenIncorrect. Null em tentativas não entregues.
+        default:
+          $ref: '#/components/responses/error'
+components:
+  parameters:
+    id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    totals:
+      type: object
+      required: [assignedTotal, toStart, inProgress, delivered, completed, pendingAttempts, pendingAnswers]
+      properties:
+        assignedTotal:
+          type: integer
+        toStart:
+          type: integer
+        inProgress:
+          type: integer
+        delivered:
+          type: integer
+        completed:
+          type: integer
+        pendingAttempts:
+          type: integer
+        pendingAnswers:
+          type: integer
+  responses:
+    error:
+      description: >-
+        error com code/message/requestId. 400 INVALID_REQUEST; 401 AUTH_REQUIRED;
+        403 PARENT_LOCKED ou ORIGIN_NOT_ALLOWED; 404 CHILD_NOT_FOUND (inclui perfil
+        inacessível ou de outra família); 503 CORS_NOT_CONFIGURED ou STORAGE_UNAVAILABLE.
+        Autenticação e autorização são validadas novamente em cada página.
+  securitySchemes:
+    adultJwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    parentUnlock:
+      type: apiKey
+      in: header
+      name: X-Parent-Unlock
+    projectKey:
+      type: apiKey
+      in: header
+      name: apikey

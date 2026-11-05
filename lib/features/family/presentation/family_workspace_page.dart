@@ -16,6 +16,8 @@ import '../../worksheets/presentation/prepare_worksheet_page.dart';
 import '../../reviews/data/pending_reviews_service.dart';
 import '../../reviews/presentation/pending_reviews_panel.dart';
 import '../../reviews/presentation/parent_review_page.dart';
+import '../../progress/data/child_progress_service.dart';
+import '../../progress/presentation/child_progress_page.dart';
 import '../data/family_service.dart';
 import '../domain/family_models.dart';
 import 'child_profile_page.dart';
@@ -34,8 +36,10 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
   late final ParentAccessService parentAccess;
   late final WorksheetService worksheets;
   late final PendingReviewsService pendingReviews;
+  late final ChildProgressService progressService;
   bool preparing = false;
   String? reviewingAttemptId;
+  String? progressChildId;
   String? preferredChildId;
   String? returnFamilyId;
   bool requestingParent = false;
@@ -60,6 +64,7 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
     service = FamilyService(widget.auth.client, parentToken: () => parentAccess.token, onParentLocked: parentAccess.forget);
     childSessions = ChildSessionService(widget.auth.client);
     pendingReviews=PendingReviewsService(widget.auth.client,parentToken:()=>parentAccess.token,onParentLocked:parentAccess.forget);
+    progressService = ChildProgressService(widget.auth.client,parentToken:()=>parentAccess.token,onParentLocked:parentAccess.forget);
     worksheets = WorksheetService(widget.auth.client,parentToken:()=>parentAccess.token,onParentLocked:parentAccess.forget);
     initializeWorkspace();
   }
@@ -71,7 +76,7 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
     if (!mounted) return;
     setState(() {
       if (!parentAccess.unlocked) {
-        parentViewReady = false; preparing = false; reviewingAttemptId = null;
+        parentViewReady = false; preparing = false; reviewingAttemptId = null; progressChildId = null;
         if (childModeFamilyId == null && returnFamilyId != null) {
           childModeFamilyId = returnFamilyId;
           ChildModeStore.enter(widget.auth.user!.id, returnFamilyId!).catchError((Object _) {
@@ -88,7 +93,7 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
     setState(() {
       returnFamilyId = childModeFamilyId ?? selectedFamily?.id;
       childModeFamilyId = null; requestingParent = false; parentViewReady = true;
-      savedChild = null; editing = false; preparing = false; reviewingAttemptId = null;
+      savedChild = null; editing = false; preparing = false; reviewingAttemptId = null; progressChildId = null;
     });
     await load(familyId: returnFamilyId);
   }
@@ -208,6 +213,11 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
       key: ValueKey(reviewingAttemptId), attemptId: reviewingAttemptId!, service: pendingReviews,
       onClose: () => setState(() => reviewingAttemptId = null),
     );
+    if (progressChildId != null) return ChildProgressPage(
+      key: ValueKey(progressChildId), childId: progressChildId!, service: progressService,
+      onClose: () => setState(() { progressChildId = null; }),
+      onReview: (attemptId) => setState(() { reviewingAttemptId = attemptId; }),
+    );
     if (preparing) return PrepareWorksheetPage(children: List<ChildProfile>.unmodifiable(children),service:worksheets,
       onClose:()=>setState(()=>preparing=false),onViewChild:(childId) async {
         setState((){preferredChildId=childId;preparing=false;});
@@ -254,6 +264,9 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
               ]),
               const SizedBox(height: 18),
               const AppBadge(label: 'PIN definido', icon: Icons.lock_outline_rounded),
+              const SizedBox(height: 18),
+              AppButton(label: 'Ver acompanhamento', variant: AppButtonVariant.secondary,
+                icon: Icons.insights_rounded, onPressed: () => setState(() { progressChildId = child.id; })),
             ]))),
           ]);
         }),
