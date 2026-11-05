@@ -48,6 +48,17 @@ class PendingReviewsService {
     catch (_) { throw const PendingReviewsException('Não foi possível confirmar a classificação. Consulta o estado ou repete o pedido.', uncertain: true); }
   }
 
+  /// Grava na base de dados um problema reportado numa pergunta.
+  /// [requestId] deve ser reutilizado ao repetir o mesmo envio (idempotência).
+  Future<void> reportQuestion({required String attemptId, required String questionId,
+      required QuestionReportReason reason, required String message, required String requestId}) async {
+    final data = await _request('/v1/attempts/$attemptId/questions/${Uri.encodeComponent(questionId)}/reports',
+      method: HttpMethod.post, body: {'reason': reason.value, 'message': message.trim(), 'clientRequestId': requestId});
+    if (data['reportId'] is! String) {
+      throw const PendingReviewsException('Não foi possível confirmar o envio do relato.', uncertain: true);
+    }
+  }
+
   Future<Map> _request(String path, {HttpMethod method = HttpMethod.get,
     Map<String, dynamic>? query, Map<String, dynamic>? body}) async {
     try {

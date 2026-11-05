@@ -77,3 +77,14 @@ class ReviewChange {
   final int baseRevision;
   Map<String, dynamic> toJson() => {'classification': classification.value, 'baseRevision': baseRevision, 'operationId': operationId};
 }
+
+enum QuestionReportReason {
+  wrongAnswer('wrong_answer', 'Resposta correta errada'),
+  unclear('unclear', 'Enunciado confuso'),
+  typo('typo', 'Erro de escrita'),
+  inappropriate('inappropriate', 'Conteúdo inadequado'),
+  other('other', 'Outro problema');
+
+  const QuestionReportReason(this.value, this.label);
+  final String value, label;
+}

@@ -8,6 +8,7 @@ import '../../../shared/widgets/app_card.dart';
 import '../../family/domain/family_models.dart';
 import '../data/pending_reviews_service.dart';
 import '../domain/parent_review_models.dart';
+import 'widgets/report_question_sheet.dart';
 import 'widgets/review_classification_selector.dart';
 
 enum _Stage { summary, review, finalize, result }
@@ -34,6 +35,8 @@ class _ParentReviewPageState extends State<ParentReviewPage> {
   _Stage? stage;
   String? reviewingQuestionId;
   bool showChoices = false;
+  /// Perguntas com problema reportado nesta sessão de revisão.
+  final reported = <String>{};
 
   @override
   void initState() {
@@ -80,6 +83,36 @@ class _ParentReviewPageState extends State<ParentReviewPage> {
         if (!failure.uncertain) { unconfirmed = null; needsRefresh = true; }
       });
     } finally { if (mounted) setState(() => saving = false); }
+  }
+
+  Future<void> report(ParentReviewQuestion question) async {
+    final data = detail;
+    if (data == null) return;
+    final sent = await showReportQuestionSheet(context, service: widget.service,
+      attemptId: data.summary.attemptId, question: question, number: numberOf(question));
+    if (!sent || !mounted) return;
+    setState(() => reported.add(question.id));
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      content: Text('Obrigado! O problema foi registado e vai ser analisado.')));
+  }
+
+  Widget reportButton(ParentReviewQuestion question) {
+    final done = reported.contains(question.id);
+    return Align(alignment: Alignment.centerRight, child: TextButton.icon(
+      onPressed: () => report(question),
+      iconAlignment: IconAlignment.end,
+      icon: Icon(done ? Icons.check_circle_rounded : Icons.flag_outlined, size: 14),
+      label: Text(done ? 'Reportado • reportar outro' : 'Reportar problema'),
+      style: TextButton.styleFrom(
+        // Discreto: ação secundária, não deve competir com a classificação.
+        foregroundColor: (done ? AppColors.success : const Color(0xFFE5603E)).withValues(alpha: 0.55),
+        textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        minimumSize: const Size(0, 32),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        visualDensity: VisualDensity.compact,
+      ),
+    ));
   }
 
   bool get blocked => loading || saving || needsRefresh || unconfirmed != null;
@@ -261,7 +294,8 @@ class _ParentReviewPageState extends State<ParentReviewPage> {
           icon: showChoices ? Icons.expand_less_rounded : Icons.expand_more_rounded,
           onPressed: () => setState(() => showChoices = !showChoices)),
         expanded: showChoices ? Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          for (final q in choices) _ChoiceDetail(number: numberOf(q), question: q),
+          for (final q in choices) _ChoiceDetail(number: numberOf(q), question: q,
+            reported: reported.contains(q.id), onReport: () => report(q)),
         ]) : null,
       ),
       for (final q in written) _RowCard(
@@ -271,7 +305,10 @@ class _ParentReviewPageState extends State<ParentReviewPage> {
         title: q.prompt,
         subtitleIcon: q.answerType == 'paper' ? Icons.menu_book_outlined : q.reviewable ? Icons.edit_note_rounded : Icons.remove_rounded,
         subtitle: q.answerType == 'paper' ? 'No caderno' : q.reviewable ? 'Resposta digital' : 'Sem resposta',
-        trailing: !q.reviewable ? null : q.review == null
+        trailing: !q.reviewable ? IconButton(tooltip: 'Reportar um problema nesta questão',
+            onPressed: () => report(q), icon: Icon(reported.contains(q.id) ? Icons.flag_rounded : Icons.flag_outlined,
+              color: reported.contains(q.id) ? AppColors.success : const Color(0xFFE5603E)))
+          : q.review == null
           ? const AppBadge(label: 'Pendente', background: AppColors.amberSoft, color: AppColors.amber)
           : _ClassificationBadge(q.review!.classification),
       ),
@@ -373,6 +410,8 @@ class _ParentReviewPageState extends State<ParentReviewPage> {
       const SizedBox(height: 12),
       const Text('Cada escolha é guardada logo e podes alterá-la mais tarde.',
         textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: AppColors.muted)),
+      const SizedBox(height: 6),
+      reportButton(question),
     ]);
   }
 
@@ -739,9 +778,11 @@ class _RowCard extends StatelessWidget {
 }
 
 class _ChoiceDetail extends StatelessWidget {
-  const _ChoiceDetail({required this.number, required this.question});
+  const _ChoiceDetail({required this.number, required this.question, required this.onReport, this.reported = false});
   final int number;
   final ParentReviewQuestion question;
+  final VoidCallback onReport;
+  final bool reported;
   @override
   Widget build(BuildContext context) {
     final answered = question.answerType == 'multiple-choice';
@@ -760,6 +801,16 @@ class _ChoiceDetail extends StatelessWidget {
           Text('Resposta: ${question.optionText(question.selectedOptionId)}', style: const TextStyle(fontSize: 13)),
           if (!right) Text('Correta: ${question.optionText(question.correctOptionId)}',
             style: const TextStyle(fontSize: 13, color: AppColors.success)),
+          Align(alignment: Alignment.centerRight, child: TextButton.icon(
+            onPressed: onReport,
+            iconAlignment: IconAlignment.end,
+            style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8), minimumSize: const Size(0, 32),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+              textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+              foregroundColor: (reported ? AppColors.success : const Color(0xFFE5603E)).withValues(alpha: 0.55)),
+            icon: Icon(reported ? Icons.flag_rounded : Icons.flag_outlined, size: 14),
+            label: Text(reported ? 'Problema reportado' : 'Reportar problema'))),
         ])),
       ]),
     );

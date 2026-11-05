@@ -15,6 +15,7 @@ const messages: Record<string, string> = {
     "Esta classificação foi alterada noutro dispositivo. Atualiza a ficha antes de continuar.",
   OPERATION_REUSED:
     "Este pedido já foi usado com outros dados. Atualiza a ficha antes de continuar.",
+  QUESTION_NOT_FOUND: "Esta pergunta não existe nesta ficha.",
   INVALID_REQUEST: "O pedido é inválido.",
   STORAGE_UNAVAILABLE:
     "Não foi possível confirmar o pedido de revisão. Tenta novamente.",
@@ -43,7 +44,13 @@ Deno.serve(async (req: Request) => {
   const completed = /^\/v1\/families\/([^/]+)\/reviewed-attempts$/.exec(path);
   const detail = /^\/v1\/attempts\/([^/]+)\/review$/.exec(path);
   const save = /^\/v1\/answers\/([^/]+)\/review$/.exec(path);
-  const operation = pending
+  const report =
+    /^\/v1\/attempts\/([^/]+)\/questions\/([A-Za-z0-9_-]{1,64})\/reports$/.exec(
+      path,
+    );
+  const operation = report
+    ? "report"
+    : pending
     ? "pending"
     : completed
       ? "completed"
@@ -53,7 +60,7 @@ Deno.serve(async (req: Request) => {
           ? "save"
           : "unknown";
   const corsPolicy = createCors(req, {
-    methods: "GET, PUT, OPTIONS",
+    methods: "GET, PUT, POST, OPTIONS",
     parentUnlock: true,
   });
   const cors = corsPolicy.headers;
@@ -92,9 +99,10 @@ Deno.serve(async (req: Request) => {
   if (!corsPolicy.configured) return fail(503, "CORS_NOT_CONFIGURED");
   if (!corsPolicy.allowed) return fail(403, "ORIGIN_NOT_ALLOWED");
   if (corsPolicy.preflightResponse) return corsPolicy.preflightResponse;
-  const targetId = pending?.[1] ?? completed?.[1] ?? detail?.[1] ?? save?.[1];
+  const targetId =
+    pending?.[1] ?? completed?.[1] ?? detail?.[1] ?? save?.[1] ?? report?.[1];
   if (!targetId) return fail(404, "ROUTE_NOT_FOUND");
-  if (req.method !== (save ? "PUT" : "GET"))
+  if (req.method !== (save ? "PUT" : report ? "POST" : "GET"))
     return fail(405, "METHOD_NOT_ALLOWED");
   const cursor = url.searchParams.get("cursor");
   if (
@@ -160,13 +168,15 @@ Deno.serve(async (req: Request) => {
         return fail(400, "INVALID_REQUEST");
       const reader = req.body?.getReader();
       if (!reader) return fail(400, "INVALID_REQUEST");
+      // Relatos têm texto livre (até 1000 caracteres, até 4 bytes cada em UTF-8).
+      const limit = report ? 8192 : 4096;
       const chunks: Uint8Array[] = [];
       let size = 0;
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         size += value.length;
-        if (size > 4096) {
+        if (size > limit) {
           await reader.cancel();
           return fail(400, "INVALID_REQUEST");
         }
@@ -183,6 +193,54 @@ Deno.serve(async (req: Request) => {
         body = JSON.parse(new TextDecoder().decode(bytes));
       } catch {
         return fail(400, "INVALID_REQUEST");
+      }
+      if (report) {
+        const message =
+          typeof body?.message === "string" ? body.message.trim() : "";
+        if (
+          !body ||
+          typeof body !== "object" ||
+          Array.isArray(body) ||
+          Object.keys(body).some(
+            (k) => !["reason", "message", "clientRequestId"].includes(k),
+          ) ||
+          !["wrong_answer", "unclear", "typo", "inappropriate", "other"].includes(
+            body.reason,
+          ) ||
+          message.length < 5 ||
+          message.length > 1000 ||
+          typeof body.clientRequestId !== "string" ||
+          !uuid.test(body.clientRequestId)
+        )
+          return fail(400, "INVALID_REQUEST");
+        const { data, error } = await admin.rpc("report_parent_question", {
+          ...params,
+          p_attempt_id: targetId,
+          p_question_id: report[2],
+          p_reason: body.reason,
+          p_message: message,
+          p_client_request_id: body.clientRequestId,
+        });
+        if (error || !data) return fail(503, "STORAGE_UNAVAILABLE");
+        if (data.error) {
+          const code = Object.hasOwn(messages, data.error)
+            ? data.error
+            : "STORAGE_UNAVAILABLE";
+          return fail(
+            code === "PARENT_LOCKED"
+              ? 403
+              : ["ATTEMPT_NOT_FOUND", "QUESTION_NOT_FOUND"].includes(code)
+                ? 404
+                : ["ATTEMPT_NOT_SUBMITTED", "OPERATION_REUSED"].includes(code)
+                  ? 409
+                  : code === "INVALID_REQUEST"
+                    ? 400
+                    : 503,
+            code,
+          );
+        }
+        // O texto livre nunca é registado nos logs.
+        return reply(201, data);
       }
       if (
         !body ||

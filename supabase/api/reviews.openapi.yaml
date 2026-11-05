@@ -119,6 +119,47 @@ paths:
                     description: Detalhe atual completo da revisão, no formato de GET attempts/{id}/review.
         default:
           $ref: '#/components/responses/error'
+  /v1/attempts/{id}/questions/{questionId}/reports:
+    post:
+      operationId: reportQuestion
+      summary: Reportar um problema numa pergunta de uma ficha entregue
+      description: >-
+        Exige JWT adulto, session_id e X-Parent-Unlock válidos, e pertença ativa à
+        família da criança. O texto livre é guardado em question_reports e nunca é
+        registado nos logs nem na auditoria. clientRequestId torna o pedido idempotente.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: questionId, in: path, required: true, schema: { type: string, pattern: '^[A-Za-z0-9_-]{1,64}$' } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [reason, message, clientRequestId]
+              properties:
+                reason: { type: string, enum: [wrong_answer, unclear, typo, inappropriate, other] }
+                message: { type: string, minLength: 5, maxLength: 1000 }
+                clientRequestId: { type: string, format: uuid }
+      responses:
+        '201':
+          description: Relato gravado (ou o mesmo relato, se o pedido for repetido)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [reportId, questionId, reason, status, createdAt]
+                properties:
+                  reportId: { type: string, format: uuid }
+                  questionId: { type: string }
+                  reason: { type: string }
+                  status: { type: string, enum: [open, in_review, resolved, dismissed] }
+                  createdAt: { type: string, format: date-time }
+        '400': { description: INVALID_REQUEST }
+        '403': { description: PARENT_LOCKED }
+        '404': { description: ATTEMPT_NOT_FOUND ou QUESTION_NOT_FOUND }
+        '409': { description: ATTEMPT_NOT_SUBMITTED ou OPERATION_REUSED }
 components:
   parameters:
     id:
