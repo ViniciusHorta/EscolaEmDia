@@ -121,6 +121,52 @@ paths:
           $ref: '#/components/responses/Error'
         default:
           $ref: '#/components/responses/Error'
+  /v1/reset:
+    post:
+      operationId: resetParentPin
+      summary: Redefinir o PIN parental após reautenticação recente
+      description: >-
+        Exige JWT adulto válido, e-mail confirmado, session_id e um início de
+        sessão por palavra-passe (claim amr, method=password) com menos de cinco
+        minutos. Substitui o hash numa transação, limpa o bloqueio de tentativas
+        e revoga todas as autorizações X-Parent-Unlock existentes. Não aceita
+        identificador de utilizador e não regista o corpo nos logs.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [pin]
+              properties:
+                pin:
+                  type: string
+                  pattern: '^[0-9]{4}$'
+                  writeOnly: true
+      responses:
+        '200':
+          description: PIN redefinido; configured é true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PinStatus'
+        '401':
+          description: AUTH_REQUIRED ou REAUTH_REQUIRED (sem palavra-passe recente)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: PIN_NOT_CONFIGURED
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          $ref: '#/components/responses/Error'
+        default:
+          $ref: '#/components/responses/Error'
   /v1/unlock-status:
     get:
       operationId: getParentUnlockStatus

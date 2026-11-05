@@ -5,6 +5,8 @@ import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/pin/app_pin_input.dart';
 import '../data/parent_access_service.dart';
+import '../data/parent_pin_service.dart';
+import 'parent_pin_reset_page.dart';
 
 class ParentUnlockPage extends StatefulWidget {
   const ParentUnlockPage({super.key, required this.access, required this.onUnlocked, required this.onExit, this.onCancel});
@@ -57,6 +59,21 @@ class _ParentUnlockPageState extends State<ParentUnlockPage> {
     } finally {if (mounted) setState(() => busy = false);}
   }
 
+  Future<void> forgotPin() async {
+    if (busy) return;
+    FocusScope.of(context).unfocus();
+    final unlocked = await Navigator.of(context).push<bool>(MaterialPageRoute(
+      builder: (_) => ParentPinResetPage(service: ParentPinService(widget.access.client), access: widget.access),
+    ));
+    if (!mounted) return;
+    if (unlocked == true && widget.access.unlocked) {
+      setState(() => busy = true);
+      try {await widget.onUnlocked();} finally {if (mounted) setState(() => busy = false);}
+    } else if (unlocked == false) {
+      setState(() {pin = ''; inputVersion++; error = null;});
+    }
+  }
+
   Future<void> exit() async {
     if (busy) return;
     setState(() {busy = true; error = null;});
@@ -85,6 +102,8 @@ class _ParentUnlockPageState extends State<ParentUnlockPage> {
           const SizedBox(height: 24),
           AppButton(label: 'Desbloquear', icon: Icons.lock_open_rounded, loading: busy,
             onPressed: busy || pin.length != 4 || waitSeconds > 0 ? null : unlock),
+          const SizedBox(height: 8),
+          TextButton(onPressed: busy ? null : forgotPin, child: const Text('Esqueci-me do PIN')),
         ])),
         const SizedBox(height: 20),
         const Text('A área dos pais volta a bloquear após cinco minutos sem atividade.', textAlign: TextAlign.center,

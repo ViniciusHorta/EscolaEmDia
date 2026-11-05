@@ -31,7 +31,9 @@ Deno.serve(async (req: Request) => {
               ? "touch"
               : route === "/v1/revoke"
                 ? "revoke"
-                : "unknown";
+                : route === "/v1/reset"
+                  ? "reset"
+                  : "unknown";
   const corsPolicy = createCors(req, {
     methods: "GET, POST, OPTIONS",
     parentUnlock: true,
@@ -83,6 +85,8 @@ Deno.serve(async (req: Request) => {
     VERIFY_EXPIRED: "A tentativa expirou. Introduz o PIN novamente.",
     PIN_NOT_CONFIGURED: "Configura primeiro o teu PIN parental.",
     PARENT_LOCKED: "A área dos pais está bloqueada. Introduz o PIN parental.",
+    REAUTH_REQUIRED:
+      "Confirma novamente a palavra-passe da conta para redefinir o PIN.",
     INTERNAL_ERROR: "Não foi possível concluir o pedido. Tenta novamente.",
   };
   const fail = (status: number, code: string, retryAfter?: number) => {
@@ -159,6 +163,8 @@ Deno.serve(async (req: Request) => {
 
     // Decode session_id only AFTER Auth has validated this exact JWT.
     let authSessionId: string | undefined;
+    // Unix seconds of the most recent password sign-in recorded in this JWT (amr).
+    let passwordAuthAt: number | undefined;
     try {
       const encoded = match[1]
         .split(".")[1]
@@ -173,6 +179,16 @@ Deno.serve(async (req: Request) => {
         /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(claims.session_id)
       )
         authSessionId = claims.session_id;
+      if (claims.sub === user.id && Array.isArray(claims.amr)) {
+        for (const entry of claims.amr) {
+          if (
+            entry?.method === "password" &&
+            typeof entry.timestamp === "number" &&
+            (passwordAuthAt === undefined || entry.timestamp > passwordAuthAt)
+          )
+            passwordAuthAt = entry.timestamp;
+        }
+      }
     } catch {
       /* No unverified claims are used. */
     }
@@ -205,6 +221,14 @@ Deno.serve(async (req: Request) => {
       return reply(200, { configured: existing !== null });
     if (operation === "setup" && existing)
       return fail(409, "PIN_ALREADY_CONFIGURED");
+    if (operation === "reset") {
+      if (!existing) return fail(409, "PIN_NOT_CONFIGURED");
+      // Recent reauthentication: a password sign-in from the last five minutes.
+      // A session that is merely old, refreshed or recovered by e-mail link is refused.
+      const age = Date.now() / 1000 - (passwordAuthAt ?? 0);
+      if (passwordAuthAt === undefined || age < -60 || age > 300)
+        return fail(401, "REAUTH_REQUIRED");
+    }
 
     if (!req.headers.get("content-type")?.includes("application/json")) {
       return fail(415, "JSON_REQUIRED");
@@ -341,6 +365,18 @@ Deno.serve(async (req: Request) => {
       material,
       256,
     );
+    if (operation === "reset") {
+      const { data, error } = await admin.rpc("reset_parent_pin", {
+        p_actor_id: user.id,
+        p_pin_hash: hex(new Uint8Array(hash)),
+        p_salt: hex(salt),
+        p_iterations: iterations,
+        p_algorithm: "pbkdf2-sha256-hmac-pepper-v1",
+      });
+      if (error || !data) return fail(503, "STORAGE_UNAVAILABLE");
+      if (data.error) return rpcFailure(data);
+      return reply(200, { configured: true });
+    }
     const { error: insertError } = await admin
       .from("adult_pin_credentials")
       .insert({

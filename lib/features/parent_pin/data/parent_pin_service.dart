@@ -1,9 +1,10 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ParentPinException implements Exception {
-  const ParentPinException(this.message, {this.alreadyConfigured = false, this.requestId});
+  const ParentPinException(this.message, {this.alreadyConfigured = false, this.reauthRequired = false, this.requestId});
   final String message;
   final bool alreadyConfigured;
+  final bool reauthRequired;
   final String? requestId;
 }
 
@@ -23,6 +24,39 @@ class ParentPinService {
     final result = await _request('setup', body: {'pin': pin});
     if (result['configured'] != true) {
       throw const ParentPinException('Não foi possível confirmar a gravação do PIN. Tenta novamente.');
+    }
+  }
+
+  /// Reautenticação: novo início de sessão com a palavra-passe da conta atual.
+  /// O JWT resultante tem amr=password recente, exigido por [reset].
+  Future<void> reauthenticate(String password) async {
+    final email = client.auth.currentUser?.email;
+    if (email == null) {
+      throw const ParentPinException('A tua sessão terminou. Entra novamente na conta.');
+    }
+    try {
+      await client.auth.signInWithPassword(email: email, password: password);
+    } on AuthException catch (error) {
+      throw ParentPinException(
+        error.statusCode == '429'
+            ? 'Demasiadas tentativas. Aguarda um pouco antes de tentar novamente.'
+            : error.code == 'invalid_credentials'
+                ? 'A palavra-passe não está correta.'
+                : 'Não foi possível confirmar a palavra-passe. Tenta novamente.',
+      );
+    } catch (_) {
+      throw const ParentPinException('Não foi possível ligar ao serviço. Verifica a ligação à Internet.');
+    }
+  }
+
+  /// Substitui o PIN parental. Só é aceite até cinco minutos após [reauthenticate].
+  Future<void> reset(String pin) async {
+    if (!RegExp(r'^[0-9]{4}$').hasMatch(pin)) {
+      throw const ParentPinException('O PIN deve ter exatamente 4 dígitos.');
+    }
+    final result = await _request('reset', body: {'pin': pin});
+    if (result['configured'] != true) {
+      throw const ParentPinException('Não foi possível confirmar o novo PIN. Tenta novamente.');
     }
   }
 
@@ -64,6 +98,7 @@ class ParentPinService {
             ? message
             : 'Não foi possível aceder ao PIN parental. Tenta novamente.',
         alreadyConfigured: code == 'PIN_ALREADY_CONFIGURED',
+        reauthRequired: code == 'REAUTH_REQUIRED',
         requestId: requestId is String ? requestId : null,
       );
     } on AuthException {

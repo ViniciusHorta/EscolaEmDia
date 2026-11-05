@@ -14,13 +14,14 @@ import '../../child_session/presentation/child_entry_page.dart';
 import '../../worksheets/data/worksheet_service.dart';
 import '../../worksheets/presentation/prepare_worksheet_page.dart';
 import '../../reviews/data/pending_reviews_service.dart';
-import '../../reviews/presentation/pending_reviews_panel.dart';
+import '../../reviews/presentation/parent_dashboard.dart';
 import '../../reviews/presentation/parent_review_page.dart';
 import '../../progress/data/child_progress_service.dart';
 import '../../progress/presentation/child_progress_page.dart';
 import '../data/family_service.dart';
 import '../domain/family_models.dart';
 import 'child_profile_page.dart';
+import 'parent_shell.dart';
 
 class FamilyWorkspacePage extends StatefulWidget {
   const FamilyWorkspacePage({super.key, required this.auth});
@@ -38,6 +39,8 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
   late final PendingReviewsService pendingReviews;
   late final ChildProgressService progressService;
   bool preparing = false;
+  ParentTab parentTab = ParentTab.dashboard;
+  int pendingCount = 0;
   String? reviewingAttemptId;
   String? progressChildId;
   String? preferredChildId;
@@ -126,6 +129,11 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
     } catch (_) {
       if (mounted) setState(() => error = 'Não foi possível abrir o espaço infantil. Tenta novamente.');
     } finally {if (mounted) setState(() => exiting = false);}
+  }
+
+  Future<void> enterAsChild(String childId) async {
+    setState(() => preferredChildId = childId);
+    await enterChildMode();
   }
 
   Future<void> exitChildDevice() async {
@@ -242,52 +250,94 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
         const SizedBox(height: 16), exitButton(),
       ],
     );
-    return AppPage(title: 'As tuas crianças',
-      subtitle: 'Cada criança tem o seu perfil e o seu PIN independente.',
-      children: [
-        PendingReviewsPanel(key:ValueKey(selectedFamily!.id),familyId:selectedFamily!.id,service:pendingReviews,
-          onReview:(attemptId)=>setState(()=>reviewingAttemptId=attemptId)),
-        const Wrap(children: [AppBadge(label: 'Perfis da família', icon: Icons.family_restroom_rounded)]),
-        const SizedBox(height: 24),
-        LayoutBuilder(builder: (context, constraints) {
-          final width = constraints.maxWidth >= 700 ? (constraints.maxWidth - 20) / 2 : constraints.maxWidth;
-          return Wrap(spacing: 20, runSpacing: 20, children: [for (final child in children)
-            SizedBox(width: width, child: AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                ExcludeSemantics(child: Text(ChildAvatars.emoji(child.avatarId), style: const TextStyle(fontSize: 48))),
-                const SizedBox(width: 16),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(child.displayName, style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: 6),
-                  Text('${child.schoolYear}.º Ano • ${ChildAvatars.label(child.avatarId)}'),
-                ])),
-              ]),
-              const SizedBox(height: 18),
-              const AppBadge(label: 'PIN definido', icon: Icons.lock_outline_rounded),
-              const SizedBox(height: 18),
-              AppButton(label: 'Ver acompanhamento', variant: AppButtonVariant.secondary,
-                icon: Icons.insights_rounded, onPressed: () => setState(() { progressChildId = child.id; })),
-            ]))),
-          ]);
-        }),
-        const SizedBox(height: 28),
-        AppButton(label: 'Preparar ficha', icon: Icons.auto_stories_rounded,
-          onPressed: exiting || children.isEmpty ? null : () => setState(() => preparing = true)),
-        const SizedBox(height: 16),
-        AppButton(label: 'Entrar no espaço infantil', icon: Icons.rocket_launch_rounded,
-          loading: exiting, onPressed: exiting ? null : enterChildMode),
-        const SizedBox(height: 16),
-        AppButton(label: 'Adicionar criança', icon: Icons.person_add_alt_1_rounded,
-          onPressed: () => setState(() => editing = true)),
-        if (families.length > 1) ...[
-          const SizedBox(height: 16),
-          AppButton(label: 'Mudar de família', variant: AppButtonVariant.secondary,
-            onPressed: () => setState(() {selectedFamily = null; children = [];})),
-        ],
-        const SizedBox(height: 16), exitButton(),
-      ],
+    return ParentShell(
+      tab: parentTab,
+      onTabChanged: (tab) => setState(() => parentTab = tab),
+      pendingCount: pendingCount,
+      busy: exiting,
+      onLock: () => parentAccess.lock(),
+      onSignOut: signOut,
+      dashboard: ParentDashboard(
+        key: ValueKey(selectedFamily!.id),
+        familyId: selectedFamily!.id,
+        children: List<ChildProfile>.unmodifiable(children),
+        service: pendingReviews,
+        onReview: (attemptId) => setState(() => reviewingAttemptId = attemptId),
+        onEnterChild: enterAsChild,
+        busy: exiting,
+        onPendingCount: (count) { if (mounted && count != pendingCount) setState(() => pendingCount = count); },
+      ),
+      worksheets: worksheetsTab(),
+      family: familyTab(),
     );
   }
+
+  Widget tabList(List<Widget> items) => ListView(
+    padding: EdgeInsets.fromLTRB(MediaQuery.sizeOf(context).width < 640 ? 16 : 32, 24,
+      MediaQuery.sizeOf(context).width < 640 ? 16 : 32, 32),
+    children: items,
+  );
+
+  Widget worksheetsTab() => tabList([
+    AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      const CircleAvatar(radius: 32, backgroundColor: AppColors.lavender,
+        child: Icon(Icons.auto_stories_rounded, color: AppColors.primary, size: 32)),
+      const SizedBox(height: 16),
+      Text('Preparar uma nova ficha', textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleLarge),
+      const SizedBox(height: 8),
+      const Text('Escolhe a criança, a disciplina e os temas. A ficha fica disponível no espaço infantil.',
+        textAlign: TextAlign.center),
+      const SizedBox(height: 24),
+      AppButton(label: 'Preparar ficha', icon: Icons.add_rounded,
+        onPressed: exiting || children.isEmpty ? null : () => setState(() => preparing = true)),
+    ])),
+    const SizedBox(height: 20),
+    AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Text('Hora de estudar?', style: Theme.of(context).textTheme.titleMedium),
+      const SizedBox(height: 6),
+      const Text('Entrega o dispositivo à criança. A área dos pais volta a pedir o PIN.'),
+      const SizedBox(height: 20),
+      AppButton(label: 'Entrar no espaço infantil', icon: Icons.rocket_launch_rounded,
+        variant: AppButtonVariant.secondary, loading: exiting, onPressed: exiting ? null : enterChildMode),
+    ])),
+  ]);
+
+  Widget familyTab() => tabList([
+    LayoutBuilder(builder: (context, constraints) {
+      final width = constraints.maxWidth >= 700 ? (constraints.maxWidth - 20) / 2 : constraints.maxWidth;
+      return Wrap(spacing: 20, runSpacing: 20, children: [for (final child in children)
+        SizedBox(width: width, child: AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            ExcludeSemantics(child: Text(ChildAvatars.emoji(child.avatarId), style: const TextStyle(fontSize: 48))),
+            const SizedBox(width: 16),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(child.displayName, style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 6),
+              Text('${child.schoolYear}.º Ano • ${ChildAvatars.label(child.avatarId)}'),
+            ])),
+          ]),
+          const SizedBox(height: 18),
+          const AppBadge(label: 'PIN definido', icon: Icons.lock_outline_rounded),
+          const SizedBox(height: 18),
+          AppButton(label: 'Ver acompanhamento', variant: AppButtonVariant.secondary,
+            icon: Icons.insights_rounded, onPressed: () => setState(() { progressChildId = child.id; })),
+          const SizedBox(height: 12),
+          AppButton(label: 'Entrar como ${child.displayName}', variant: AppButtonVariant.success,
+            icon: Icons.rocket_launch_rounded, loading: exiting,
+            onPressed: exiting ? null : () => enterAsChild(child.id)),
+        ]))),
+      ]);
+    }),
+    const SizedBox(height: 28),
+    AppButton(label: 'Adicionar criança', icon: Icons.person_add_alt_1_rounded,
+      onPressed: () => setState(() => editing = true)),
+    if (families.length > 1) ...[
+      const SizedBox(height: 16),
+      AppButton(label: 'Mudar de família', variant: AppButtonVariant.secondary,
+        onPressed: () => setState(() {selectedFamily = null; children = [];})),
+    ],
+    const SizedBox(height: 16), exitButton(),
+  ]);
 
   Widget readyPage(ChildProfile child) => AppPage(
     title: 'Tudo a postos para começar!',
