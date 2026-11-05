@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Importador de Exercícios</title>
+<!-- Ferramenta LOCAL de administração. Abrir diretamente no navegador (duplo clique). Não publicar. -->
+<style>
+  :root {
+    --primary: #5845CA; --primary-press: #432BB4; --lavender: #EDE9FE; --bg: #FBF9FF; --surface: #FFFFFF;
+    --soft: #EFF4FF; --border: #D5E3FC; --text: #0D1C2E; --muted: #474554; --outline: #C9C4D6;
+    --success: #2A6900; --success-soft: #E6F6DA; --error: #BA1A1A; --error-soft: #FFE5DF;
+    --amber: #855300; --amber-soft: #FFDDB8; --radius: 20px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.5 "Lexend", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 24px 16px 64px; }
+  header { display: flex; gap: 14px; align-items: center; margin-bottom: 8px; }
+  header .logo { width: 48px; height: 48px; }
+  h1 { font-size: 26px; margin: 0; }
+  h2 { font-size: 19px; margin: 0 0 4px; display: flex; gap: 10px; align-items: center; }
+  h2 .step { width: 28px; height: 28px; border-radius: 50%; background: var(--lavender); color: var(--primary);
+    display: grid; place-items: center; font-size: 14px; flex: none; }
+  h3 { font-size: 16px; margin: 18px 0 6px; }
+  p.lead { color: var(--muted); margin: 0 0 20px; }
+  section { background: var(--surface); border: 1px solid var(--lavender); border-radius: 28px;
+    padding: 22px; margin-bottom: 18px; box-shadow: 0 8px 24px -8px rgba(88,69,202,.12); }
+  .hint { color: var(--muted); font-size: 14px; margin: 0 0 14px; }
+  .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  label { display: block; font-weight: 600; font-size: 14px; margin-bottom: 6px; }
+  input, select, textarea { width: 100%; font: inherit; color: inherit; background: var(--soft);
+    border: 1.5px solid var(--border); border-radius: 14px; padding: 11px 14px; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--lavender); }
+  textarea { min-height: 260px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; resize: vertical; }
+  textarea#prompt { min-height: 340px; background: #fff; }
+  button { font: inherit; font-weight: 700; border: 0; border-radius: 999px; padding: 11px 20px; cursor: pointer;
+    background: var(--primary); color: #fff; box-shadow: 0 4px 0 var(--primary-press); transition: transform .06s; }
+  button:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--primary-press); }
+  button.secondary { background: var(--soft); color: var(--primary); box-shadow: 0 4px 0 var(--border); border: 1px solid var(--border); }
+  button.success { background: #10B981; box-shadow: 0 4px 0 #0A7F5A; }
+  button:disabled { background: var(--soft); color: var(--outline); box-shadow: 0 4px 0 var(--border); cursor: not-allowed; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 14px; }
+  .badge { display: inline-flex; gap: 6px; align-items: center; padding: 3px 12px; border-radius: 999px;
+    font-size: 13px; font-weight: 700; background: var(--lavender); color: var(--primary); }
+  .badge.ok { background: var(--success-soft); color: var(--success); }
+  .badge.warn { background: var(--amber-soft); color: var(--amber); }
+  .badge.err { background: var(--error-soft); color: var(--error); }
+  .msg { border-radius: 16px; padding: 12px 16px; margin-top: 14px; }
+  .msg.ok { background: var(--success-soft); color: var(--success); }
+  .msg.err { background: var(--error-soft); color: var(--error); }
+  .msg.warn { background: var(--amber-soft); color: var(--amber); }
+  .msg ul { margin: 6px 0 0; padding-left: 20px; }
+  .q { border: 1px solid var(--border); border-radius: 18px; padding: 14px 16px; margin-top: 10px; background: #fff; }
+  .q .top { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 6px; }
+  .q .prompt { font-weight: 600; }
+  .q ol { margin: 8px 0 0; padding-left: 22px; }
+  .q li.correct { color: var(--success); font-weight: 700; }
+  .q .exp { color: var(--muted); font-size: 13px; margin-top: 6px; }
+  details { background: var(--soft); border-radius: 16px; padding: 10px 14px; margin-top: 12px; }
+  summary { cursor: pointer; font-weight: 700; }
+  pre { white-space: pre-wrap; font-size: 13px; background: #fff; border-radius: 12px; padding: 12px; overflow-x: auto; }
+  code { background: var(--lavender); padding: 1px 6px; border-radius: 6px; font-size: 13px; }
+  .conn { display: flex; gap: 8px; align-items: center; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--outline); display: inline-block; }
+  .dot.on { background: #10B981; }
+  @media (max-width: 600px) { section { padding: 16px; border-radius: 22px; } h1 { font-size: 22px; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <img class="logo" src="../../assets/branding/logo.png" alt="" width="48" height="48">
+    <div>
+      <h1>Importador de Exercícios</h1>
+      <div class="hint" style="margin:0">Escola em Dia • ferramenta local de administração</div>
+    </div>
+  </header>
+  <p class="lead">Fluxo: escolhe o destino → copia o pedido para a IA → cola aqui o JSON que a IA devolver → valida e revê → importa para a base.</p>
+
+  <!-- 1. Ligação -->
+  <section>
+    <h2><span class="step">1</span> Ligação ao Supabase <span class="conn"><span id="dot" class="dot"></span><span id="connLabel" class="hint" style="margin:0">Sem ligação</span></span></h2>
+    <p class="hint">Opcional. Com ligação, as disciplinas e temas vêm da base e a importação é feita por esta página.
+      Sem ligação, podes escrever os nomes e usar <b>Copiar SQL</b> no passo 5 para importar pelo <i>SQL Editor</i>.</p>
+    <div class="grid">
+      <div><label for="url">URL do projeto</label><input id="url" value="https://hhgxxvvreyhigxynrgmv.supabase.co" autocomplete="off"></div>
+      <div><label for="key">Chave <code>service_role</code> (legacy, JWT)</label>
+        <input id="key" type="password" placeholder="eyJhbGciOi…" autocomplete="off" spellcheck="false"></div>
+    </div>
+    <p class="hint" style="margin-top:10px">Supabase → Project Settings → API Keys → <i>Legacy API keys</i> → <code>service_role</code>.
+      As chaves novas <code>sb_secret_…</code> são bloqueadas pelo Supabase em navegadores; nesse caso usa <b>Copiar SQL</b>.
+      A chave fica só em memória: não é gravada e desaparece ao fechar o separador. Nunca a coloques no código nem a partilhes.</p>
+    <div class="row"><button id="connect" class="secondary">Ligar e carregar disciplinas</button></div>
+    <div id="connMsg"></div>
+  </section>
+
+  <!-- 2. Destino -->
+  <section>
+    <h2><span class="step">2</span> Destino da ficha</h2>
+    <p class="hint">O tema é reutilizado se já existir para a disciplina e o ano; caso contrário é criado na importação.</p>
+    <div class="grid">
+      <div><label for="year">Ano escolar</label>
+        <select id="year"><option value="1">1.º Ano</option><option value="2">2.º Ano</option><option value="3" selected>3.º Ano</option><option value="4">4.º Ano</option></select></div>
+      <div><label for="subject">Disciplina</label><input id="subject" list="subjects" value="Matemática" autocomplete="off"><datalist id="subjects"></datalist></div>
+      <div><label for="topic">Tema</label><input id="topic" list="topics" placeholder="Escolhe ou escreve um tema" autocomplete="off"><datalist id="topics"></datalist></div>
+    </div>
+    <div id="topicInfo" class="hint" style="margin-top:8px"></div>
+  </section>
+
+  <!-- 3. Pedido para a IA -->
+  <section>
+    <h2><span class="step">3</span> Pedido para a IA</h2>
+    <p class="hint">Ajusta as quantidades, copia o texto e cola-o na IA (ChatGPT, Claude, Gemini…). A IA deve responder apenas com o JSON.</p>
+    <div class="grid">
+      <div><label for="nMc">Escolha múltipla</label><input id="nMc" type="number" min="0" max="50" value="3"></div>
+      <div><label for="nTf">Verdadeiro ou falso</label><input id="nTf" type="number" min="0" max="50" value="2"></div>
+      <div><label for="nWr">Resposta aberta</label><input id="nWr" type="number" min="0" max="50" value="1"></div>
+      <div><label for="extra">Indicações extra (opcional)</label><input id="extra" placeholder="Ex.: usar contextos de compras no mercado"></div>
+    </div>
+    <h3>Texto a enviar à IA</h3>
+    <textarea id="prompt" readonly></textarea>
+    <div class="row"><button id="copyPrompt">Copiar pedido para a IA</button><span id="promptInfo" class="hint" style="margin:0"></span></div>
+
+    <details>
+      <summary>Formato do JSON (referência)</summary>
+      <pre id="schemaDoc"></pre>
+    </details>
+  </section>
+
+  <!-- 4. JSON -->
+  <section>
+    <h2><span class="step">4</span> Colar o JSON da IA</h2>
+    <p class="hint">Podes colar a resposta tal como vem (mesmo com <code>```json</code>). A página valida com as mesmas regras da base de dados e mostra a pré-visualização.</p>
+    <textarea id="json" placeholder='{ "title": "…", "instructions": "…", "questions": [ … ] }' spellcheck="false"></textarea>
+    <div class="grid" style="margin-top:14px">
+      <div><label for="title">Título da ficha</label><input id="title" maxlength="160" placeholder="Preenchido a partir do JSON"></div>
+    </div>
+    <div class="row"><button id="validate">Validar e pré-visualizar</button><button id="clear" class="secondary">Limpar</button></div>
+    <div id="validation"></div>
+    <div id="preview"></div>
+  </section>
+
+  <!-- 5. Importar -->
+  <section>
+    <h2><span class="step">5</span> Importar</h2>
+    <p class="hint">A ficha é publicada logo e fica disponível na preparação de fichas da área dos pais. Importar a mesma ficha duas vezes não a duplica.</p>
+    <div class="row">
+      <button id="import" class="success" disabled>Importar para a base</button>
+      <button id="copySql" class="secondary" disabled>Copiar SQL (para o SQL Editor)</button>
+    </div>
+    <div id="importMsg"></div>
+  </section>
+</main>
+
+<script>
+(() => {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  // Sugestões quando não há ligação (catálogo inicial do projeto).
+  const seed = {
+    subjects: ['Matemática', 'Português'],
+    topics: {
+      'Matemática': { 1: ['Números e operações', 'Problemas e raciocínio'], 2: ['Medidas e dinheiro', 'Operações e tabuadas'],
+        3: ['Frações e partes iguais', 'Multiplicação e divisão'], 4: ['Frações equivalentes', 'Multiplicação e divisão'] },
+      'Português': { 1: ['Gramática', 'Leitura e compreensão'], 2: ['Gramática', 'Leitura e compreensão'],
+        3: ['Gramática', 'Leitura e compreensão'], 4: ['Gramática', 'Leitura e compreensão'] },
+    },
+  };
+  const state = { connected: false, subjects: [], topics: [], content: null, title: '' };
+
+  // ---------- Ligação ----------
+  function headers() {
+    const key = $('key').value.trim();
+    const h = { apikey: key, 'Content-Type': 'application/json' };
+    if (key.startsWith('eyJ')) h.Authorization = 'Bearer ' + key; // chave legacy (JWT)
+    return h;
+  }
+  const baseUrl = () => $('url').value.trim().replace(/\/+$/, '');
+
+  async function connect() {
+    const box = $('connMsg');
+    if (!$('key').value.trim()) { box.innerHTML = msg('err', 'Indica a chave service_role.'); return; }
+    box.innerHTML = msg('warn', 'A ligar…');
+    try {
+      const [s, t] = await Promise.all([
+        fetch(baseUrl() + '/rest/v1/subjects?select=id,name&order=name', { headers: headers() }),
+        fetch(baseUrl() + '/rest/v1/topics?select=id,subject_id,school_year,name&order=name', { headers: headers() }),
+      ]);
+      if (!s.ok || !t.ok) throw new Error('HTTP ' + (s.ok ? t.status : s.status) + ' — ' + (await (s.ok ? t : s).text()).slice(0, 200));
+      state.subjects = await s.json();
+      state.topics = await t.json();
+      state.connected = true;
+      $('dot').classList.add('on');
+      $('connLabel').textContent = `Ligado • ${state.subjects.length} disciplinas, ${state.topics.length} temas`;
+      box.innerHTML = msg('ok', 'Ligação estabelecida. As listas de disciplinas e temas vêm agora da base.');
+      refreshLists();
+      updateButtons();
+    } catch (e) {
+      state.connected = false;
+      $('dot').classList.remove('on');
+      $('connLabel').textContent = 'Sem ligação';
+      box.innerHTML = msg('err', 'Não foi possível ligar: ' + esc(e.message) +
+        '<br>Confirma o URL e que usas a chave <b>service_role legacy (JWT)</b>. Em alternativa, usa <b>Copiar SQL</b>.');
+      updateButtons();
+    }
+  }
+
+  // ---------- Listas ----------
+  function subjectNames() { return state.connected ? state.subjects.map((s) => s.name) : seed.subjects; }
+  function topicNames() {
+    const year = Number($('year').value), name = $('subject').value.trim().toLowerCase();
+    if (state.connected) {
+      const subject = state.subjects.find((s) => s.name.toLowerCase() === name);
+      return subject ? state.topics.filter((t) => t.subject_id === subject.id && t.school_year === year).map((t) => t.name) : [];
+    }
+    const key = seed.subjects.find((s) => s.toLowerCase() === name);
+    return key ? (seed.topics[key][year] || []) : [];
+  }
+  function refreshLists() {
+    $('subjects').innerHTML = subjectNames().map((n) => `<option value="${esc(n)}">`).join('');
+    const topics = topicNames();
+    $('topics').innerHTML = topics.map((n) => `<option value="${esc(n)}">`).join('');
+    const topic = $('topic').value.trim();
+    const subjectOk = subjectNames().some((n) => n.toLowerCase() === $('subject').value.trim().toLowerCase());
+    $('topicInfo').innerHTML = !subjectOk && state.connected
+      ? '<span class="badge err">Disciplina inexistente na base</span>'
+      : !topic ? (topics.length ? `Temas existentes: ${topics.map(esc).join(' • ')}` : 'Ainda não há temas para esta disciplina e ano.')
+      : topics.some((n) => n.toLowerCase() === topic.toLowerCase()) ? '<span class="badge ok">Tema existente — será reutilizado</span>'
+      : '<span class="badge warn">Tema novo — será criado na importação</span>';
+    buildPrompt();
+    updateButtons();
+  }
+
+  // ---------- Pedido para a IA ----------
+  const schemaDoc = `{
+  "title": "Título curto da ficha (até 160 caracteres)",
+  "instructions": "Instrução geral para a criança (opcional)",
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "prompt": "Enunciado da pergunta",
+      "options": [
+        { "id": "a", "text": "Opção A" },
+        { "id": "b", "text": "Opção B" },
+        { "id": "c", "text": "Opção C" }
+      ],
+      "correctAnswer": "b",
+      "explanation": "Explicação curta mostrada à criança na correção"
+    },
+    {
+      "id": "q2",
+      "type": "true_false",
+      "prompt": "Afirmação para a criança decidir se é verdadeira ou falsa",
+      "correctAnswer": true,
+      "explanation": "Explicação curta"
+    },
+    {
+      "id": "q3",
+      "type": "written",
+      "prompt": "Pergunta de resposta aberta",
+      "explanation": "Resposta esperada e critérios para os pais (não é mostrada à criança)"
+    }
+  ]
+}
+
+Regras validadas pela base de dados:
+• "questions": entre 1 e 50 perguntas; cada "id" é único e não vazio; "prompt" não vazio.
+• "type": "multiple-choice", "true_false" ou "written".
+• multiple-choice: "options" com 2 a 8 opções, cada uma com "id" único e "text" não vazio;
+  "correctAnswer" é o "id" (texto) de uma das opções.
+• true_false: "correctAnswer" é true ou false (booleano, sem aspas) e não tem "options".
+• written: sem "options" nem "correctAnswer"; corrigida pelos pais no Painel dos Pais.
+• "explanation" é opcional mas recomendada.`;
+
+  function buildPrompt() {
+    const year = $('year').value, subject = $('subject').value.trim() || '(disciplina)', topic = $('topic').value.trim() || '(tema)';
+    const n = { mc: int($('nMc').value), tf: int($('nTf').value), wr: int($('nWr').value) };
+    const total = n.mc + n.tf + n.wr;
+    const extra = $('extra').value.trim();
+    $('promptInfo').textContent = total < 1 || total > 50 ? 'O total de perguntas tem de estar entre 1 e 50.' : `${total} perguntas no total.`;
+    $('prompt').value =
+`És um professor do 1.º Ciclo do Ensino Básico em Portugal. Cria uma ficha de exercícios para uma criança do ${year}.º ano, na disciplina de ${subject}, sobre o tema «${topic}», alinhada com as Aprendizagens Essenciais.
+
+Composição (exatamente ${total} perguntas):
+• ${n.mc} de escolha múltipla ("multiple-choice") com 3 ou 4 opções e uma só resposta certa;
+• ${n.tf} de verdadeiro ou falso ("true_false");
+• ${n.wr} de resposta aberta ("written"), que a criança pode responder por escrito ou no caderno.
+${extra ? `\nIndicações adicionais: ${extra}\n` : ''}
+Regras de conteúdo:
+• Português de Portugal (pt-PT), frases curtas e claras, adequadas à idade (${Number(year) + 5}–${Number(year) + 6} anos).
+• Varia a posição da resposta certa nas perguntas de escolha múltipla; opções erradas plausíveis.
+• Equilibra as respostas verdadeiro/falso (não ponhas todas iguais).
+• Sem dados pessoais, marcas, violência ou temas sensíveis.
+• "explanation": explicação curta e encorajadora para a criança (escolha múltipla e verdadeiro/falso); nas abertas, a resposta esperada e os critérios para os pais.
+• Começa com uma "instructions" curta e amigável para a criança.
+
+Formato: responde APENAS com um único objeto JSON válido, sem texto antes ou depois e sem comentários, exatamente com esta estrutura:
+
+${schemaDoc}`;
+  }
+  const int = (v) => Math.max(0, Math.min(50, parseInt(v, 10) || 0));
+
+  // ---------- Validação (espelha public.valid_worksheet_content) ----------
+  const typeAliases = { 'multiple_choice': 'multiple-choice', 'multiplechoice': 'multiple-choice', 'escolha-multipla': 'multiple-choice',
+    'true-false': 'true_false', 'truefalse': 'true_false', 'verdadeiro_falso': 'true_false', 'verdadeiro-falso': 'true_false',
+    'open': 'written', 'aberta': 'written', 'text': 'written' };
+
+  function extractJson(raw) {
+    let text = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
+    const first = Math.min(...['{', '['].map((c) => { const i = text.indexOf(c); return i < 0 ? Infinity : i; }));
+    if (first === Infinity) throw new Error('Não encontrei JSON no texto colado.');
+    const last = Math.max(text.lastIndexOf('}'), text.lastIndexOf(']'));
+    return JSON.parse(text.slice(first, last + 1));
+  }
+
+  function validate(raw) {
+    const errors = [], warnings = [];
+    let data;
+    try { data = extractJson(raw); } catch (e) { return { errors: ['JSON inválido: ' + e.message], warnings }; }
+    if (Array.isArray(data)) { data = { questions: data }; warnings.push('Recebi uma lista: tratei-a como "questions".'); }
+    if (!data || typeof data !== 'object') return { errors: ['A raiz do JSON tem de ser um objeto.'], warnings };
+    const content = {};
+    for (const key of ['instructions', 'text']) {
+      if (data[key] == null) continue;
+      if (typeof data[key] !== 'string') errors.push(`"${key}" tem de ser texto.`);
+      else if (data[key].trim()) content[key] = data[key].trim();
+    }
+    const title = typeof data.title === 'string' ? data.title.trim() : '';
+    const qs = data.questions;
+    if (!Array.isArray(qs)) return { errors: [...errors, '"questions" tem de ser uma lista.'], warnings };
+    if (qs.length < 1 || qs.length > 50) errors.push(`"questions" tem ${qs.length} perguntas; o permitido é entre 1 e 50.`);
+    const ids = new Set();
+    content.questions = qs.map((q, i) => {
+      const n = `Pergunta ${i + 1}`;
+      if (!q || typeof q !== 'object' || Array.isArray(q)) { errors.push(`${n}: tem de ser um objeto.`); return q; }
+      const out = {};
+      let id = typeof q.id === 'string' || typeof q.id === 'number' ? String(q.id).trim() : '';
+      if (!id) { id = `q${i + 1}`; warnings.push(`${n}: sem "id"; atribuí "${id}".`); }
+      if (ids.has(id)) errors.push(`${n}: o id "${id}" está repetido.`);
+      ids.add(id); out.id = id;
+      let type = typeof q.type === 'string' ? q.type.trim() : '';
+      if (typeAliases[type.toLowerCase()]) { warnings.push(`${n}: tipo "${type}" convertido em "${typeAliases[type.toLowerCase()]}".`); type = typeAliases[type.toLowerCase()]; }
+      if (!['multiple-choice', 'true_false', 'written'].includes(type)) errors.push(`${n}: "type" tem de ser multiple-choice, true_false ou written.`);
+      out.type = type;
+      if (typeof q.prompt !== 'string' || !q.prompt.trim()) errors.push(`${n}: "prompt" em falta ou vazio.`);
+      else out.prompt = q.prompt.trim();
+
+      if (type === 'multiple-choice') {
+        if (!Array.isArray(q.options)) errors.push(`${n}: "options" tem de ser uma lista.`);
+        else {
+          if (q.options.length < 2 || q.options.length > 8) errors.push(`${n}: tem ${q.options.length} opções; o permitido é entre 2 e 8.`);
+          const optionIds = new Set();
+          out.options = q.options.map((o, j) => {
+            if (typeof o === 'string') o = { text: o };
+            const optId = o && (typeof o.id === 'string' || typeof o.id === 'number') && String(o.id).trim() ? String(o.id).trim() : String.fromCharCode(97 + j);
+            if (optionIds.has(optId)) errors.push(`${n}: a opção "${optId}" está repetida.`);
+            optionIds.add(optId);
+            if (!o || typeof o.text !== 'string' || !o.text.trim()) errors.push(`${n}: a opção ${j + 1} não tem "text".`);
+            return { id: optId, text: o && typeof o.text === 'string' ? o.text.trim() : '' };
+          });
+          let correct = q.correctAnswer;
+          if (typeof correct === 'number' && out.options[correct]) { correct = out.options[correct].id; warnings.push(`${n}: "correctAnswer" numérico convertido no id "${correct}".`); }
+          if (typeof correct !== 'string' || !optionIds.has(correct)) errors.push(`${n}: "correctAnswer" tem de ser o id de uma das opções (${[...optionIds].join(', ')}).`);
+          out.correctAnswer = correct;
+        }
+      } else if (type === 'true_false') {
+        let correct = q.correctAnswer;
+        if (typeof correct === 'string' && /^(true|verdadeiro|v)$/i.test(correct.trim())) { correct = true; warnings.push(`${n}: "correctAnswer" em texto convertido em true.`); }
+        if (typeof correct === 'string' && /^(false|falso|f)$/i.test(correct.trim())) { correct = false; warnings.push(`${n}: "correctAnswer" em texto convertido em false.`); }
+        if (typeof correct !== 'boolean') errors.push(`${n}: "correctAnswer" tem de ser true ou false.`);
+        if ('options' in q) warnings.push(`${n}: "options" ignorado em verdadeiro/falso.`);
+        out.correctAnswer = correct;
+      } else if (type === 'written' && ('options' in q || 'correctAnswer' in q)) {
+        warnings.push(`${n}: "options"/"correctAnswer" ignorados em resposta aberta.`);
+      }
+      if (q.explanation != null) {
+        if (typeof q.explanation !== 'string') errors.push(`${n}: "explanation" tem de ser texto.`);
+        else if (q.explanation.trim()) out.explanation = q.explanation.trim();
+      } else if (type !== 'written') warnings.push(`${n}: sem "explanation" (recomendada para a correção da criança).`);
+      return out;
+    });
+    const tf = content.questions.filter((q) => q && q.type === 'true_false');
+    if (tf.length >= 3 && tf.every((q) => q.correctAnswer === tf[0].correctAnswer)) warnings.push('Todas as perguntas verdadeiro/falso têm a mesma resposta.');
+    return { errors, warnings, content, title };
+  }
+
+  // ---------- Pré-visualização ----------
+  const typeLabel = { 'multiple-choice': 'Escolha múltipla', 'true_false': 'Verdadeiro ou falso', 'written': 'Resposta aberta' };
+  function renderPreview(content) {
+    const counts = content.questions.reduce((acc, q) => (acc[q.type] = (acc[q.type] || 0) + 1, acc), {});
+    let html = `<h3>Pré-visualização</h3><div class="row" style="margin-top:0">` +
+      Object.entries(counts).map(([t, c]) => `<span class="badge">${c} × ${esc(typeLabel[t] || t)}</span>`).join('') + `</div>`;
+    if (content.instructions) html += `<p class="hint" style="margin-top:10px"><b>Instruções:</b> ${esc(content.instructions)}</p>`;
+    content.questions.forEach((q, i) => {
+      html += `<div class="q"><div class="top"><span class="badge">${i + 1}</span><span class="badge ok">${esc(typeLabel[q.type] || q.type)}</span><code>${esc(q.id)}</code></div>`;
+      html += `<div class="prompt">${esc(q.prompt || '')}</div>`;
+      if (q.type === 'multiple-choice' && q.options) html += `<ol type="a">` + q.options.map((o) =>
+        `<li class="${o.id === q.correctAnswer ? 'correct' : ''}">${esc(o.text)}${o.id === q.correctAnswer ? ' ✓' : ''}</li>`).join('') + `</ol>`;
+      if (q.type === 'true_false') html += `<div style="margin-top:6px">Resposta certa: <b class="${'correct'}" style="color:var(--success)">${q.correctAnswer === true ? 'Verdadeiro' : q.correctAnswer === false ? 'Falso' : '—'}</b></div>`;
+      if (q.explanation) html += `<div class="exp">💡 ${esc(q.explanation)}</div>`;
+      html += `</div>`;
+    });
+    return html;
+  }
+
+  function runValidation() {
+    const result = validate($('json').value);
+    state.content = null;
+    let html = '';
+    if (result.errors.length) html += msg('err', `<b>${result.errors.length} erro(s) — corrige antes de importar:</b><ul>${result.errors.map((e) => `<li>${esc(e)}</li>`).join('')}</ul>`);
+    if (result.warnings.length) html += msg('warn', `<b>Avisos:</b><ul>${result.warnings.map((e) => `<li>${esc(e)}</li>`).join('')}</ul>`);
+    if (!result.errors.length) {
+      state.content = result.content;
+      if (result.title && !$('title').value.trim()) $('title').value = result.title;
+      html += msg('ok', `JSON válido: ${result.content.questions.length} perguntas prontas a importar.`);
+    }
+    $('validation').innerHTML = html;
+    $('preview').innerHTML = result.content && !result.errors.length ? renderPreview(result.content) : '';
+    $('importMsg').innerHTML = '';
+    updateButtons();
+  }
+
+  // ---------- Importação ----------
+  function target() {
+    return { year: Number($('year').value), subject: $('subject').value.trim(), topic: $('topic').value.trim(), title: $('title').value.trim() };
+  }
+  function targetErrors() {
+    const t = target(), e = [];
+    if (!t.subject) e.push('Indica a disciplina.');
+    if (!t.topic) e.push('Indica o tema.');
+    if (!t.title) e.push('Indica o título da ficha.');
+    if (t.title.length > 160) e.push('O título tem mais de 160 caracteres.');
+    return e;
+  }
+  function updateButtons() {
+    const ready = !!state.content && targetErrors().length === 0;
+    $('copySql').disabled = !ready;
+    $('import').disabled = !ready || !state.connected;
+    $('import').title = state.connected ? '' : 'Liga-te no passo 1 para importar diretamente, ou usa Copiar SQL.';
+  }
+
+  const errorText = {
+    SUBJECT_NOT_FOUND: 'A disciplina não existe na base. Confirma o nome (tem de ser igual ao existente).',
+    INVALID_SCHOOL_YEAR: 'Ano escolar inválido (1 a 4).', INVALID_TITLE: 'Título inválido (1 a 160 caracteres).',
+    INVALID_TOPIC: 'Tema inválido (1 a 120 caracteres).', INVALID_CONTENT: 'A base rejeitou o conteúdo da ficha (regras de validação).',
+  };
+
+  async function importNow() {
+    const box = $('importMsg');
+    const errs = targetErrors();
+    if (errs.length || !state.content) { box.innerHTML = msg('err', errs.join(' ') || 'Valida o JSON primeiro.'); return; }
+    const t = target();
+    if (!confirm(`Importar e publicar "${t.title}" (${state.content.questions.length} perguntas) em ${t.subject} • ${t.year}.º ano • ${t.topic}?`)) return;
+    $('import').disabled = true;
+    box.innerHTML = msg('warn', 'A importar…');
+    try {
+      const res = await fetch(baseUrl() + '/rest/v1/rpc/admin_import_worksheet', {
+        method: 'POST', headers: headers(),
+        body: JSON.stringify({ p_subject_name: t.subject, p_school_year: t.year, p_topic_name: t.topic, p_title: t.title, p_content: state.content }),
+      });
+      const body = await res.json().catch(() => null);
+      if (!res.ok) throw new Error((body && (body.message || body.hint)) || ('HTTP ' + res.status));
+      if (body && body.error) { box.innerHTML = msg('err', esc(errorText[body.error] || body.error)); return; }
+      box.innerHTML = body.duplicate
+        ? msg('warn', 'Esta ficha já tinha sido importada (mesmo título e conteúdo). Nada foi duplicado.')
+        : msg('ok', `Ficha importada e publicada ✓<br>${body.questionCount} perguntas • tema ${body.topicCreated ? 'criado' : 'existente'}<br><span class="hint">worksheet ${esc(body.worksheetId)} • versão ${esc(body.versionId)}</span>`);
+      if (body.topicCreated) await connect();
+    } catch (e) {
+      box.innerHTML = msg('err', 'Falhou a importação: ' + esc(e.message) + '<br>Podes usar <b>Copiar SQL</b> e executar no SQL Editor.');
+    } finally { updateButtons(); }
+  }
+
+  function sqlLiteral(s) { return "'" + String(s).replace(/'/g, "''") + "'"; }
+  function buildSql() {
+    const t = target();
+    const json = JSON.stringify(state.content, null, 2);
+    let tag = 'ficha';
+    while (json.includes('$' + tag + '$')) tag += '_x';
+    return `-- Escola em Dia • importação de ficha (gerado pelo importador local)
+select public.admin_import_worksheet(
+  ${sqlLiteral(t.subject)},
+  ${t.year},
+  ${sqlLiteral(t.topic)},
+  ${sqlLiteral(t.title)},
+  $${tag}$${json}$${tag}$::jsonb
+);`;
+  }
+  async function copy(text, button, label) {
+    try { await navigator.clipboard.writeText(text); }
+    catch { const area = document.createElement('textarea'); area.value = text; document.body.appendChild(area); area.select(); document.execCommand('copy'); area.remove(); }
+    const old = button.textContent; button.textContent = label; setTimeout(() => (button.textContent = old), 1600);
+  }
+
+  const msg = (kind, html) => `<div class="msg ${kind}" role="status">${html}</div>`;
+
+  // ---------- Eventos ----------
+  $('schemaDoc').textContent = schemaDoc;
+  $('connect').addEventListener('click', connect);
+  $('key').addEventListener('keydown', (e) => { if (e.key === 'Enter') connect(); });
+  ['year', 'subject', 'topic'].forEach((id) => $(id).addEventListener('input', refreshLists));
+  ['nMc', 'nTf', 'nWr', 'extra'].forEach((id) => $(id).addEventListener('input', buildPrompt));
+  $('title').addEventListener('input', updateButtons);
+  $('copyPrompt').addEventListener('click', (e) => copy($('prompt').value, e.currentTarget, 'Copiado ✓'));
+  $('validate').addEventListener('click', runValidation);
+  $('clear').addEventListener('click', () => { $('json').value = ''; $('title').value = ''; state.content = null; $('validation').innerHTML = ''; $('preview').innerHTML = ''; $('importMsg').innerHTML = ''; updateButtons(); });
+  $('import').addEventListener('click', importNow);
+  $('copySql').addEventListener('click', (e) => {
+    copy(buildSql(), e.currentTarget, 'SQL copiado ✓');
+    $('importMsg').innerHTML = msg('ok', 'SQL copiado. Cola no Supabase → SQL Editor e executa. O resultado mostra o worksheetId (ou "duplicate": true se já existia).');
+  });
+  refreshLists();
+})();
+</script>
+</body>
+</html>
