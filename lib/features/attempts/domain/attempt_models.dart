@@ -17,12 +17,14 @@ class SavedAnswer {
 }
 class AttemptSnapshot {
   const AttemptSnapshot({required this.id,required this.childId,required this.assignmentId,required this.title,required this.subjectName,
-    required this.instructions,required this.status,required this.text,required this.questions,required this.answers,required this.writable});
+    required this.instructions,required this.status,required this.text,required this.questions,required this.answers,required this.writable,this.attemptNumber=1});
   final String id,childId,assignmentId,title,subjectName,instructions,text,status;
   final List<AttemptQuestion> questions;
   final Map<String,SavedAnswer> answers;
   final bool writable;
+  final int attemptNumber;
   factory AttemptSnapshot.fromJson(Map value)=>AttemptSnapshot(
+    attemptNumber:value['attemptNumber'] as int? ?? 1,
     id:value['id'] as String,childId:value['childId'] as String,assignmentId:value['assignmentId'] as String,
     status:value['status'] as String,title:value['title'] as String,subjectName:value['subjectName'] as String,instructions:value['instructions'] as String? ?? '',
     text:value['text'] as String? ?? '',writable:value['writable']==true,

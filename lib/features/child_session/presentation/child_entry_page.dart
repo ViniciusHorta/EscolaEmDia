@@ -10,6 +10,7 @@ import '../../family/data/family_service.dart';
 import '../../family/domain/family_models.dart';
 import '../data/child_session_service.dart';
 import '../../attempts/presentation/worksheet_attempt_page.dart';
+import '../../attempts/presentation/widgets/repeat_worksheet_confirmation.dart';
 import '../../worksheets/domain/worksheet_models.dart';
 import '../../worksheets/presentation/widgets/assigned_worksheet_card.dart';
 
@@ -40,6 +41,8 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
   Timer? expiry;
   Future<List<AssignedWorksheet>>? assignedWorksheets;
   AssignedWorksheet? activeAssignment;
+  AssignedWorksheet? repeatCandidate;
+  String? repeatFromAttemptId;
 
   @override
   void initState() {super.initState(); WidgetsBinding.instance.addObserver(this); load();}
@@ -87,7 +90,7 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
     try {
       final child = await widget.sessions.login(selected!.id, pin);
       if (!mounted) return;
-      setState(() {authenticated = child; activeAssignment=null; pin = ''; inputVersion++; assignedWorksheets=fetchAssignments(child.id);});
+      setState(() {authenticated = child; activeAssignment=null;repeatCandidate=null;repeatFromAttemptId=null; pin = ''; inputVersion++; assignedWorksheets=fetchAssignments(child.id);});
       scheduleExpiry();
     } on ChildSessionException catch (failure) {
       if (!mounted) return;
@@ -111,7 +114,7 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
     final remaining = widget.sessions.expiresAt?.difference(DateTime.now()) ?? Duration.zero;
     expiry = Timer(remaining.isNegative ? Duration.zero : remaining, () {
       widget.sessions.forgetExpired();
-      if (mounted) setState(() {authenticated = null; activeAssignment=null; error = 'A tua sessão terminou. Introduz o PIN para continuar.';});
+      if (mounted) setState(() {authenticated = null; activeAssignment=null;repeatCandidate=null;repeatFromAttemptId=null; error = 'A tua sessão terminou. Introduz o PIN para continuar.';});
     });
   }
 
@@ -121,14 +124,14 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
       final child = await widget.sessions.profile();
       if (mounted) {setState(() {authenticated=child;assignedWorksheets=fetchAssignments(child.id);}); scheduleExpiry();}
     } on ChildSessionException catch (failure) {
-      if (mounted) setState(() {error = failure.message; if (failure.ended) {authenticated = null; activeAssignment=null;}});
+      if (mounted) setState(() {error = failure.message; if (failure.ended) {authenticated = null; activeAssignment=null;repeatCandidate=null;repeatFromAttemptId=null;}});
     } finally {if (mounted) setState(() => busy = false);}
   }
 
   Future<List<AssignedWorksheet>> fetchAssignments(String childId) async {
     try {return await widget.sessions.assignments(childId);}
     on ChildSessionException catch(failure){
-      if(failure.ended && mounted && authenticated?.id==childId)setState((){authenticated=null;activeAssignment=null;});
+      if(failure.ended && mounted && authenticated?.id==childId)setState((){authenticated=null;activeAssignment=null;repeatCandidate=null;repeatFromAttemptId=null;});
       rethrow;
     }
   }
@@ -142,7 +145,7 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
         return AppCard(child:Column(children:[
           Text(failure is ChildSessionException?failure.message:'Não foi possível carregar as tuas fichas.'),
           const SizedBox(height:16),
-          AppButton(label:'Tentar novamente',onPressed:busy?null:()=>setState(()=>assignedWorksheets=fetchAssignments(child.id))),
+          AppButton(label:'Tentar novamente',onPressed:busy?null:()=>setState((){assignedWorksheets=fetchAssignments(child.id);})),
         ]));
       }
       final items=snapshot.data??[];
@@ -152,9 +155,30 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
         SizedBox(height:10),Text('Quando os teus pais prepararem uma ficha, ela vai aparecer aqui.',textAlign:TextAlign.center),
       ]));
       return Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[for(final item in items)
-        Padding(padding:const EdgeInsets.only(bottom:20),child:AssignedWorksheetCard(assignment:item,onStart:busy?null:()=>setState(()=>activeAssignment=item)))]);
+        Padding(padding:const EdgeInsets.only(bottom:20),child:AssignedWorksheetCard(assignment:item,onStart:busy?null:()=>openAssignment(item),
+          onRepeat:busy||!item.canRepeat?null:()=>prepareRepeat(item,item.latestAttemptId!)))]);
     },
   );
+
+  void openAssignment(AssignedWorksheet assignment) {
+    if(busy||authenticated?.id!=assignment.childId)return;
+    setState(() { activeAssignment=assignment;repeatCandidate=null;repeatFromAttemptId=null; });
+  }
+  void prepareRepeat(AssignedWorksheet assignment,String previousId) {
+    if(busy||authenticated?.id!=assignment.childId)return;
+    setState(() { activeAssignment=null;repeatCandidate=assignment;repeatFromAttemptId=previousId; });
+  }
+  void beginRepeat() {
+    final candidate=repeatCandidate;
+    if(candidate==null||repeatFromAttemptId==null||authenticated?.id!=candidate.childId)return;
+    setState(() { activeAssignment=candidate;repeatCandidate=null; });
+  }
+  void cancelRepeat() {
+    setState(() {
+      repeatCandidate=null;repeatFromAttemptId=null;
+      if(authenticated!=null)assignedWorksheets=fetchAssignments(authenticated!.id);
+    });
+  }
 
   Future<void> changeUser() async {
     if (busy) return;
@@ -162,7 +186,7 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
     try {
       await widget.sessions.endSession();
       expiry?.cancel();
-      if (mounted) setState(() {authenticated = null; activeAssignment=null; pin = ''; inputVersion++;});
+      if (mounted) setState(() {authenticated = null; activeAssignment=null;repeatCandidate=null;repeatFromAttemptId=null; pin = ''; inputVersion++;});
     } on ChildSessionException catch (failure) {if (mounted) setState(() => error = failure.message);}
     finally {if (mounted) setState(() => busy = false);}
   }
@@ -182,10 +206,17 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
   Widget build(BuildContext context) {
     if (loading) return const Scaffold(body: Center(child: CircularProgressIndicator(semanticsLabel: 'A carregar os perfis')));
     if(authenticated!=null && activeAssignment!=null)return WorksheetAttemptPage(
-      key:ValueKey(activeAssignment!.id),assignment:activeAssignment!,childId:authenticated!.id,sessions:widget.sessions,
-      onPause:()=>setState((){activeAssignment=null;assignedWorksheets=fetchAssignments(authenticated!.id);}),
-      onExpired:()=>setState((){activeAssignment=null;authenticated=null;error='A tua sessão terminou. Introduz o PIN para continuar.';}),
+      key:ValueKey('${activeAssignment!.id}-${repeatFromAttemptId??'open'}'),repeatFromAttemptId:repeatFromAttemptId,assignment:activeAssignment!,childId:authenticated!.id,sessions:widget.sessions,
+      onPause:()=>setState((){activeAssignment=null;repeatCandidate=null;repeatFromAttemptId=null;assignedWorksheets=fetchAssignments(authenticated!.id);}),
+      onExpired:()=>setState((){activeAssignment=null;repeatCandidate=null;repeatFromAttemptId=null;authenticated=null;error='A tua sessão terminou. Introduz o PIN para continuar.';}),
       onOpenParents:widget.onOpenParents,
+      onRepeat:(previousId){
+        final assignment=activeAssignment;
+        if(assignment!=null)prepareRepeat(assignment,previousId);
+      },
+    );
+    if(authenticated!=null&&repeatCandidate!=null)return RepeatWorksheetConfirmation(
+      title:repeatCandidate!.worksheet.title,onConfirm:beginRepeat,onCancel:cancelRepeat,onParents:widget.onOpenParents,
     );
     if (authenticated != null) return studySpace(authenticated!);
     return PopScope(canPop: false, child: AppPage(

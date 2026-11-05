@@ -113,11 +113,15 @@ paths:
                     type: array
                     items:
                       type: object
-                      required: [attemptId, childId, title, subjectId, subjectName, status, startedAt, submittedAt, assignmentActive, questionCount, summary]
+                      required: [attemptId, attemptNumber, childId, title, subjectId, subjectName, status, startedAt, submittedAt, assignmentActive, questionCount, summary]
                       properties:
                         attemptId:
                           type: string
                           format: uuid
+                        attemptNumber:
+                          type: integer
+                          minimum: 1
+                          description: Número sequencial da realização dentro da mesma atribuição.
                         childId:
                           type: string
                           format: uuid

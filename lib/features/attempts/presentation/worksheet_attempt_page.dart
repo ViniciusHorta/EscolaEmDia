@@ -13,9 +13,11 @@ import 'submission_summary_page.dart';
 
 class WorksheetAttemptPage extends StatefulWidget {
   const WorksheetAttemptPage({super.key,required this.assignment,required this.childId,required this.sessions,
-    required this.onPause,required this.onExpired,required this.onOpenParents});
+    required this.onPause,required this.onExpired,required this.onOpenParents,required this.onRepeat,this.repeatFromAttemptId});
   final AssignedWorksheet assignment;
   final String childId;
+  final String? repeatFromAttemptId;
+  final ValueChanged<String> onRepeat;
   final ChildSessionService sessions;
   final VoidCallback onPause,onExpired,onOpenParents;
   @override State<WorksheetAttemptPage> createState()=>_WorksheetAttemptPageState();
@@ -23,7 +25,7 @@ class WorksheetAttemptPage extends StatefulWidget {
 class _WorksheetAttemptPageState extends State<WorksheetAttemptPage> {
   late final AttemptController controller;
   bool confirmingDelivery=false;
-  @override void initState(){super.initState();controller=AttemptController(service:AttemptService(widget.sessions),assignment:widget.assignment,childId:widget.childId);open();}
+  @override void initState(){super.initState();controller=AttemptController(service:AttemptService(widget.sessions),assignment:widget.assignment,childId:widget.childId,repeatFromAttemptId:widget.repeatFromAttemptId);open();}
   Future<void> open()async{try{await controller.open();}on ChildSessionException catch(error){if(error.ended&&mounted)widget.onExpired();}catch(_){/* Message is held by the controller. */}}
   @override void dispose(){controller.dispose();super.dispose();}
   Future<void> run(Future<void> Function() action)async{
@@ -43,6 +45,11 @@ class _WorksheetAttemptPageState extends State<WorksheetAttemptPage> {
   }
   Future<void> finish()async{
     await run(()async{await controller.saveAll();if(mounted)setState(()=>confirmingDelivery=true);});
+  }
+  Future<void> repeat()async{
+    final result=controller.result;
+    if(result==null||result.status!='completed')return;
+    await run(()async{await controller.persist();if(mounted)widget.onRepeat(result.attemptId);});
   }
   Future<void> closeSummary()async{
     await run(()async{await controller.persist();if(mounted)widget.onPause();});
@@ -85,7 +92,7 @@ class _WorksheetAttemptPageState extends State<WorksheetAttemptPage> {
       AppButton(label:'Voltar ao meu espaço',variant:AppButtonVariant.secondary,onPressed:widget.onPause),
     ]);
     if(controller.result!=null&&!controller.viewLocalDraft)return SubmissionSummaryPage(summary:controller.result!,
-      onClose:closeSummary,onParents:parents,onViewLocalDraft:controller.pending.isEmpty?null:controller.showLocalDraft);
+      errorMessage:controller.problem,onClose:closeSummary,onParents:parents,onRepeat:controller.result!.status=='completed'?repeat:null,onViewLocalDraft:controller.pending.isEmpty?null:controller.showLocalDraft);
     if(controller.serverSubmitted&&controller.result==null)return AppPage(title:'Consultar entrega',
       subtitle:controller.problem??'Vamos carregar o resumo da tua ficha.',children:[
         AppButton(label:'Consultar resumo',loading:controller.busy,onPressed:controller.busy?null:()=>run(controller.loadResult)),
@@ -95,6 +102,12 @@ class _WorksheetAttemptPageState extends State<WorksheetAttemptPage> {
     final data=controller.snapshot!; final q=controller.question;
     final enabled=!controller.busy&&controller.writable&&controller.conflictQuestion==null;
     return AppPage(title:'Pergunta ${controller.index+1} de ${data.questions.length}',subtitle:'${data.subjectName} • Sem pressa, com calma',children:[
+      AppBadge(label:'Tentativa ${data.attemptNumber}',icon:Icons.history_rounded),
+      const SizedBox(height:12),
+      if(controller.resumedExistingRepeat)...[
+        const AppCard(child:Text('Esta tentativa já tinha progresso guardado. Vamos continuar a partir daí.')),
+        const SizedBox(height:16),
+      ],
       Row(children:[Expanded(child:Text(data.title,style:Theme.of(context).textTheme.titleMedium)),
         const SizedBox(width:12),TextButton.icon(onPressed:controller.busy?null:(controller.result!=null?closeSummary:pause),icon:const Icon(Icons.pause_circle_outline_rounded),label:const Text('Pausar'))]),
       const SizedBox(height:18),

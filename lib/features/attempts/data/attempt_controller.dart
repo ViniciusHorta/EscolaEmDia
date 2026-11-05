@@ -10,10 +10,12 @@ import '../domain/submission_summary.dart';
 import 'attempt_service.dart';
 
 class AttemptController extends ChangeNotifier {
-  AttemptController({required this.service,required this.assignment,required this.childId});
+  AttemptController({required this.service,required this.assignment,required this.childId,this.repeatFromAttemptId});
   final AttemptService service;
   final AssignedWorksheet assignment;
   final String childId;
+  final String? repeatFromAttemptId;
+  bool resumedExistingRepeat=false;
   AttemptSnapshot? snapshot;
   SubmissionSummary? result;
   bool deliveryPending=false,refreshBeforeSubmit=false,viewLocalDraft=false;
@@ -45,9 +47,10 @@ class AttemptController extends ChangeNotifier {
     try{
       preferences=await SharedPreferences.getInstance();
       if(disposed)return;
-      final result=await service.open(assignment,childId,preferences!);
+      final result=await service.open(assignment,childId,preferences!,repeatFromAttemptId:repeatFromAttemptId);
       if(disposed)return;
       if(result.childId!=childId||result.assignmentId!=assignment.id||result.questions.isEmpty)throw const ChildSessionException('Não foi possível abrir esta ficha no teu perfil.');
+      resumedExistingRepeat=repeatFromAttemptId!=null&&result.answers.isNotEmpty&&result.writable;
       snapshot=result;values.clear();revisions.clear();pending.clear();
       for(final entry in result.answers.entries){values[entry.key]=Map.of(entry.value.value);revisions[entry.key]=entry.value.revision;}
       final source=preferences!.getString(key);

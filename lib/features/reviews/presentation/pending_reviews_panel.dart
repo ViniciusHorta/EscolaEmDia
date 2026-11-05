@@ -59,6 +59,7 @@ class _PendingReviewsPanelState extends State<PendingReviewsPanel> {
           const SizedBox(height: 14), Text(row.summary.title, style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 14), Wrap(spacing: 8, runSpacing: 8, children: [
             const AppBadge(label: 'Ficha entregue', icon: Icons.cloud_done_outlined),
+            AppBadge(label: 'Tentativa ${row.summary.attemptNumber}', icon: Icons.history_rounded),
             AppBadge(label: completed ? 'Revisão concluída' : '${row.summary.pendingReview} respostas por rever',
               background: completed ? AppColors.successSoft : AppColors.amberSoft, color: completed ? AppColors.success : AppColors.amber),
           ]),

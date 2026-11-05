@@ -40,14 +40,15 @@ class ChildProgress {
 class AttemptHistoryEntry {
   const AttemptHistoryEntry({required this.id, required this.childId, required this.title,
     required this.subjectId, required this.subjectName, required this.status, required this.startedAt,
-    required this.assignmentActive, required this.questionCount, this.submittedAt, this.summary});
+    required this.assignmentActive, required this.questionCount, this.submittedAt, this.summary, this.attemptNumber=1});
   final String id, childId, title, subjectId, subjectName, status;
   final DateTime startedAt;
   final DateTime? submittedAt;
   final bool assignmentActive;
-  final int questionCount;
+  final int questionCount, attemptNumber;
   final SubmissionSummary? summary;
   factory AttemptHistoryEntry.fromJson(Map value) => AttemptHistoryEntry(
+    attemptNumber: value['attemptNumber'] as int? ?? 1,
     id: value['attemptId'] as String, childId: value['childId'] as String, title: value['title'] as String,
     subjectId: value['subjectId'] as String, subjectName: value['subjectName'] as String, status: value['status'] as String,
     startedAt: DateTime.parse(value['startedAt'] as String),

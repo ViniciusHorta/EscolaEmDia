@@ -139,7 +139,7 @@ components:
     page:
       description: >-
         items com child (id/familyId/displayName/schoolYear/avatarId), attemptId,
-        assignmentId, childId, title, subjectName, status, submittedAt, questionCount,
+        attemptNumber, assignmentId, childId, title, subjectName, status, submittedAt, questionCount,
         choiceTotal/choiceCorrect/choiceUnanswered, writtenTotal/writtenAnswered,
         writtenCorrect/writtenPartial/writtenIncorrect, pendingReview e unansweredTotal.
         nextCursor UUID ou null. Não inclui respostas ou soluções.

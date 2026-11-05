@@ -7,15 +7,17 @@ import '../../../shared/widgets/layout/app_page.dart';
 import '../domain/submission_summary.dart';
 
 class SubmissionSummaryPage extends StatelessWidget {
-  const SubmissionSummaryPage({super.key,required this.summary,required this.onClose,required this.onParents,this.onViewLocalDraft});
+  const SubmissionSummaryPage({super.key,required this.summary,required this.onClose,required this.onParents,this.onViewLocalDraft,this.onRepeat,this.errorMessage});
   final SubmissionSummary summary;
   final VoidCallback onClose,onParents;
-  final VoidCallback? onViewLocalDraft;
+  final VoidCallback? onViewLocalDraft,onRepeat;
+  final String? errorMessage;
   @override Widget build(BuildContext context)=>AppPage(title:'Muito bem!',subtitle:'A tua ficha foi entregue.',children:[
     AppCard(color:AppColors.lavender,child:Column(children:[
       const Icon(Icons.stars_rounded,size:80,color:AppColors.primary),const SizedBox(height:20),
       Text(summary.title,textAlign:TextAlign.center,style:Theme.of(context).textTheme.headlineMedium),const SizedBox(height:16),
       const Text('Fizeste tudo ao teu ritmo. Obrigado pelo teu esforço!',textAlign:TextAlign.center),
+      const SizedBox(height:16),AppBadge(label:'Tentativa ${summary.attemptNumber}',icon:Icons.history_rounded),
       const SizedBox(height:20),AppBadge(label:summary.pendingReview>0?'Aguarda revisão parental':'Concluída',icon:Icons.check_circle_outline_rounded),
     ])),
     const SizedBox(height:24),AppCard(child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
@@ -28,9 +30,15 @@ class SubmissionSummaryPage extends StatelessWidget {
       if(summary.unansweredTotal>0)...[const SizedBox(height:16),Text('${summary.unansweredTotal} perguntas ficaram sem resposta.')],
       if(summary.choiceTotal==0)...[const SizedBox(height:16),const Text('O teu trabalho ficou guardado, sem nota automática.')],
     ])),
+    if(errorMessage!=null)...[
+      const SizedBox(height:16),AppCard(color:AppColors.coralSoft,child:Semantics(liveRegion:true,child:Text(errorMessage!))),
+    ],
     if(onViewLocalDraft!=null)...[
       const SizedBox(height:20),const AppCard(child:Text('Existem alterações neste dispositivo que não foram incluídas na entrega confirmada. Podes consultá-las sem alterar a ficha entregue.')),
       const SizedBox(height:12),AppButton(label:'Consultar alterações locais',variant:AppButtonVariant.secondary,onPressed:onViewLocalDraft),
+    ],
+    if(onRepeat!=null)...[
+      const SizedBox(height:24),AppButton(label:'Fazer outra vez',icon:Icons.replay_rounded,onPressed:onRepeat),
     ],
     const SizedBox(height:28),AppButton(label:'Voltar ao meu espaço',icon:Icons.home_outlined,onPressed:onClose),
     const SizedBox(height:16),TextButton.icon(onPressed:onParents,icon:const Icon(Icons.lock_outline_rounded),label:const Text('Área dos pais')),

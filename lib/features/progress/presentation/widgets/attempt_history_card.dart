@@ -16,6 +16,7 @@ class AttemptHistoryCard extends StatelessWidget {
       Text(attempt.title, style: Theme.of(context).textTheme.titleLarge), const SizedBox(height: 8),
       Text('${attempt.subjectName} • ${attempt.questionCount} perguntas'), const SizedBox(height: 14),
       Wrap(spacing: 8, runSpacing: 8, children: [
+        AppBadge(label: 'Tentativa ${attempt.attemptNumber}', icon: Icons.history_rounded),
         AppBadge(label: historyStatusLabel(attempt.status),
           background: attempt.status == 'completed' ? AppColors.successSoft : AppColors.lavender,
           color: attempt.status == 'completed' ? AppColors.success : AppColors.primary),

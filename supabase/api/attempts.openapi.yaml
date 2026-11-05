@@ -1,12 +1,13 @@
 openapi: 3.0.3
 info:
   title: Escola em Dia — Tentativas e respostas
-  version: 1.1.0
+  version: 1.2.0
   description: >-
     Iniciar/retomar, guardar respostas, entregar e consultar o resumo da própria criança.
     Apenas tokens infantis opacos são aceites. Correção objetiva feita no servidor;
-    respostas abertas preenchidas aguardam revisão. A classificação parental manual,
-    a repetição pela interface e a sincronização em lote serão acrescentadas posteriormente.
+    respostas abertas preenchidas aguardam revisão. Repetição explícita após conclusão
+    usa a mesma atribuição e versão, com uma tentativa nova e respostas em branco.
+    A sincronização em lote continua pendente.
 servers:
   - url: https://hhgxxvvreyhigxynrgmv.supabase.co/functions/v1/attempts
 security:
@@ -15,12 +16,19 @@ security:
 paths:
   /v1/assignments/{id}/attempts:
     post:
-      summary: Iniciar ou retomar a tentativa em progresso da atribuição
+      summary: Iniciar, retomar ou repetir explicitamente uma ficha concluída
       description: >-
         A atribuição deve pertencer à criança da sessão. Um novo pedido só inicia
         uma tentativa se não houver outra em progresso. Todos os clientRequestId
         usados para iniciar/retomar ficam associados à tentativa em sync_operations,
-        de forma que uma repetição posterior nunca inicia outra tentativa.
+        de forma que repetir o mesmo pedido nunca inicia outra tentativa. Para repetir
+        a ficha, enviar previousAttemptId da última tentativa completed e um novo
+        clientRequestId. O servidor valida a pertença e o estado; a ficha deve continuar
+        atribuída. Havendo uma tentativa em curso, retoma essa tentativa. Uma origem
+        completed desatualizada, sem tentativa em curso, devolve REPEAT_STATE_CHANGED.
+        Sem previousAttemptId, uma atribuição já entregue devolve a tentativa existente
+        em leitura em vez de criar uma repetição implícita. Uma tentativa nova não copia
+        respostas nem classificações. attemptNumber é sequencial por atribuição.
       parameters:
         - $ref: '#/components/parameters/Id'
       requestBody:
@@ -35,6 +43,10 @@ paths:
                 clientRequestId:
                   type: string
                   format: uuid
+                previousAttemptId:
+                  type: string
+                  format: uuid
+                  description: Opcional. ID da última tentativa concluída para pedir uma repetição explícita.
       responses:
         '201':
           description: Tentativa iniciada ou retomada, com payload infantil sanitizado e respostas guardadas
@@ -44,7 +56,7 @@ paths:
     get:
       summary: Consultar tentativa e respostas da própria criança
       description: >-
-        Inclui id, assignmentId, childId, worksheetVersionId, status, startedAt,
+        Inclui id, attemptNumber, assignmentId, childId, worksheetVersionId, status, startedAt,
         writable, title, subjectName, instructions, text, audioText, questions e answers.
         As perguntas incluem apenas id/type/prompt e opções id/text; não incluem
         correctAnswer, explanation ou outros campos reservados.
@@ -177,7 +189,7 @@ paths:
           description: >-
             attemptId, assignmentId, childId, status, submittedAt, title,
             subjectName, questionCount, choiceTotal, choiceCorrect, choiceUnanswered,
-            writtenTotal, writtenAnswered, writtenCorrect, writtenPartial, writtenIncorrect, pendingReview e unansweredTotal.
+            attemptNumber, writtenTotal, writtenAnswered, writtenCorrect, writtenPartial, writtenIncorrect, pendingReview e unansweredTotal.
             Não inclui soluções, critérios ou respostas corretas por pergunta.
         default:
           $ref: '#/components/responses/Error'
@@ -226,6 +238,10 @@ components:
         Erro code/message/requestId. 400 pedido inválido, 401 sessão infantil inválida,
         404 tentativa/pergunta inacessível, 409 conflito ou tentativa só de leitura,
         422 resposta inválida, 503 indisponibilidade e 500 erro interno.
+        REPEAT_NOT_AVAILABLE (409) quando a origem não está concluída ou não pertence
+        à mesma atribuição; REPEAT_STATE_CHANGED (409) quando existe uma tentativa
+        posterior e a lista precisa de atualização. OPERATION_REUSED (409) se o mesmo
+        identificador for usado com conteúdo diferente.
         Não inclui respostas completas nos logs ou erros.
       content:
         application/json:

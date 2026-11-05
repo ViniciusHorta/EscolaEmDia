@@ -8,15 +8,17 @@ import '../domain/submission_summary.dart';
 class AttemptService {
   const AttemptService(this.sessions);
   final ChildSessionService sessions;
-  Future<AttemptSnapshot> open(AssignedWorksheet assignment,String childId,SharedPreferences preferences) async {
+  Future<AttemptSnapshot> open(AssignedWorksheet assignment,String childId,SharedPreferences preferences,{String? repeatFromAttemptId}) async {
     final knownAttempt=assignment.activeAttemptId??assignment.latestAttemptId;
-    if(knownAttempt!=null)return get(knownAttempt);
-    final key='attempt-start-$childId-${assignment.id}';
+    if(repeatFromAttemptId==null&&knownAttempt!=null)return get(knownAttempt);
+    // Each completed source attempt gets its own durable operation ID. Never reuse the first start key.
+    final key=repeatFromAttemptId==null?'attempt-start-$childId-${assignment.id}'
+      :'attempt-start-$childId-${assignment.id}-after-$repeatFromAttemptId';
     var requestId=preferences.getString(key);
     if(requestId==null){requestId=newRequestId();if(!await preferences.setString(key,requestId)){
       throw const ChildSessionException('Não foi possível preparar a gravação desta ficha. Tenta novamente.');
     }}
-    return AttemptSnapshot.fromJson(await sessions.attemptRequest('/v1/assignments/${assignment.id}/attempts',method:'POST',body:{'clientRequestId':requestId}));
+    return AttemptSnapshot.fromJson(await sessions.attemptRequest('/v1/assignments/${assignment.id}/attempts',method:'POST',body:{'clientRequestId':requestId,if(repeatFromAttemptId!=null)'previousAttemptId':repeatFromAttemptId}));
   }
   Future<AttemptSnapshot> get(String id) async=>AttemptSnapshot.fromJson(await sessions.attemptRequest('/v1/attempts/$id'));
   Future<int> save(String attemptId,String questionId,PendingAnswer draft) async {

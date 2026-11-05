@@ -99,6 +99,8 @@ class _ParentReviewPageState extends State<ParentReviewPage> {
       if (data != null && !loading) ...[
         AppCard(color: data.summary.pendingReview == 0 ? AppColors.successSoft : AppColors.lavender,
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            AppBadge(label:'Tentativa ${data.summary.attemptNumber}',icon:Icons.history_rounded),
+            const SizedBox(height:12),
             AppBadge(label: data.summary.pendingReview == 0 ? 'Revisão concluída' : '${data.summary.pendingReview} respostas por rever',
               icon: data.summary.pendingReview == 0 ? Icons.task_alt_rounded : Icons.rate_review_outlined),
             const SizedBox(height: 16),

@@ -24,12 +24,14 @@ class WorksheetSummary {
     topicNames:(value['topicNames'] as List).cast<String>(),isSample:value['isSample']==true);
 }
 class AssignedWorksheet {
-  const AssignedWorksheet({required this.id,required this.childId,required this.worksheet,required this.assignedAt,this.activeAttemptId,this.latestAttemptId,this.latestAttemptStatus});
+  const AssignedWorksheet({required this.id,required this.childId,required this.worksheet,required this.assignedAt,this.activeAttemptId,this.latestAttemptId,this.latestAttemptStatus,this.latestAttemptNumber});
   final String id,childId;
   final String? activeAttemptId,latestAttemptId,latestAttemptStatus;
+  final int? latestAttemptNumber;
+  bool get canRepeat => activeAttemptId==null && latestAttemptId!=null && latestAttemptStatus=='completed';
   final WorksheetSummary worksheet;
   final DateTime assignedAt;
   factory AssignedWorksheet.fromJson(Map value) => AssignedWorksheet(id:value['id'] as String,
     childId:value['childId'] as String,worksheet:WorksheetSummary.fromJson(value['worksheet'] as Map),
-    assignedAt:DateTime.parse(value['assignedAt'] as String),activeAttemptId:value['activeAttemptId'] as String?,latestAttemptId:value['latestAttemptId'] as String?,latestAttemptStatus:value['latestAttemptStatus'] as String?);
+    assignedAt:DateTime.parse(value['assignedAt'] as String),activeAttemptId:value['activeAttemptId'] as String?,latestAttemptId:value['latestAttemptId'] as String?,latestAttemptStatus:value['latestAttemptStatus'] as String?,latestAttemptNumber:value['latestAttemptNumber'] as int?);
 }

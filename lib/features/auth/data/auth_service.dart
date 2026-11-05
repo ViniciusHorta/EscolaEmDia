@@ -26,9 +26,13 @@ class AuthService extends ChangeNotifier {
   bool get signedIn => client.auth.currentSession != null;
   bool get emailConfirmed => user?.emailConfirmedAt != null;
 
-  String? get _redirectUrl => kIsWeb
+  /// Deep link da app nativa; registado no AndroidManifest e nas
+  /// Redirect URLs do Supabase Auth.
+  static const mobileRedirectUrl = 'escolaemdia://login-callback/';
+
+  String get _redirectUrl => kIsWeb
       ? Uri.base.replace(query: '', fragment: '').toString()
-      : null;
+      : mobileRedirectUrl;
 
   Future<bool> register(String email, String password) async {
     final response = await client.auth.signUp(
