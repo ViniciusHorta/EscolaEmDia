@@ -293,7 +293,7 @@ Validação manual pelo utilizador: consultar a tentativa concluída já existen
 
 ## Edição do perfil infantil — instalação
 
-1. No SQL Editor do Supabase, executar uma vez `supabase/migrations/202611060004_update_child_profile.sql`. Cria a RPC `update_child_profile`, exclusiva de service_role, com search_path vazio.
+1. No SQL Editor do Supabase, executar uma vez `supabase/migrations/202611060004_update_child_profile.sql`. Cria a RPC `update_child_profile`, exclusiva de service_role, com search_path vazio. Se a RPC já tinha sido criada antes, executar também `supabase/migrations/202611060005_fix_update_child_profile_changed_fields.sql`, que corrige a falha ao gravar alterações (`STORAGE_UNAVAILABLE`).
 2. Republicar a função famílias: `supabase functions deploy families --project-ref hhgxxvvreyhigxynrgmv`. Passa a aceitar `PUT /v1/families/{id}/children/{childId}` (CORS inclui PUT). Usa o `CHILD_PIN_PEPPER` existente; não há segredos novos.
 3. Na área do responsável, separador Família, usar «Editar perfil» no card da criança.
 

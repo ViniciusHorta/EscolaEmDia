@@ -43,9 +43,9 @@ begin
   update public.children set display_name = btrim(p_display_name),
     school_year = p_school_year, avatar_id = p_avatar_id
     where id = p_child_id returning * into v_child;
-  if v_before.display_name is distinct from v_child.display_name then v_changed := v_changed || 'displayName'; end if;
-  if v_before.school_year is distinct from v_child.school_year then v_changed := v_changed || 'schoolYear'; end if;
-  if v_before.avatar_id is distinct from v_child.avatar_id then v_changed := v_changed || 'avatarId'; end if;
+  if v_before.display_name is distinct from v_child.display_name then v_changed := array_append(v_changed, 'displayName'); end if;
+  if v_before.school_year is distinct from v_child.school_year then v_changed := array_append(v_changed, 'schoolYear'); end if;
+  if v_before.avatar_id is distinct from v_child.avatar_id then v_changed := array_append(v_changed, 'avatarId'); end if;
 
   if p_pin_hash is not null then
     -- clock_timestamp garante uma versão de credencial diferente da anterior.
@@ -60,7 +60,7 @@ begin
       where child_id = p_child_id;
     update public.child_sessions set revoked_at = now()
       where child_id = p_child_id and revoked_at is null;
-    v_changed := v_changed || 'pin';
+    v_changed := array_append(v_changed, 'pin');
   end if;
 
   if cardinality(v_changed) > 0 then
