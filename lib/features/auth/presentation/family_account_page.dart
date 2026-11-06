@@ -5,13 +5,19 @@ import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../data/auth_service.dart';
+import '../../legal/data/legal_service.dart';
+import '../../legal/domain/legal_models.dart';
+import '../../legal/presentation/legal_document_page.dart';
 import 'password_recovery_page.dart';
 import 'widgets/account_mode_selector.dart';
 import 'widgets/family_brand_card.dart';
 
 class FamilyAccountPage extends StatefulWidget {
-  const FamilyAccountPage({super.key, required this.auth});
+  const FamilyAccountPage({super.key, required this.auth, this.loadLegalDocuments});
   final AuthService auth;
+
+  /// Substituível em testes; por omissão consulta a Edge Function `legal`.
+  final Future<List<LegalDocument>> Function()? loadLegalDocuments;
 
   @override
   State<FamilyAccountPage> createState() => _FamilyAccountPageState();
@@ -28,8 +34,40 @@ class _FamilyAccountPageState extends State<FamilyAccountPage> {
   bool busy = false;
   String? feedback;
   String? confirmationEmail;
+  List<LegalDocument>? legalDocuments;
+  bool legalLoading = false;
+  String? legalError;
 
   bool get registering => mode == AccountMode.register;
+
+  LegalDocument? legalDocument(LegalDocumentKind kind) =>
+      legalDocuments?.where((d) => d.kind == kind).firstOrNull;
+  bool get legalReady => LegalDocumentKind.values.every((kind) => legalDocument(kind) != null);
+
+  @override
+  void initState() {
+    super.initState();
+    loadLegal();
+  }
+
+  Future<void> loadLegal() async {
+    if (legalLoading) return;
+    setState(() { legalLoading = true; legalError = null; });
+    try {
+      final documents = await (widget.loadLegalDocuments ?? LegalService(widget.auth.client).currentDocuments)();
+      if (!mounted) return;
+      setState(() {
+        legalDocuments = documents;
+        legalError = legalReady ? null : 'Os documentos legais ainda não estão disponíveis. A criação de contas está temporariamente suspensa.';
+      });
+    } on LegalException catch (error) {
+      if (mounted) setState(() => legalError = error.message);
+    } catch (_) {
+      if (mounted) setState(() => legalError = 'Não foi possível carregar os documentos legais.');
+    } finally {
+      if (mounted) setState(() => legalLoading = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -58,13 +96,18 @@ class _FamilyAccountPageState extends State<FamilyAccountPage> {
     final valid = form.currentState?.validate() ?? false;
     setState(() => showTermsError = registering && !acceptedTerms);
     if (!valid || showTermsError) return;
+    if (registering && !legalReady) {
+      setState(() => feedback = legalError ?? 'Aguarda o carregamento dos documentos legais.');
+      return;
+    }
     FocusScope.of(context).unfocus();
     final isRegistration = registering;
     final submittedEmail = email.text.trim();
     setState(() { busy = true; feedback = null; confirmationEmail = null; });
     try {
       if (isRegistration) {
-        final pending = await widget.auth.register(submittedEmail, password.text);
+        final pending = await widget.auth.register(submittedEmail, password.text,
+          legalDocumentIds: LegalDocumentKind.values.map((kind) => legalDocument(kind)!.id).toList());
         if (!mounted) return;
         if (pending) {
           form.currentState?.reset();
@@ -109,14 +152,14 @@ class _FamilyAccountPageState extends State<FamilyAccountPage> {
     if (mounted && used != null && used.isNotEmpty) email.text = used;
   }
 
-  void showDocument(String title) => showDialog<void>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: Text(title),
-      content: const Text('Este documento será disponibilizado antes da abertura do registo.'),
-      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Fechar'))],
-    ),
-  );
+  void showDocument(LegalDocumentKind kind) {
+    final document = legalDocument(kind);
+    if (document != null) {
+      LegalDocumentPage.open(context, document);
+    } else {
+      loadLegal();
+    }
+  }
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -192,9 +235,9 @@ class _FamilyAccountPageState extends State<FamilyAccountPage> {
                         padding: const EdgeInsets.only(top: 12),
                         child: Wrap(crossAxisAlignment: WrapCrossAlignment.center, children: [
                           const Text('Li e aceito os '),
-                          documentLink('Termos de Utilização'),
+                          documentLink(LegalDocumentKind.terms),
                           const Text(' e a '),
-                          documentLink('Política de Privacidade'),
+                          documentLink(LegalDocumentKind.privacy),
                           const Text('.'),
                         ]),
                       )),
@@ -203,6 +246,12 @@ class _FamilyAccountPageState extends State<FamilyAccountPage> {
                       liveRegion: true,
                       child: const Text('Aceita os termos para continuar.', style: TextStyle(color: AppColors.error)),
                     ),
+                    if (legalError != null) ...[
+                      const SizedBox(height: 8),
+                      Semantics(liveRegion: true, child: Text(legalError!, style: const TextStyle(color: AppColors.error))),
+                      Align(alignment: Alignment.centerLeft, child: TextButton(
+                        onPressed: legalLoading ? null : loadLegal, child: const Text('Tentar carregar novamente'))),
+                    ],
                   ] else ...[
                     const SizedBox(height: 8),
                     Align(alignment: Alignment.centerRight,
@@ -264,13 +313,13 @@ class _FamilyAccountPageState extends State<FamilyAccountPage> {
     )),
   );
 
-  Widget documentLink(String title) => TextButton(
-    onPressed: () => showDocument(title),
+  Widget documentLink(LegalDocumentKind kind) => TextButton(
+    onPressed: () => showDocument(kind),
     style: TextButton.styleFrom(
       padding: const EdgeInsets.symmetric(horizontal: 2),
       minimumSize: const Size(0, 48),
       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
     ),
-    child: Text(title),
+    child: Text(kind.label),
   );
 }

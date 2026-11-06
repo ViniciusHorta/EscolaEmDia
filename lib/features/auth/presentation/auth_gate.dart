@@ -11,6 +11,8 @@ import 'family_account_page.dart';
 import 'new_password_page.dart';
 import '../../parent_pin/presentation/parent_pin_gate.dart';
 import '../../family/presentation/family_workspace_page.dart';
+import '../../legal/data/legal_service.dart';
+import '../../legal/presentation/legal_consent_gate.dart';
 
 class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
@@ -74,10 +76,15 @@ class _AuthGateState extends State<AuthGate> {
             : auth.recoveringPassword
                 ? NewPasswordPage(auth: auth)
                 : auth.emailConfirmed
-                    ? ParentPinGate(
-                        key: ValueKey(auth.user!.id),
-                        auth: auth,
-                        child: FamilyWorkspacePage(key: ValueKey(auth.user!.id), auth: auth),
+                    ? LegalConsentGate(
+                        key: ValueKey('legal-${auth.user!.id}'),
+                        service: LegalService(auth.client),
+                        onSignOut: auth.signOut,
+                        child: ParentPinGate(
+                          key: ValueKey(auth.user!.id),
+                          auth: auth,
+                          child: FamilyWorkspacePage(key: ValueKey(auth.user!.id), auth: auth),
+                        ),
                       )
                     : AccountSessionPage(auth: auth),
       );

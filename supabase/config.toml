@@ -28,3 +28,7 @@ verify_jwt = false
 [functions.progress]
 # Adult Auth and parental unlock are validated explicitly in the handler and RPCs.
 verify_jwt = false
+
+[functions.legal]
+# Documents are public; acceptance routes validate adult Auth with auth.getUser(token).
+verify_jwt = false

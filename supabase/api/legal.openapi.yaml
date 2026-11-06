@@ -1,0 +1,129 @@
+openapi: 3.0.3
+info:
+  title: Escola em Dia — Documentos legais
+  version: 1.0.0
+  description: >-
+    Termos de Utilização e Política de Privacidade versionados, e aceites por responsável.
+    A função Supabase legal acrescenta o prefixo /functions/v1/legal.
+    As versões publicadas são imutáveis; a versão em vigor de cada tipo é a de número mais alto.
+servers:
+  - url: https://hhgxxvvreyhigxynrgmv.supabase.co/functions/v1/legal
+paths:
+  /v1/documents:
+    get:
+      operationId: listCurrentLegalDocuments
+      summary: Versões em vigor (uma por tipo). Público, usado no registo.
+      security: []
+      responses:
+        '200':
+          description: Versões em vigor
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items: { type: array, items: { $ref: '#/components/schemas/LegalDocument' } }
+        default: { $ref: '#/components/responses/Error' }
+  /v1/documents/{id}:
+    get:
+      operationId: getLegalDocument
+      summary: Uma versão concreta (incluindo versões substituídas). Público.
+      security: []
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Versão
+          content: { application/json: { schema: { $ref: '#/components/schemas/LegalDocument' } } }
+        '404': { $ref: '#/components/responses/Error' }
+        default: { $ref: '#/components/responses/Error' }
+  /v1/acceptances:
+    get:
+      operationId: getLegalAcceptanceStatus
+      summary: Estado do responsável autenticado (exige e-mail confirmado)
+      security: [{ adultSession: [] }]
+      responses:
+        '200':
+          description: Estado
+          content: { application/json: { schema: { $ref: '#/components/schemas/LegalStatus' } } }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        default: { $ref: '#/components/responses/Error' }
+    post:
+      operationId: acceptLegalDocuments
+      summary: Aceitar versões em vigor. Idempotente. Regista IP e user-agent.
+      security: [{ adultSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [documentIds]
+              properties:
+                documentIds:
+                  type: array
+                  minItems: 1
+                  maxItems: 10
+                  items: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Estado atualizado
+          content: { application/json: { schema: { $ref: '#/components/schemas/LegalStatus' } } }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '409':
+          description: DOCUMENT_OUTDATED — algum id não é a versão em vigor do seu tipo
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        default: { $ref: '#/components/responses/Error' }
+components:
+  securitySchemes:
+    adultSession: { type: http, scheme: bearer, bearerFormat: JWT }
+  schemas:
+    LegalDocument:
+      type: object
+      required: [id, kind, version, title, content, contentSha256, requiresReacceptance, publishedAt]
+      properties:
+        id: { type: string, format: uuid }
+        kind: { type: string, enum: [terms, privacy] }
+        version: { type: integer, minimum: 1 }
+        title: { type: string }
+        changeSummary: { type: string, nullable: true }
+        content: { type: string, description: 'Markdown simples (#, ##, ###, listas, **negrito**)' }
+        contentSha256: { type: string, pattern: '^[0-9a-f]{64}$' }
+        requiresReacceptance: { type: boolean }
+        publishedAt: { type: string, format: date-time }
+    LegalAcceptance:
+      type: object
+      required: [documentId, kind, version, title, acceptedAt, source]
+      properties:
+        documentId: { type: string, format: uuid }
+        kind: { type: string, enum: [terms, privacy] }
+        version: { type: integer }
+        title: { type: string }
+        acceptedAt: { type: string, format: date-time }
+        source: { type: string, enum: [signup, in_app] }
+    LegalStatus:
+      type: object
+      required: [current, pending, accepted]
+      properties:
+        current: { type: array, items: { $ref: '#/components/schemas/LegalDocument' } }
+        pending: { type: array, description: Versões em vigor que o responsável ainda tem de aceitar, items: { $ref: '#/components/schemas/LegalDocument' } }
+        accepted: { type: array, items: { $ref: '#/components/schemas/LegalAcceptance' } }
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, requestId]
+          properties:
+            code: { type: string }
+            message: { type: string }
+            requestId: { type: string, format: uuid }
+  responses:
+    Error:
+      description: Erro
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }

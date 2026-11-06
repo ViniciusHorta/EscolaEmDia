@@ -1,6 +1,6 @@
 # Administração (ferramenta local)
 
-Página estática para gerir o catálogo no Supabase: **fichas e perguntas**, **temas/disciplinas** e **relatos de problemas** feitos pelos responsáveis.
+Página estática para gerir o catálogo no Supabase: **fichas e perguntas**, **temas/disciplinas**, **relatos de problemas** feitos pelos responsáveis e **documentos legais** (Termos e Privacidade).
 
 ## Usar
 
@@ -22,6 +22,9 @@ Não publicar esta página: com a chave `service_role` tem acesso total à base.
 - Esses temas podem ser **arquivados**: deixam de aparecer no editor e aos responsáveis, sem mexer no histórico.
   Só é possível quando nenhuma versão atual nem a versão publicada visível aos responsáveis o usa. Podem ser reativados.
 
+- **Documentos legais são imutáveis.** Cada publicação cria uma versão nova. «Exige novo aceite» obriga todos os responsáveis
+  a aceitar no próximo acesso (com o resumo «O que mudou»); desmarcar só para correções menores. A primeira versão exige sempre aceite.
+
 ## Estrutura
 
 - `js/core.js` — estado, chamadas RPC, mensagens, diálogos
@@ -29,5 +32,6 @@ Não publicar esta página: com a chave `service_role` tem acesso total à base.
 - `js/worksheets.js` / `js/editor.js` — lista e editor de fichas
 - `js/topics.js` — disciplinas e temas
 - `js/reports.js` — relatos de problemas em perguntas
+- `js/legal.js` — publicação de versões dos Termos de Utilização e da Política de Privacidade (requer `202611060006_legal_documents.sql`)
 
 Todas as escritas passam por funções `admin_*` (`security definer`, apenas `service_role`).

@@ -15,6 +15,7 @@ class ParentShell extends StatelessWidget {
     required this.family,
     required this.onLock,
     required this.onSignOut,
+    this.onOpenLegal,
     this.pendingCount = 0,
     this.busy = false,
   });
@@ -26,6 +27,7 @@ class ParentShell extends StatelessWidget {
   final Widget family;
   final VoidCallback onLock;
   final VoidCallback onSignOut;
+  final VoidCallback? onOpenLegal;
   final int pendingCount;
   final bool busy;
 
@@ -105,6 +107,12 @@ class ParentShell extends StatelessWidget {
           title: const Text('Bloquear área do responsável'),
           subtitle: const Text('Volta a pedir o PIN do responsável.'),
           onTap: () { Navigator.pop(sheet); onLock(); },
+        ),
+        if (onOpenLegal != null) ListTile(
+          leading: const Icon(Icons.gavel_rounded, color: AppColors.primary),
+          title: const Text('Documentos legais'),
+          subtitle: const Text('Termos de Utilização e Política de Privacidade.'),
+          onTap: () { Navigator.pop(sheet); onOpenLegal!(); },
         ),
         ListTile(
           leading: const Icon(Icons.logout_rounded, color: AppColors.error),

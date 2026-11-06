@@ -1,3 +1,5 @@
+import '../../legal/data/legal_service.dart';
+import '../../legal/presentation/legal_documents_page.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/request_id.dart';
@@ -303,6 +305,7 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
       busy: exiting,
       onLock: () => parentAccess.lock(),
       onSignOut: signOut,
+      onOpenLegal: () => LegalDocumentsPage.open(context, LegalService(widget.auth.client)),
       dashboard: ParentDashboard(
         key: ValueKey(selectedFamily!.id),
         familyId: selectedFamily!.id,

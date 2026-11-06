@@ -12,7 +12,7 @@
     box.innerHTML = A.msg('warn', 'A ligar…');
     $('connect').disabled = true;
     try {
-      await Promise.all([A.loadCatalogue(), A.loadWorksheets(), A.reports.load()]);
+      await Promise.all([A.loadCatalogue(), A.loadWorksheets(), A.reports.load(), A.legal.load()]);
       $('key').value = '';
       box.innerHTML = '';
       $('loginView').hidden = true;
@@ -37,12 +37,14 @@
     A.worksheets.render();
     A.topics.render();
     A.reports.render();
+    A.legal.render();
   }
 
   // Recarrega dados da base sem fechar o editor aberto.
-  app.reload = async ({ catalogue = true, worksheets = true, reports = false } = {}) => {
+  app.reload = async ({ catalogue = true, worksheets = true, reports = false, legal = false } = {}) => {
     try {
-      await Promise.all([catalogue && A.loadCatalogue(), worksheets && A.loadWorksheets(), reports && A.reports.load()].filter(Boolean));
+      await Promise.all([catalogue && A.loadCatalogue(), worksheets && A.loadWorksheets(), reports && A.reports.load(),
+        legal && A.legal.load()].filter(Boolean));
       renderAll();
     } catch (e) { A.fail(e); }
   };
@@ -63,7 +65,7 @@
   $('key').addEventListener('keydown', (e) => { if (e.key === 'Enter') connect(); });
   $('logout').addEventListener('click', logout);
   $('refresh').addEventListener('click', async () => {
-    await app.reload({ reports: true });
+    await app.reload({ reports: true, legal: true });
     A.toast('ok', 'Dados atualizados.', 1800);
   });
   document.querySelectorAll('nav.tabs button').forEach((b) => b.addEventListener('click', () => app.showTab(b.dataset.tab)));
@@ -73,4 +75,5 @@
   A.worksheets.init();
   A.editor.init();
   A.reports.init();
+  A.legal.init();
 })();

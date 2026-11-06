@@ -43,11 +43,14 @@ class AuthService extends ChangeNotifier {
       ? Uri.base.replace(query: '', fragment: '').toString()
       : mobileRedirectUrl;
 
-  Future<bool> register(String email, String password) async {
+  /// [legalDocumentIds]: versões dos documentos legais aceites no formulário. O servidor
+  /// regista o aceite no momento da criação da conta (trigger em auth.users).
+  Future<bool> register(String email, String password, {List<String> legalDocumentIds = const []}) async {
     final response = await client.auth.signUp(
       email: email.trim(),
       password: password,
       emailRedirectTo: _redirectUrl,
+      data: {if (legalDocumentIds.isNotEmpty) 'legal_acceptances': legalDocumentIds},
     );
     return response.session == null;
   }

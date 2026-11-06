@@ -199,3 +199,8 @@ dialog h3 { margin: 0 0 14px; font-size: 18px; }
   .savebar .status { flex-basis: 100%; }
   .savebar button { flex: 1; }
 }
+
+/* Documentos legais */
+.legal-preview { background: #fff; border: 1px solid var(--border); border-radius: 18px; padding: 8px 20px; max-height: 520px; overflow: auto; }
+.legal-preview h3, .legal-preview h4, .legal-preview h5 { margin: 18px 0 8px; }
+.legal-preview p, .legal-preview li { line-height: 1.55; }

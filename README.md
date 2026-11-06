@@ -9,7 +9,7 @@ flutter pub get
 flutter run -d chrome --web-port=8081
 ```
 
-A página inicial apresenta a conta familiar do Stitch: criação de conta e entrada, validação de campos, visibilidade da palavra-passe e aceitação dos termos. O registo e o login por e-mail estão ligados ao Supabase. A sessão é mantida pelo SDK e pode ser encerrada com «Sair da conta». Acesso social e recuperação de palavra-passe continuam desativados; os documentos legais ainda não estão disponíveis. Não usar o registo como aceitação legal definitiva enquanto os documentos não forem publicados.
+A página inicial apresenta a conta familiar do Stitch: criação de conta e entrada, validação de campos, visibilidade da palavra-passe e aceitação dos termos. O registo e o login por e-mail estão ligados ao Supabase. A sessão é mantida pelo SDK e pode ser encerrada com «Sair da conta». Acesso social continua desativado. O registo exige o aceite das versões em vigor dos Termos de Utilização e da Política de Privacidade (ver «Documentos legais» abaixo).
 
 A galeria interativa continua acessível em `/#/components` e pelo botão «Ver componentes» em desenvolvimento. Os dados da galeria são exemplos.
 
@@ -32,6 +32,17 @@ supabase functions deploy --project-ref hhgxxvvreyhigxynrgmv
 ```
 
 O `supabase/config.toml` já desativa a verificação JWT legada nas sete funções; cada rota mantém a sua própria validação. O módulo `_shared` é incluído pelas importações e não é uma função independente. Alterações no módulo exigem republicar todas as funções que o usam. Alterações apenas ao valor de um Secret não exigem republicação: https://supabase.com/docs/guides/functions/secrets . Publicação pela CLI: https://supabase.com/docs/guides/functions/deploy .
+
+## Documentos legais (Termos e Privacidade)
+
+Termos de Utilização e Política de Privacidade são **versionados** e cada responsável aceita versões concretas.
+
+- **Base de dados** (`202611060006_legal_documents.sql`): `legal_documents` guarda versões imutáveis (número sequencial por tipo, conteúdo, SHA-256, resumo das alterações, se exige novo aceite). `legal_acceptances` regista cada aceite (utilizador, versão, data, origem `signup`/`in_app`, IP e user-agent); não pode ser alterado e só é apagado com a conta.
+- **Registo**: o formulário carrega as versões em vigor e envia os ids aceites em `user_metadata.legal_acceptances`; um trigger em `auth.users` grava o aceite no instante da criação da conta. Sem as duas versões publicadas, a app **não permite criar contas**.
+- **Novas versões**: depois do login, `LegalConsentGate` verifica o estado. Se foi publicada uma versão que exige novo aceite, o responsável vê o resumo das alterações e só continua depois de aceitar (ou sai da conta). Versões publicadas como «sem novo aceite» (correções menores) não interrompem quem já aceitou.
+- **Consulta**: menu da conta → «Documentos legais» mostra as versões em vigor e as versões aceites, com data.
+- **Publicar**: `tools/admin` → separador «Documentos legais». Os rascunhos da primeira versão estão em `docs/legal/` e têm marcadores `[…]` (entidade, NIF, contactos, região, prazos) que **têm de ser preenchidos e revistos juridicamente antes de publicar** — uma versão publicada não pode ser alterada.
+- **API**: Edge Function `legal` (`supabase/api/legal.openapi.yaml`). Publicar com `supabase functions deploy legal --project-ref hhgxxvvreyhigxynrgmv`.
 
 ## Supabase — preparação para testar
 

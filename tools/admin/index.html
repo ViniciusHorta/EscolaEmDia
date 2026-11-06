@@ -46,6 +46,7 @@
         <button data-tab="worksheets" class="active">Fichas</button>
         <button data-tab="topics">Temas</button>
         <button data-tab="reports">Relatos <span id="reportCount" class="count" hidden></span></button>
+        <button data-tab="legal">Documentos legais</button>
       </nav>
       <span class="spacer"></span>
       <span class="conn"><span class="dot on"></span><span id="connLabel"></span></span>
@@ -116,6 +117,34 @@
       <div id="rFilterInfo"></div>
       <div id="reportList"></div>
     </div>
+
+    <!-- Documentos legais -->
+    <div id="tab-legal" class="tab" hidden>
+      <div class="page-head"><h2>Documentos legais</h2></div>
+      <p class="hint">Termos de Utilização e Política de Privacidade. Cada publicação cria uma <b>versão nova e imutável</b>;
+        os responsáveis aceitam versões concretas e o aceite fica registado (data, origem, IP).
+        Alterações relevantes devem <b>exigir novo aceite</b>: os responsáveis veem o resumo das alterações no próximo acesso e não continuam sem aceitar.
+        Use «Sem novo aceite» apenas para correções que não mudam direitos nem tratamentos (gralhas, contactos).</p>
+      <div id="legalWarn"></div>
+      <section>
+        <div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Documento</th><th>Versão</th><th>Título</th><th>Aceite</th><th>Publicada</th><th>Aceites</th><th></th></tr></thead><tbody id="legalRows"></tbody></table></div>
+      </section>
+      <div class="page-head"><h2>Publicar nova versão</h2></div>
+      <section>
+        <div class="field"><label for="lKind">Documento</label>
+          <select id="lKind"><option value="terms">Termos de Utilização</option><option value="privacy">Política de Privacidade</option></select></div>
+        <div class="field"><label for="lTitle">Título</label><input id="lTitle" maxlength="160" placeholder="Termos de Utilização da Escola em Dia"></div>
+        <div class="field"><label for="lContent">Conteúdo (Markdown simples: #, ##, ###, listas com «- » e **negrito**)</label>
+          <textarea id="lContent" class="code" spellcheck="true"></textarea>
+          <div class="row mt"><label class="hint" style="margin:0">Carregar de ficheiro .md: <input id="lFile" type="file" accept=".md,.txt,text/markdown,text/plain" style="width:auto"></label></div></div>
+        <div class="field"><label for="lSummary">O que mudou (mostrado aos responsáveis; obrigatório a partir da 2.ª versão)</label>
+          <textarea id="lSummary" maxlength="2000"></textarea></div>
+        <div class="field"><label><input id="lReaccept" type="checkbox" checked style="width:auto"> Exige novo aceite de todos os responsáveis</label></div>
+        <div class="row end"><button id="lPublish">Publicar versão</button></div>
+        <h3>Pré-visualização</h3>
+        <div id="lPreview" class="legal-preview"></div>
+      </section>
+    </div>
   </main>
 </div>
 
@@ -138,6 +167,7 @@
 <script src="js/worksheets.js"></script>
 <script src="js/editor.js"></script>
 <script src="js/reports.js"></script>
+<script src="js/legal.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
