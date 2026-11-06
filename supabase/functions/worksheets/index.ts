@@ -384,6 +384,7 @@ Deno.serve(async (req: Request) => {
         .select("id,name,subject_id,school_year")
         .eq("subject_id", subjectId)
         .eq("school_year", year)
+        .is("archived_at", null) // temas arquivados não aparecem aos pais
         .order("id")
         .limit(51);
       if (cursor) query = query.gt("id", cursor);

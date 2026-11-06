@@ -187,7 +187,7 @@
     try {
       const [s, t] = await Promise.all([
         fetch(baseUrl() + '/rest/v1/subjects?select=id,name&order=name', { headers: headers() }),
-        fetch(baseUrl() + '/rest/v1/topics?select=id,subject_id,school_year,name&order=name', { headers: headers() }),
+        fetch(baseUrl() + '/rest/v1/topics?select=id,subject_id,school_year,name&archived_at=is.null&order=name', { headers: headers() }),
       ]);
       if (!s.ok || !t.ok) throw new Error('HTTP ' + (s.ok ? t.status : s.status) + ' — ' + (await (s.ok ? t : s).text()).slice(0, 200));
       state.subjects = await s.json();
@@ -446,7 +446,7 @@ ${schemaDoc}`;
   const errorText = {
     SUBJECT_NOT_FOUND: 'A disciplina não existe na base. Confirma o nome (tem de ser igual ao existente).',
     INVALID_SCHOOL_YEAR: 'Ano escolar inválido (1 a 4).', INVALID_TITLE: 'Título inválido (1 a 160 caracteres).',
-    INVALID_TOPIC: 'Tema inválido (1 a 120 caracteres).', INVALID_CONTENT: 'A base rejeitou o conteúdo da ficha (regras de validação).',
+    INVALID_TOPIC: 'Tema inválido (1 a 120 caracteres).', TOPIC_ARCHIVED: 'Esse tema está arquivado. Reativa-o na Administração ou usa outro nome.', INVALID_CONTENT: 'A base rejeitou o conteúdo da ficha (regras de validação).',
   };
 
   async function importNow() {
