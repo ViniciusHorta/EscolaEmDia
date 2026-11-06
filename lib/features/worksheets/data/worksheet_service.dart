@@ -43,7 +43,7 @@ class WorksheetService {
       if(session?.isExpired==true)session=(await client.auth.refreshSession()).session;
       if(session==null)throw const WorksheetException('A tua sessão terminou. Entra novamente na conta.');
       final capability=parentToken();
-      if(capability==null){onParentLocked();throw const WorksheetException('Desbloqueia a área dos pais para continuar.');}
+      if(capability==null){onParentLocked();throw const WorksheetException('Desbloqueia a área do responsável para continuar.');}
       final response=await client.functions.invoke('worksheets$path',method:method,queryParameters:query,body:body,
         headers:{'Authorization':'Bearer ${session.accessToken}','X-Parent-Unlock':capability});
       if(response.data is! Map)throw const WorksheetException('Não foi possível confirmar o pedido.');

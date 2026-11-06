@@ -123,7 +123,7 @@ class _WorksheetAttemptPageState extends State<WorksheetAttemptPage> {
           subtitle:data.subjectName,
           leading:RoundActionButton(icon:Icons.pause_rounded,tooltip:'Pausar',
             onPressed:controller.busy?null:(controller.result!=null?closeSummary:pause)),
-          trailing:RoundActionButton(icon:Icons.lock_outline_rounded,tooltip:'Área dos pais',filled:true,
+          trailing:RoundActionButton(icon:Icons.lock_outline_rounded,tooltip:'Área do responsável',filled:true,
             onPressed:controller.busy?null:parents),
         ),
         Expanded(child:SingleChildScrollView(

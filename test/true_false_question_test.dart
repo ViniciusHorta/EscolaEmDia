@@ -103,7 +103,7 @@ void main() {
     expect(find.text('Esta pergunta ficou sem resposta.'), findsOneWidget);
   });
 
-  test('Revisão parental: Verdadeiro ou Falso é corrigida automaticamente', () {
+  test('Revisão do responsável: Verdadeiro ou Falso é corrigida automaticamente', () {
     ParentReviewQuestion question(String answerType, String? selected) => ParentReviewQuestion.fromJson({
       'id': 'tf1', 'type': 'true_false', 'prompt': 'A baleia é um mamífero.', 'answerType': answerType,
       'reviewable': false, 'explanation': '', 'selectedOptionId': selected, 'correctOptionId': 'true',

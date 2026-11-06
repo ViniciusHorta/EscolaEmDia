@@ -7,7 +7,7 @@ import '../../../shared/widgets/app_card.dart';
 import '../../family/domain/family_models.dart';
 import '../data/pending_reviews_service.dart';
 
-/// Separador «Painel» da área dos pais (Stitch: 1. Painel dos Pais — Revisões Pendentes).
+/// Separador «Painel» da área do responsável (Stitch: 1. Painel do Responsável — Revisões Pendentes).
 class ParentDashboard extends StatefulWidget {
   const ParentDashboard({
     super.key,
@@ -464,7 +464,7 @@ class _EnterChildCard extends StatelessWidget {
           Text('Hora de estudar, ${child.displayName}?', style: const TextStyle(
             fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.text)),
           const SizedBox(height: 2),
-          const Text('Entrega o dispositivo. A área dos pais volta a pedir o PIN.',
+          const Text('Entrega o dispositivo. A área do responsável volta a pedir o PIN.',
             style: TextStyle(color: AppColors.muted, fontSize: 14)),
         ])),
       ]),

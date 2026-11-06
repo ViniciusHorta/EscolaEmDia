@@ -156,7 +156,7 @@
   }
 
   function versionInfo(d, li) {
-    if (!d) return 'Ficha nova: ao gravar é criada a versão 1. «Guardar rascunho» não a mostra aos pais; «Guardar e publicar» sim.';
+    if (!d) return 'Ficha nova: ao gravar é criada a versão 1. «Guardar rascunho» não a mostra aos responsáveis; «Guardar e publicar» sim.';
     const l = d.latest, pub = d.versions.find((v) => v.publishedAt);
     const parts = [];
     if (!l) return 'Sem versões.';
@@ -164,11 +164,11 @@
       parts.push(`<span class="badge ok">v${l.versionNumber} publicada</span> em ${A.fmtDate(l.publishedAt)}.`);
       parts.push(`Alterar perguntas, ano ou temas cria a <b>v${l.versionNumber + 1}</b> (quem já tem a ficha atribuída mantém a v${l.versionNumber}). O título é atualizado em todas as versões.`);
     } else if (pub) {
-      parts.push(`<span class="badge warn">v${l.versionNumber} em rascunho</span> Os pais continuam a ver a v${pub.versionNumber}. Publica para a substituir.`);
+      parts.push(`<span class="badge warn">v${l.versionNumber} em rascunho</span> Os responsáveis continuam a ver a v${pub.versionNumber}. Publica para a substituir.`);
     } else {
-      parts.push(`<span class="badge warn">Rascunho</span> Nunca publicada: os pais ainda não a veem.`);
+      parts.push(`<span class="badge warn">Rascunho</span> Nunca publicada: os responsáveis ainda não a veem.`);
     }
-    if (d.status === 'archived') parts.push('<span class="badge grey">Arquivada</span> «Guardar e publicar» volta a mostrá-la aos pais.');
+    if (d.status === 'archived') parts.push('<span class="badge grey">Arquivada</span> «Guardar e publicar» volta a mostrá-la aos responsáveis.');
     if (li && li.assignmentCount) parts.push(`${li.assignmentCount} atribuição(ões) a crianças.`);
     if (d.versions.length > 1) parts.push(`<span class="muted small">Histórico: ${d.versions.map((v) => `v${v.versionNumber}${v.publishedAt ? '' : ' (rascunho)'}`).join(', ')}</span>`);
     return parts.join(' ');
@@ -209,9 +209,9 @@
         <label class="${q.correctAnswer === false ? 'on' : ''}"><input type="radio" name="tf-${i}" data-f="tf" value="false" ${q.correctAnswer === false ? 'checked' : ''}> Falso</label>
       </div>`;
     } else {
-      body += `<p class="hint" style="margin:8px 0">A criança responde por escrito ou no caderno; é corrigida pelos pais.</p>`;
+      body += `<p class="hint" style="margin:8px 0">A criança responde por escrito ou no caderno; é corrigida pelos responsáveis.</p>`;
     }
-    const expLabel = q.type === 'written' ? 'Resposta esperada e critérios para os pais (não é mostrada à criança)' : 'Explicação mostrada à criança na correção';
+    const expLabel = q.type === 'written' ? 'Resposta esperada e critérios para os responsáveis (não é mostrada à criança)' : 'Explicação mostrada à criança na correção';
     body += `<label class="small" style="margin-top:10px">${expLabel}</label>
       <textarea data-f="explanation" rows="2">${esc(q.explanation || '')}</textarea><div class="q-err"></div>`;
     return `<div class="q-card" data-q="${i}" data-qid="${esc(q.id)}">
@@ -256,7 +256,7 @@
     $('edStatus').innerHTML = status;
     $('edDraft').disabled = !ok;
     $('edPublish').disabled = !ok;
-    $('edDraft').title = latestPublished() ? 'Grava sem mudar o que os pais veem (uma nova versão fica em rascunho)' : 'Grava sem mostrar aos pais';
+    $('edDraft').title = latestPublished() ? 'Grava sem mudar o que os responsáveis veem (uma nova versão fica em rascunho)' : 'Grava sem mostrar aos responsáveis';
     return ok;
   }
 
@@ -366,7 +366,7 @@
         p_topic_ids: [...ed.topicIds], p_title: ed.title.trim(), p_content: content, p_publish: !!publish,
       });
       const text = r.newVersion && r.published ? `Versão ${r.versionNumber} criada e publicada ✓`
-        : r.newVersion ? `Versão ${r.versionNumber} gravada como rascunho (os pais não a veem ainda).`
+        : r.newVersion ? `Versão ${r.versionNumber} gravada como rascunho (os responsáveis não a veem ainda).`
         : r.publishedNow ? `Versão ${r.versionNumber} publicada ✓`
         : r.published ? 'Alterações gravadas ✓' : 'Rascunho gravado ✓';
       ed.dirty = false;

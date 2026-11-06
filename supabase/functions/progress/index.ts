@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const uuid = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const messages: Record<string, string> = {
   AUTH_REQUIRED: "Entra novamente na conta do adulto.",
-  PARENT_LOCKED: "Desbloqueia a área dos pais para consultar o acompanhamento.",
+  PARENT_LOCKED: "Desbloqueia a área do responsável para consultar o acompanhamento.",
   CHILD_NOT_FOUND: "Este perfil não está disponível nesta família.",
   INVALID_REQUEST: "Os filtros ou a página do histórico são inválidos.",
   STORAGE_UNAVAILABLE:

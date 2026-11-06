@@ -11,7 +11,7 @@ const hash = async (value: string) =>
   ).join("");
 const messages: Record<string, string> = {
   AUTH_REQUIRED: "A tua sessão terminou. Entra novamente na conta.",
-  PARENT_LOCKED: "Desbloqueia a área dos pais para continuar.",
+  PARENT_LOCKED: "Desbloqueia a área do responsável para continuar.",
   EMAIL_NOT_CONFIRMED: "Confirma o teu e-mail antes de continuar.",
   CHILD_NOT_FOUND: "Este perfil não está disponível.",
   CHILD_SESSION_EXPIRED: "A tua sessão terminou. Entra novamente com o PIN.",
@@ -384,7 +384,7 @@ Deno.serve(async (req: Request) => {
         .select("id,name,subject_id,school_year")
         .eq("subject_id", subjectId)
         .eq("school_year", year)
-        .is("archived_at", null) // temas arquivados não aparecem aos pais
+        .is("archived_at", null) // temas arquivados não aparecem aos responsáveis
         .order("id")
         .limit(51);
       if (cursor) query = query.gt("id", cursor);

@@ -48,8 +48,8 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
   String? preferredChildId;
   String? returnFamilyId;
   bool requestingParent = false;
-  /// O pedido de PIN parental veio do espaço infantil («Área dos Pais»), e não
-  /// do arranque/bloqueio com o perfil Pais como último perfil usado.
+  /// O pedido de PIN do responsável veio do espaço infantil («Área do Responsável»), e não
+  /// do arranque/bloqueio com o perfil Responsável como último perfil usado.
   bool parentRequestFromChild = false;
   bool enteringChildMode = false;
   bool parentViewReady = false;
@@ -60,6 +60,7 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
   Family? selectedFamily;
   List<ChildProfile> children = [];
   ChildProfile? savedChild;
+  ChildProfile? editingChild;
   bool loading = true;
   bool editing = false;
   bool exiting = false;
@@ -85,11 +86,11 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
     if (!mounted) return;
     setState(() {
       if (!parentAccess.unlocked) {
-        parentViewReady = false; preparing = false; reviewingAttemptId = null; progressChildId = null;
+        parentViewReady = false; preparing = false; reviewingAttemptId = null; progressChildId = null; editingChild = null;
         if (childModeFamilyId == null && returnFamilyId != null) {
           childModeFamilyId = returnFamilyId;
-          // Bloqueio da área dos pais: o último perfil continua a ser «Pais»,
-          // por isso volta a pedir o PIN parental (com opção de alterar perfil).
+          // Bloqueio da área do responsável: o último perfil continua a ser «Responsável»,
+          // por isso volta a pedir o PIN do responsável (com opção de alterar perfil).
           if (!enteringChildMode) {requestingParent = true; parentRequestFromChild = false;}
           ChildModeStore.enter(widget.auth.user!.id, returnFamilyId!).catchError((Object _) {
             // Reload still requires a fresh parental PIN if this preference cannot be saved.
@@ -105,7 +106,7 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
     setState(() {
       returnFamilyId = childModeFamilyId ?? selectedFamily?.id;
       childModeFamilyId = null; requestingParent = false; parentViewReady = true;
-      savedChild = null; editing = false; preparing = false; reviewingAttemptId = null; progressChildId = null;
+      savedChild = null; editing = false; editingChild = null; preparing = false; reviewingAttemptId = null; progressChildId = null;
     });
     await load(familyId: returnFamilyId);
     LastProfileStore.remember(widget.auth.user!.id, LastProfile.parent(selectedFamily?.id ?? returnFamilyId));
@@ -129,7 +130,7 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
       final last = await LastProfileStore.read(adultId);
       if (!mounted) return;
       // Pede sempre o PIN do último perfil usado neste dispositivo: o teclado da
-      // criança (já selecionada) ou o PIN parental por cima do seletor de perfis.
+      // criança (já selecionada) ou o PIN do responsável por cima do seletor de perfis.
       final familyId = stored ?? last?.familyId;
       setState(() {
         childModeFamilyId = familyId; returnFamilyId = familyId;
@@ -214,6 +215,11 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
     editing = false; savedChild = child; error = null; returnFamilyId = child.familyId;
   });
 
+  void profileUpdated(ChildProfile child) => setState(() {
+    children = [for (final item in children) item.id == child.id ? child : item];
+    editingChild = null; error = null;
+  });
+
   Future<void> signOut() async {
     if (exiting) return;
     setState(() {exiting = true; error = null;});
@@ -265,6 +271,12 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
         setState((){preferredChildId=childId;preparing=false;});
         await enterChildMode();
       });
+    if (editingChild != null) return ChildProfilePage.edit(
+      key: ValueKey('edit-${editingChild!.id}'), child: editingChild!,
+      onUpdate: (update) => service.updateChild(editingChild!, update),
+      onSaved: profileUpdated,
+      onBack: () => setState(() => editingChild = null),
+    );
     if (savedChild != null) return readyPage(savedChild!);
     if (editing) return ChildProfilePage(
       onSave: save, onSaved: profileSaved,
@@ -329,7 +341,7 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
     AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Text('Hora de estudar?', style: Theme.of(context).textTheme.titleMedium),
       const SizedBox(height: 6),
-      const Text('Entrega o dispositivo à criança. A área dos pais volta a pedir o PIN.'),
+      const Text('Entrega o dispositivo à criança. A área do responsável volta a pedir o PIN.'),
       const SizedBox(height: 20),
       AppButton(label: 'Entrar no espaço infantil', icon: Icons.rocket_launch_rounded,
         variant: AppButtonVariant.secondary, loading: exiting, onPressed: exiting ? null : enterChildMode),
@@ -355,6 +367,9 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
           const SizedBox(height: 18),
           AppButton(label: 'Ver acompanhamento', variant: AppButtonVariant.secondary,
             icon: Icons.insights_rounded, onPressed: () => setState(() { progressChildId = child.id; })),
+          const SizedBox(height: 12),
+          AppButton(label: 'Editar perfil', variant: AppButtonVariant.secondary,
+            icon: Icons.edit_rounded, onPressed: exiting ? null : () => setState(() { editingChild = child; })),
           const SizedBox(height: 12),
           AppButton(label: 'Entrar como ${child.displayName}', variant: AppButtonVariant.success,
             icon: Icons.rocket_launch_rounded, loading: exiting,

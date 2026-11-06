@@ -175,7 +175,7 @@
       "id": "q3",
       "type": "written",
       "prompt": "Pergunta de resposta aberta",
-      "explanation": "Resposta esperada e critérios para os pais (não é mostrada à criança)"
+      "explanation": "Resposta esperada e critérios para os responsáveis (não é mostrada à criança)"
     }
   ]
 }
@@ -186,7 +186,7 @@ Regras validadas pela base de dados:
 • multiple-choice: "options" com 2 a 8 opções, cada uma com "id" único e "text" não vazio;
   "correctAnswer" é o "id" (texto) de uma das opções.
 • true_false: "correctAnswer" é true ou false (booleano, sem aspas) e não tem "options".
-• written: sem "options" nem "correctAnswer"; corrigida pelos pais no Painel dos Pais.
+• written: sem "options" nem "correctAnswer"; corrigida pelos responsáveis no Painel do Responsável.
 • "explanation" é opcional mas recomendada.`;
 
   A.buildAiPrompt = ({ year, subject, topics, counts, extra, title }) => {
@@ -204,7 +204,7 @@ Regras de conteúdo:
 • Varia a posição da resposta certa nas perguntas de escolha múltipla; opções erradas plausíveis.
 • Equilibra as respostas verdadeiro/falso (não ponhas todas iguais).
 • Sem dados pessoais, marcas, violência ou temas sensíveis.
-• "explanation": explicação curta e encorajadora para a criança (escolha múltipla e verdadeiro/falso); nas abertas, a resposta esperada e os critérios para os pais.
+• "explanation": explicação curta e encorajadora para a criança (escolha múltipla e verdadeiro/falso); nas abertas, a resposta esperada e os critérios para os responsáveis.
 • Começa com uma "instructions" curta e amigável para a criança.
 
 Formato: responde APENAS com um único objeto JSON válido, sem texto antes ou depois e sem comentários, exatamente com esta estrutura:

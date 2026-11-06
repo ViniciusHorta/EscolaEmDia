@@ -63,7 +63,7 @@ paths:
         Devolve summary, instructions/text/audioText e questions em ordem original.
         As respostas são as entregues no servidor, nunca rascunhos locais.
         Inclui texto da opção correta e explicação publicada só para escolhas múltiplas.
-        Nas abertas, apenas resposta própria e classificação parental atual, sem solução
+        Nas abertas, apenas resposta própria e classificação do responsável atual, sem solução
         inventada, critérios privados, identidade do adulto ou histórico de revisões.
         A correção de uma realização anterior completed pode ser consultada enquanto
         outra realização está em curso; não altera nenhuma das tentativas.

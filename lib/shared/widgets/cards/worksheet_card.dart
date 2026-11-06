@@ -24,7 +24,7 @@ class WorksheetCard extends StatelessWidget {
               Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Wrap(spacing: 8, runSpacing: 8, children: [
           const AppBadge(
-              label: 'Preparada pelos teus pais',
+              label: 'Preparada pelo teu responsável',
               icon: Icons.favorite_border,
               color: Color(0xFF9B321B),
               background: AppColors.coralSoft),

@@ -49,7 +49,7 @@ class ParentPinService {
     }
   }
 
-  /// Substitui o PIN parental. Só é aceite até cinco minutos após [reauthenticate].
+  /// Substitui o PIN do responsável. Só é aceite até cinco minutos após [reauthenticate].
   Future<void> reset(String pin) async {
     if (!RegExp(r'^[0-9]{4}$').hasMatch(pin)) {
       throw const ParentPinException('O PIN deve ter exatamente 4 dígitos.');
@@ -96,7 +96,7 @@ class ParentPinService {
       throw ParentPinException(
         message is String && message.isNotEmpty
             ? message
-            : 'Não foi possível aceder ao PIN parental. Tenta novamente.',
+            : 'Não foi possível aceder ao PIN do responsável. Tenta novamente.',
         alreadyConfigured: code == 'PIN_ALREADY_CONFIGURED',
         reauthRequired: code == 'REAUTH_REQUIRED',
         requestId: requestId is String ? requestId : null,

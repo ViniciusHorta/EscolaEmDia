@@ -3,7 +3,7 @@ import '../../../core/theme/app_tokens.dart';
 
 enum ParentTab { dashboard, worksheets, family }
 
-/// Estrutura da área dos pais: cabeçalho «Área dos Pais», estado do PIN,
+/// Estrutura da área do responsável: cabeçalho «Área do Responsável», estado do PIN,
 /// menu de conta e barra de navegação inferior (Painel, Fichas, Família).
 class ParentShell extends StatelessWidget {
   const ParentShell({
@@ -102,8 +102,8 @@ class ParentShell extends StatelessWidget {
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         ListTile(
           leading: const Icon(Icons.lock_outline_rounded, color: AppColors.primary),
-          title: const Text('Bloquear área dos pais'),
-          subtitle: const Text('Volta a pedir o PIN parental.'),
+          title: const Text('Bloquear área do responsável'),
+          subtitle: const Text('Volta a pedir o PIN do responsável.'),
           onTap: () { Navigator.pop(sheet); onLock(); },
         ),
         ListTile(
@@ -133,7 +133,7 @@ class _Header extends StatelessWidget {
         padding: EdgeInsets.fromLTRB(MediaQuery.sizeOf(context).width < 640 ? 16 : 32, 12, 16, 14),
         child: Row(children: [
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('ÁREA DOS PAIS', style: TextStyle(
+            const Text('ÁREA DO RESPONSÁVEL', style: TextStyle(
               color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.w700, letterSpacing: 1.2)),
             const SizedBox(height: 2),
             Semantics(header: true, child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft,
@@ -142,7 +142,7 @@ class _Header extends StatelessWidget {
           ])),
           const SizedBox(width: 8),
           Tooltip(
-            message: 'PIN ativo. Tocar para bloquear a área dos pais.',
+            message: 'PIN ativo. Tocar para bloquear a área do responsável.',
             child: Material(
               color: AppColors.softBlue,
               shape: const StadiumBorder(),

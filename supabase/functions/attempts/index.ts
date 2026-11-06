@@ -8,7 +8,7 @@ const hash = async (text: string) =>
     (b) => b.toString(16).padStart(2, "0"),
   ).join("");
 const messages: Record<string, string> = {
-  FEEDBACK_NOT_AVAILABLE: "A correção fica disponível quando esta tentativa estiver concluída. Aguarda a revisão dos teus pais.",
+  FEEDBACK_NOT_AVAILABLE: "A correção fica disponível quando esta tentativa estiver concluída. Aguarda a revisão do teu responsável.",
   REPEAT_NOT_AVAILABLE: "Esta ficha ainda não está concluída. Aguarda a revisão antes de repetir.",
   REPEAT_STATE_CHANGED: "Esta ficha já tem outra tentativa. Volta ao teu espaço e atualiza a lista.",
   ATTEMPT_REVISION_CONFLICT:

@@ -68,7 +68,7 @@ class PendingReviewsService {
       final capability = parentToken();
       if (capability == null) {
         onParentLocked();
-        throw const PendingReviewsException('Desbloqueia a área dos pais para continuar.', code: 'PARENT_LOCKED');
+        throw const PendingReviewsException('Desbloqueia a área do responsável para continuar.', code: 'PARENT_LOCKED');
       }
       final response = await client.functions.invoke('reviews$path', method: method, queryParameters: query, body: body,
         headers: {'Authorization': 'Bearer ${session.accessToken}', 'X-Parent-Unlock': capability});

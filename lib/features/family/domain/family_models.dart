@@ -32,6 +32,15 @@ class ChildProfileDraft {
   final String pin;
 }
 
+// Transient form data only. pin == null keeps the current child PIN.
+class ChildProfileUpdate {
+  const ChildProfileUpdate({required this.displayName, required this.schoolYear, required this.avatarId, this.pin});
+  final String displayName;
+  final int schoolYear;
+  final String avatarId;
+  final String? pin;
+}
+
 abstract final class ChildAvatars {
   static const choices = <String, (String, String)>{
     'fox': ('Raposinha', '🦊'), 'owl': ('Mocho', '🦉'),

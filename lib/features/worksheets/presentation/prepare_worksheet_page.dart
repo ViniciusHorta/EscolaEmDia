@@ -144,7 +144,7 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
     title:const Text('Como funciona?'),
     content:const Text('1. Escolhe a criança, a disciplina e os temas.\n'
       '2. Propomos uma ficha publicada que cobre esses temas, já equilibrada entre escolha múltipla e respostas abertas.\n'
-      '3. Disponibiliza-a: aparece no espaço da criança. As respostas abertas chegam ao Painel dos Pais para revisão.'),
+      '3. Disponibiliza-a: aparece no espaço da criança. As respostas abertas chegam ao Painel do Responsável para revisão.'),
     actions:[TextButton(onPressed:()=>Navigator.pop(dialog),child:const Text('Percebi'))],
   ));
 
@@ -342,7 +342,7 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
         icon:Icons.lightbulb_outline_rounded,iconBackground:AppColors.coralSoft,iconColor:const Color(0xFFE5603E),
         title:'${item.writtenCount} ${item.writtenCount==1?'Pergunta Aberta / Reflexão':'Perguntas Abertas / Reflexão'}',
         badge:'Raciocínio',badgeBackground:AppColors.coralSoft,badgeColor:const Color(0xFFE5603E),
-        text:'Resposta escrita ou feita no caderno. Pode exigir papel e lápis e precisa da tua revisão no Painel dos Pais.'),
+        text:'Resposta escrita ou feita no caderno. Pode exigir papel e lápis e precisa da tua revisão no Painel do Responsável.'),
       _Expandable(icon:Icons.layers_outlined,title:'Ver temas abrangidos nesta ficha',children:[
         for(final name in item.topicNames)Padding(padding:const EdgeInsets.only(bottom:8),child:Row(children:[
           const Icon(Icons.check_rounded,color:AppColors.success,size:20),const SizedBox(width:8),Expanded(child:Text(name))])),
@@ -433,13 +433,13 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
       _Expandable(icon:Icons.auto_stories_outlined,title:'O que acontece a seguir?',children:const [
         _NextStep(number:1,text:'A criança entra no seu espaço com o PIN e encontra a ficha em destaque.'),
         _NextStep(number:2,text:'As perguntas de escolha múltipla são corrigidas automaticamente.'),
-        _NextStep(number:3,text:'As respostas abertas aparecem nas Revisões Pendentes do Painel dos Pais.'),
+        _NextStep(number:3,text:'As respostas abertas aparecem nas Revisões Pendentes do Painel do Responsável.'),
       ]),
       feedback(),
       const SizedBox(height:24),
       AppButton(label:'Ver no Perfil de ${child!.displayName} agora',icon:Icons.play_circle_outline_rounded,loading:busy,onPressed:busy?null:viewChild),
       const SizedBox(height:12),
-      AppButton(label:'Voltar ao Painel dos Pais',icon:Icons.dashboard_outlined,variant:AppButtonVariant.secondary,onPressed:busy?null:widget.onClose),
+      AppButton(label:'Voltar ao Painel do Responsável',icon:Icons.dashboard_outlined,variant:AppButtonVariant.secondary,onPressed:busy?null:widget.onClose),
       const SizedBox(height:8),
       Center(child:TextButton.icon(onPressed:busy?null:reset,icon:const Icon(Icons.add_rounded),
         label:const Text('Preparar outra ficha para mais tarde'),style:TextButton.styleFrom(foregroundColor:AppColors.muted))),

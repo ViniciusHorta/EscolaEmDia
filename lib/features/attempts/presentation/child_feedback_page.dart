@@ -83,7 +83,7 @@ class _ChildFeedbackPageState extends State<ChildFeedbackPage> {
           AppButton(label: 'Atualizar correção', variant: AppButtonVariant.secondary, icon: Icons.refresh_rounded, onPressed: load),
           const SizedBox(height: 16),
         ],
-        TextButton.icon(onPressed: widget.onParents, icon: const Icon(Icons.lock_outline_rounded), label: const Text('Área dos pais')),
+        TextButton.icon(onPressed: widget.onParents, icon: const Icon(Icons.lock_outline_rounded), label: const Text('Área do responsável')),
       ],
     ));
   }

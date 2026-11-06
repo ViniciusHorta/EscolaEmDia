@@ -35,7 +35,7 @@ class AssignedWorksheetCard extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Wrap(spacing: 8, runSpacing: 8, children: [
-          const AppBadge(label: 'Preparada pelos teus pais', icon: Icons.favorite_border_rounded,
+          const AppBadge(label: 'Preparada pelo teu responsável', icon: Icons.favorite_border_rounded,
             background: AppColors.coralSoft, color: Color(0xFFE5603E)),
           AppBadge(label: '${item.questionCount} perguntas', icon: Icons.quiz_outlined),
           if (item.isSample) const AppBadge(label: 'Ficha de exemplo', background: AppColors.amberSoft, color: AppColors.amber),
@@ -76,7 +76,7 @@ class AssignedWorksheetTile extends StatelessWidget {
     final status = paused
         ? 'Progresso guardado'
         : assignment.latestAttemptStatus == 'pending_review'
-            ? 'Entregue • os teus pais vão rever'
+            ? 'Entregue • o teu responsável vai rever'
             : assignment.latestAttemptStatus == 'completed' ? 'Concluída' : 'Entregue';
     final attempt = assignment.latestAttemptNumber;
     final actions = <Widget>[

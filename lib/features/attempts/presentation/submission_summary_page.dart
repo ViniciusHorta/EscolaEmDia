@@ -28,7 +28,7 @@ class SubmissionSummaryPage extends StatelessWidget {
         AttemptTopBar(
           title: summary.status == 'completed' ? 'Ficha concluída' : 'Ficha entregue',
           leading: RoundActionButton(icon: Icons.home_rounded, tooltip: 'Voltar ao meu espaço', onPressed: onClose),
-          trailing: RoundActionButton(icon: Icons.lock_outline_rounded, tooltip: 'Área dos pais', filled: true, onPressed: onParents),
+          trailing: RoundActionButton(icon: Icons.lock_outline_rounded, tooltip: 'Área do responsável', filled: true, onPressed: onParents),
         ),
         Expanded(child: SingleChildScrollView(child: Center(child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 720),
@@ -70,9 +70,9 @@ class SubmissionSummaryPage extends StatelessWidget {
                   icon: Icons.family_restroom_rounded,
                   child: Text.rich(TextSpan(style: const TextStyle(fontSize: 16, height: 1.45, color: AppColors.text), children: [
                     TextSpan(text: summary.pendingReview == 1
-                        ? '1 resposta para a mãe ou o pai lerem no '
-                        : '${summary.pendingReview} respostas para a mãe ou o pai lerem no '),
-                    const TextSpan(text: 'Painel dos Pais', style: TextStyle(fontWeight: FontWeight.w700)),
+                        ? '1 resposta para o teu responsável ler no '
+                        : '${summary.pendingReview} respostas para o teu responsável ler no '),
+                    const TextSpan(text: 'Painel do Responsável', style: TextStyle(fontWeight: FontWeight.w700)),
                     const TextSpan(text: ' 💛'),
                   ])),
                 ),
@@ -102,7 +102,7 @@ class SubmissionSummaryPage extends StatelessWidget {
                 AppButton(label: 'Ver a correção', icon: Icons.fact_check_outlined, variant: AppButtonVariant.success, onPressed: onViewFeedback),
                 const SizedBox(height: 16),
               ] else if (summary.pendingReview > 0) ...[
-                const Text('A correção detalhada fica disponível quando os teus pais terminarem a revisão.',
+                const Text('A correção detalhada fica disponível quando o teu responsável terminar a revisão.',
                   textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted, fontSize: 14)),
                 const SizedBox(height: 12),
                 AppButton(label: 'Atualizar resultado', variant: AppButtonVariant.secondary,

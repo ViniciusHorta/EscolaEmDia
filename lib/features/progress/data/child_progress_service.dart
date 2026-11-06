@@ -34,7 +34,7 @@ class ChildProgressService {
       final capability = parentToken();
       if (capability == null) {
         onParentLocked();
-        throw const ChildProgressException('Desbloqueia a área dos pais para continuar.');
+        throw const ChildProgressException('Desbloqueia a área do responsável para continuar.');
       }
       final response = await client.functions.invoke('progress$path', method: HttpMethod.get, queryParameters: query,
         headers: {'Authorization': 'Bearer ${session.accessToken}', 'X-Parent-Unlock': capability});

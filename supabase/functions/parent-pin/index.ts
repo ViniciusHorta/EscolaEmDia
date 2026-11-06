@@ -78,13 +78,13 @@ Deno.serve(async (req: Request) => {
       "Não foi possível aceder aos dados do PIN. Tenta mais tarde.",
     PIN_ALREADY_CONFIGURED: "O PIN desta conta já está configurado.",
     INVALID_PIN: "O PIN deve ter exatamente 4 dígitos.",
-    WRONG_PIN: "O PIN parental não está correto. Tenta novamente.",
+    WRONG_PIN: "O PIN do responsável não está correto. Tenta novamente.",
     PIN_LOCKED:
       "Demasiadas tentativas. Aguarda cinco minutos antes de tentar novamente.",
     PIN_BUSY: "Já existe uma tentativa em curso. Aguarda alguns instantes.",
     VERIFY_EXPIRED: "A tentativa expirou. Introduz o PIN novamente.",
-    PIN_NOT_CONFIGURED: "Configura primeiro o teu PIN parental.",
-    PARENT_LOCKED: "A área dos pais está bloqueada. Introduz o PIN parental.",
+    PIN_NOT_CONFIGURED: "Configura primeiro o PIN do responsável.",
+    PARENT_LOCKED: "A área do responsável está bloqueada. Introduz o PIN do responsável.",
     REAUTH_REQUIRED:
       "Confirma novamente a palavra-passe da conta para redefinir o PIN.",
     INTERNAL_ERROR: "Não foi possível concluir o pedido. Tenta novamente.",

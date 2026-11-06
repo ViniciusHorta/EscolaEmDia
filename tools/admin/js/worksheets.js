@@ -60,7 +60,7 @@
           <div class="meta">${esc(w.subjectName)} • ${l.schoolYear || '?'}.º Ano • ${topics.length ? topics.map(esc).join(', ') : '<i>sem tema</i>'}</div>
           <div class="badges">
             ${statusBadge(w)}
-            ${hasPendingDraft(w) ? '<span class="badge warn" title="Há alterações gravadas que os pais ainda não veem">Rascunho por publicar</span>' : ''}
+            ${hasPendingDraft(w) ? '<span class="badge warn" title="Há alterações gravadas que os responsáveis ainda não veem">Rascunho por publicar</span>' : ''}
             <span class="badge grey" title="Versão mais recente">v${l.versionNumber || 1}</span>
             <span class="badge grey">${l.questionCount || 0} perguntas${counts ? ' • ' + counts : ''}</span>
             ${w.assignmentCount ? `<span class="badge grey" title="Atribuições a crianças (todas as versões)">${w.assignmentCount} atribuiç${w.assignmentCount === 1 ? 'ão' : 'ões'}</span>` : ''}
@@ -81,11 +81,11 @@
 
   async function setStatus(id, status) {
     const w = A.state.worksheets.find((x) => x.id === id);
-    if (status === 'archived' && !confirm(`Arquivar «${w.title}»?\n\nDeixa de aparecer aos pais para novas atribuições. As fichas já atribuídas continuam disponíveis para as crianças.`)) return;
+    if (status === 'archived' && !confirm(`Arquivar «${w.title}»?\n\nDeixa de aparecer aos responsáveis para novas atribuições. As fichas já atribuídas continuam disponíveis para as crianças.`)) return;
     try {
       await A.rpc('admin_set_worksheet_status', { p_id: id, p_status: status });
       await A.app.reload({ catalogue: false });
-      A.toast('ok', status === 'archived' ? 'Ficha arquivada.' : 'Ficha reativada: volta a aparecer aos pais.');
+      A.toast('ok', status === 'archived' ? 'Ficha arquivada.' : 'Ficha reativada: volta a aparecer aos responsáveis.');
     } catch (e) { A.fail(e); }
   }
 

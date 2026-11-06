@@ -1,4 +1,4 @@
-// Relatos de problemas em perguntas, feitos pelos pais na revisão.
+// Relatos de problemas em perguntas, feitos pelos responsáveis na revisão.
 (() => {
   'use strict';
   const A = window.A, $ = A.$, esc = A.esc;

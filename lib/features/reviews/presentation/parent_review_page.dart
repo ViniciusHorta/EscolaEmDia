@@ -13,7 +13,7 @@ import 'widgets/review_classification_selector.dart';
 
 enum _Stage { summary, review, finalize, result }
 
-/// Revisão parental de uma ficha entregue (Stitch: 2. Resumo da Ficha Entregue,
+/// Revisão do responsável de uma ficha entregue (Stitch: 2. Resumo da Ficha Entregue,
 /// 3. Revisão de Resposta Aberta, 4. Finalização da Revisão, 5. Resultado Final).
 /// Cada classificação é gravada no servidor no momento em que é escolhida; a
 /// ficha fica concluída quando não restam respostas por rever.
@@ -626,7 +626,7 @@ class _ParentReviewPageState extends State<ParentReviewPage> {
         ),
       ],
       const SizedBox(height: 24),
-      AppButton(label: 'Voltar ao Painel dos Pais', icon: Icons.dashboard_outlined, variant: AppButtonVariant.secondary,
+      AppButton(label: 'Voltar ao Painel do Responsável', icon: Icons.dashboard_outlined, variant: AppButtonVariant.secondary,
         onPressed: blocked ? null : widget.onClose),
       const SizedBox(height: 8),
       Center(child: TextButton.icon(onPressed: () => setState(() { stage = _Stage.summary; showChoices = true; }),

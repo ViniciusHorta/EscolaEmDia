@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: Escola em Dia — PIN parental
+  title: Escola em Dia — PIN do responsável
   version: 1.1.0
   description: >-
     Configuração inicial e consulta do PIN adulto. Adições ao contrato de API.
@@ -84,7 +84,7 @@ paths:
   /v1/verify:
     post:
       operationId: verifyParentPin
-      summary: Validar o PIN parental e emitir autorização temporária
+      summary: Validar o PIN do responsável e emitir autorização temporária
       description: >-
         Rota lógica POST /v1/parent-pin/verify. Exige JWT adulto válido, e-mail
         confirmado e session_id do JWT. Cinco tentativas por janela de 15 minutos,
@@ -124,7 +124,7 @@ paths:
   /v1/reset:
     post:
       operationId: resetParentPin
-      summary: Redefinir o PIN parental após reautenticação recente
+      summary: Redefinir o PIN do responsável após reautenticação recente
       description: >-
         Exige JWT adulto válido, e-mail confirmado, session_id e um início de
         sessão por palavra-passe (claim amr, method=password) com menos de cinco
@@ -181,7 +181,7 @@ paths:
   /v1/touch:
     post:
       operationId: touchParentUnlock
-      summary: Renovar prazo após atividade real na área parental
+      summary: Renovar prazo após atividade real na área do responsável
       description: >-
         Expira após cinco minutos sem utilização no servidor. Prazo absoluto de
         doze horas desde a criação. Não renovar autorizações expiradas ou revogadas.

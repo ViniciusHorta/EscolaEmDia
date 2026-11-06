@@ -44,8 +44,8 @@
       const deleteTitle = t.worksheetCount ? 'Usado por fichas' : history.length ? 'Ainda usado em versões antigas de fichas (histórico imutável). Podes arquivá-lo.' : '';
       const block = archiveBlock(t);
       const archiveBtn = t.archivedAt
-        ? `<button class="sm secondary" data-act="unarchive-topic" data-id="${t.id}" title="Volta a aparecer no editor e aos pais">Reativar</button>`
-        : `<button class="sm secondary" data-act="archive-topic" data-id="${t.id}" ${block ? `disabled title="${esc(block)}"` : 'title="Esconde o tema do editor e da área dos pais, sem mexer no histórico"'}>Arquivar</button>`;
+        ? `<button class="sm secondary" data-act="unarchive-topic" data-id="${t.id}" title="Volta a aparecer no editor e aos responsáveis">Reativar</button>`
+        : `<button class="sm secondary" data-act="archive-topic" data-id="${t.id}" ${block ? `disabled title="${esc(block)}"` : 'title="Esconde o tema do editor e da área do responsável, sem mexer no histórico"'}>Arquivar</button>`;
       return head + `<tr ${t.archivedAt ? 'style="opacity:.65"' : ''}>
         <td><b>${esc(t.name)}</b>${t.archivedAt ? ` <span class="badge grey" title="Arquivado em ${A.fmtDate(t.archivedAt)}">Arquivado</span>` : ''}</td><td>${esc(subject)}</td><td>${t.schoolYear}.º</td>
         <td>${usageCell}</td>
@@ -68,14 +68,14 @@
   // Motivo pelo qual o tema não pode ser arquivado (espelha a regra de admin_set_topic_archived), ou null.
   function archiveBlock(t) {
     if (t.worksheetCount) return `Usado na versão atual de ${t.worksheetCount} ficha(s): retira-o dessas fichas primeiro.`;
-    if ((t.historyWorksheets || []).some((h) => h.live)) return 'Ainda visível aos pais numa versão publicada: publica primeiro as fichas onde o retiraste.';
+    if ((t.historyWorksheets || []).some((h) => h.live)) return 'Ainda visível aos responsáveis numa versão publicada: publica primeiro as fichas onde o retiraste.';
     return null;
   }
 
   async function setArchived(id, archived) {
     const t = A.topic(id);
     if (!t) return;
-    if (archived && !confirm(`Arquivar o tema «${t.name}»?\n\nDeixa de aparecer no editor de fichas e na área dos pais. As versões antigas das fichas não são alteradas e podes reativá-lo a qualquer momento.`)) return;
+    if (archived && !confirm(`Arquivar o tema «${t.name}»?\n\nDeixa de aparecer no editor de fichas e na área do responsável. As versões antigas das fichas não são alteradas e podes reativá-lo a qualquer momento.`)) return;
     try {
       await A.rpc('admin_set_topic_archived', { p_id: id, p_archived: archived });
       await A.app.reload({ worksheets: false });
@@ -160,7 +160,7 @@
       return `<li style="margin-bottom:10px"><b>${esc(w ? w.title : h.worksheetId)}</b>
         <div class="small muted">Tema presente em ${versions}${w && w.latest ? ` • versão atual: v${w.latest.versionNumber}${w.latest.publishedAt ? '' : ' (rascunho)'}` : ''}</div>
         <div class="row" style="margin-top:4px">
-          ${h.live ? '<span class="badge warn" title="A versão atual é um rascunho: os pais ainda veem a versão publicada com este tema">Ainda visível aos pais</span>' : ''}
+          ${h.live ? '<span class="badge warn" title="A versão atual é um rascunho: os responsáveis ainda veem a versão publicada com este tema">Ainda visível aos responsáveis</span>' : ''}
           ${h.assigned ? '<span class="badge grey">Atribuída a crianças</span>' : ''}
           <button type="button" class="sm secondary" data-open-ws="${h.worksheetId}">Abrir ficha</button>
         </div></li>`;
@@ -172,7 +172,7 @@
       info: true,
       body: `<p class="hint">Estas fichas já não usam o tema na versão atual, mas versões anteriores continuam ligadas a ele.
         As versões publicadas não podem ser alteradas (podem estar atribuídas a crianças), por isso o tema não pode ser apagado — pode ser renomeado ou <b>arquivado</b>.</p>
-        ${live ? '<p class="msg warn" style="margin-top:0">Há fichas com a remoção do tema ainda em rascunho: publica-as para que os pais deixem de ver o tema.</p>' : ''}
+        ${live ? '<p class="msg warn" style="margin-top:0">Há fichas com a remoção do tema ainda em rascunho: publica-as para que os responsáveis deixem de ver o tema.</p>' : ''}
         <ul style="padding-left:18px; margin:0">${items}</ul>`,
     });
     $('dlgBody').onclick = (ev) => {

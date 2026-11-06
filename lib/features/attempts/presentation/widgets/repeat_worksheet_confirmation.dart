@@ -18,7 +18,7 @@ class RepeatWorksheetConfirmation extends StatelessWidget {
       ])),
       const SizedBox(height: 24), AppButton(label: 'Começar nova tentativa', icon: Icons.replay_rounded, onPressed: onConfirm),
       const SizedBox(height: 16), AppButton(label: 'Agora não', variant: AppButtonVariant.secondary, onPressed: onCancel),
-      const SizedBox(height: 16), TextButton.icon(onPressed: onParents, icon: const Icon(Icons.lock_outline_rounded), label: const Text('Área dos pais')),
+      const SizedBox(height: 16), TextButton.icon(onPressed: onParents, icon: const Icon(Icons.lock_outline_rounded), label: const Text('Área do responsável')),
     ],
   ));
 }

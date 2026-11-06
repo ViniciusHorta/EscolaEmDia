@@ -7,11 +7,12 @@ const encoder = new TextEncoder();
 const hex = (bytes: Uint8Array) =>
   Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 const messages: Record<string, string> = {
-  PARENT_LOCKED: "A área dos pais está bloqueada. Introduz o PIN parental.",
+  PARENT_LOCKED: "A área do responsável está bloqueada. Introduz o PIN do responsável.",
   AUTH_REQUIRED: "A tua sessão terminou. Entra novamente na conta.",
   EMAIL_NOT_CONFIRMED: "Confirma o teu e-mail antes de continuar.",
-  ADULT_SETUP_REQUIRED: "Configura o PIN parental antes de adicionar crianças.",
+  ADULT_SETUP_REQUIRED: "Configura o PIN do responsável antes de adicionar crianças.",
   FAMILY_NOT_FOUND: "Esta família não está disponível para a tua conta.",
+  CHILD_NOT_FOUND: "Este perfil já não está disponível nesta família.",
   INVALID_PROFILE:
     "Verifica a alcunha, o avatar, o ano escolar e o PIN de 4 dígitos.",
   INVALID_REQUEST: "O pedido é inválido.",
@@ -33,7 +34,7 @@ const messages: Record<string, string> = {
 Deno.serve(async (req: Request) => {
   const requestId = crypto.randomUUID();
   const corsPolicy = createCors(req, {
-    methods: "GET, POST, OPTIONS",
+    methods: "GET, POST, PUT, OPTIONS",
     parentUnlock: true,
     retryAfter: false,
   });
@@ -43,12 +44,16 @@ Deno.serve(async (req: Request) => {
     .replace(/^\/functions\/v1(?=\/)/, "")
     .replace(/^\/families(?=\/|$)/, "");
   const childRoute = /^\/v1\/families\/([^/]+)\/children$/.exec(path);
+  const childItemRoute =
+    /^\/v1\/families\/([^/]+)\/children\/([^/]+)$/.exec(path);
   const isFamilies = path === "/v1/families";
   const operation = isFamilies
     ? "families"
     : childRoute
       ? "children"
-      : "unknown";
+      : childItemRoute
+        ? "child"
+        : "unknown";
   const reply = (status: number, data: unknown, code?: string) => {
     console.info(
       JSON.stringify({
@@ -85,10 +90,17 @@ Deno.serve(async (req: Request) => {
   if (!corsPolicy.allowed) return fail(403, "ORIGIN_NOT_ALLOWED");
   if (corsPolicy.preflightResponse) return corsPolicy.preflightResponse;
   if (operation === "unknown") return fail(404, "ROUTE_NOT_FOUND");
-  if (req.method !== "GET" && req.method !== "POST")
+  if (
+    childItemRoute
+      ? req.method !== "PUT"
+      : req.method !== "GET" && req.method !== "POST"
+  )
     return fail(405, "METHOD_NOT_ALLOWED");
-  const familyId = childRoute?.[1];
+  const familyId = childRoute?.[1] ?? childItemRoute?.[1];
   if (familyId && !uuid.test(familyId)) return fail(400, "INVALID_REQUEST");
+  const childId = childItemRoute?.[2];
+  if (childItemRoute && !uuid.test(childId!))
+    return fail(400, "INVALID_REQUEST");
   const cursor = url.searchParams.get("cursor");
   if (cursor && !uuid.test(cursor)) return fail(400, "INVALID_REQUEST");
 
@@ -113,7 +125,7 @@ Deno.serve(async (req: Request) => {
     } = await admin.auth.getUser(token);
     if (authError || !user) return fail(401, "AUTH_REQUIRED");
     if (!user.email_confirmed_at) return fail(403, "EMAIL_NOT_CONFIRMED");
-    if (req.method === "POST") {
+    if (req.method === "POST" || req.method === "PUT") {
       const unlockToken = req.headers.get("x-parent-unlock") ?? "";
       if (!/^par_[0-9a-f]{64}$/.test(unlockToken))
         return fail(403, "PARENT_LOCKED");
@@ -246,13 +258,16 @@ Deno.serve(async (req: Request) => {
       !body ||
       typeof body !== "object" ||
       Array.isArray(body) ||
-      typeof body.clientRequestId !== "string" ||
-      !uuid.test(body.clientRequestId)
+      (!childItemRoute &&
+        (typeof body.clientRequestId !== "string" ||
+          !uuid.test(body.clientRequestId)))
     )
       return fail(400, "INVALID_REQUEST");
     const expected = isFamilies
       ? ["clientRequestId"]
-      : ["clientRequestId", "displayName", "schoolYear", "avatarId", "pin"];
+      : childItemRoute
+        ? ["displayName", "schoolYear", "avatarId", "pin"]
+        : ["clientRequestId", "displayName", "schoolYear", "avatarId", "pin"];
     if (Object.keys(body).some((k) => !expected.includes(k)))
       return fail(400, "INVALID_REQUEST");
     const handleRpcError = (error: { message: string }) => {
@@ -260,13 +275,17 @@ Deno.serve(async (req: Request) => {
         ? error.message
         : "STORAGE_UNAVAILABLE";
       return fail(
-        code === "FAMILY_NOT_FOUND"
+        code === "FAMILY_NOT_FOUND" || code === "CHILD_NOT_FOUND"
           ? 404
-          : code === "ADULT_SETUP_REQUIRED"
-            ? 403
-            : code === "REQUEST_CONFLICT"
-              ? 409
-              : 503,
+          : code === "AUTH_REQUIRED"
+            ? 401
+            : code === "ADULT_SETUP_REQUIRED"
+              ? 403
+              : code === "REQUEST_CONFLICT"
+                ? 409
+                : code === "INVALID_PROFILE"
+                  ? 422
+                  : 503,
         code,
       );
     };
@@ -278,6 +297,8 @@ Deno.serve(async (req: Request) => {
       if (error) return handleRpcError(error);
       return reply(201, data);
     }
+    // No pedido de edição o PIN é opcional: ausente ou null mantém o PIN atual.
+    const pinOptional = Boolean(childItemRoute) && body.pin == null;
     if (
       typeof body.displayName !== "string" ||
       [...body.displayName.trim()].length < 1 ||
@@ -286,10 +307,24 @@ Deno.serve(async (req: Request) => {
       body.schoolYear < 1 ||
       body.schoolYear > 4 ||
       !avatars.has(body.avatarId) ||
-      typeof body.pin !== "string" ||
-      !/^[0-9]{4}$/.test(body.pin)
+      (!pinOptional &&
+        (typeof body.pin !== "string" || !/^[0-9]{4}$/.test(body.pin)))
     )
       return fail(422, "INVALID_PROFILE");
+    if (childItemRoute && pinOptional) {
+      const { data, error } = await admin.rpc("update_child_profile", {
+        p_actor_id: user.id,
+        p_family_id: familyId,
+        p_child_id: childId,
+        p_display_name: body.displayName.trim(),
+        p_school_year: body.schoolYear,
+        p_avatar_id: body.avatarId,
+        p_pin_hash: null,
+        p_salt: null,
+      });
+      if (error) return handleRpcError(error);
+      return reply(200, data);
+    }
     const pepper = Deno.env.get("CHILD_PIN_PEPPER");
     if (!pepper || pepper.length < 32)
       return fail(503, "SERVICE_NOT_CONFIGURED");
@@ -302,8 +337,11 @@ Deno.serve(async (req: Request) => {
     );
     const sign = (value: string) =>
       crypto.subtle.sign("HMAC", pepperKey, encoder.encode(value));
+    // O identificador do perfil é o clientRequestId da criação; a verificação
+    // do login infantil usa sempre familyId + childId.
+    const pinSubject = childItemRoute ? childId : body.clientRequestId;
     const prehash = await sign(
-      `child-pin-v1:${familyId}:${body.clientRequestId}:${body.pin}`,
+      `child-pin-v1:${familyId}:${pinSubject}:${body.pin}`,
     );
     const material = await crypto.subtle.importKey(
       "raw",
@@ -318,6 +356,20 @@ Deno.serve(async (req: Request) => {
       material,
       256,
     );
+    if (childItemRoute) {
+      const { data, error } = await admin.rpc("update_child_profile", {
+        p_actor_id: user.id,
+        p_family_id: familyId,
+        p_child_id: childId,
+        p_display_name: body.displayName.trim(),
+        p_school_year: body.schoolYear,
+        p_avatar_id: body.avatarId,
+        p_pin_hash: hex(new Uint8Array(hash)),
+        p_salt: hex(salt),
+      });
+      if (error) return handleRpcError(error);
+      return reply(200, data);
+    }
     const fingerprint = await sign(
       JSON.stringify([
         "child-create-v1",

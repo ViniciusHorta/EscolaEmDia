@@ -34,9 +34,9 @@ class ChildFeedbackCard extends StatelessWidget {
       ],
       if (question.type == 'written' && question.outcome != 'unanswered') ...[
         const SizedBox(height: 14), Text(question.outcome == 'pending_review'
-          ? 'Os teus pais ainda vão rever esta resposta.' : 'Esta é a classificação que os teus pais deram à tua resposta.'),
+          ? 'O teu responsável ainda vai rever esta resposta.' : 'Esta é a classificação que o teu responsável deu à tua resposta.'),
         if (question.outcome == 'incorrect' || question.outcome == 'partially_correct') ...[
-          const SizedBox(height: 8), const Text('Conversa com os teus pais sobre o que podes melhorar e volta a tentar quando quiseres.'),
+          const SizedBox(height: 8), const Text('Conversa com o teu responsável sobre o que podes melhorar e volta a tentar quando quiseres.'),
         ],
       ],
       if (question.explanation.isNotEmpty) ...[

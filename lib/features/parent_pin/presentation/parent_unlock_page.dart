@@ -56,7 +56,7 @@ class _ParentUnlockPageState extends State<ParentUnlockPage> {
         });
       }
     } catch (_) {
-      if (mounted) setState(() {error = 'Não foi possível abrir a área dos pais. Tenta novamente.'; pin = ''; inputVersion++;});
+      if (mounted) setState(() {error = 'Não foi possível abrir a área do responsável. Tenta novamente.'; pin = ''; inputVersion++;});
     } finally {if (mounted) setState(() => busy = false);}
   }
 
@@ -92,12 +92,12 @@ class _ParentUnlockPageState extends State<ParentUnlockPage> {
         const CircleAvatar(radius: 36, backgroundColor: AppColors.lavender,
           child: Icon(Icons.lock_outline_rounded, color: AppColors.primary, size: 36)),
         const SizedBox(height: 24),
-        Text('Área dos pais', textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineMedium),
+        Text('Área do responsável', textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineMedium),
         const SizedBox(height: 12),
-        const Text('Introduz o PIN parental para continuar.', textAlign: TextAlign.center),
+        const Text('Introduz o PIN do responsável para continuar.', textAlign: TextAlign.center),
         const SizedBox(height: 28),
         AppCard(child: Column(children: [
-          AppPinInput(key: ValueKey(inputVersion), label: 'PIN parental', enabled: !busy && waitSeconds == 0,
+          AppPinInput(key: ValueKey(inputVersion), label: 'PIN do responsável', enabled: !busy && waitSeconds == 0,
             errorText: error, onChanged: (value) => setState(() {pin = value; error = null;})),
           if (waitSeconds > 0) Padding(padding: const EdgeInsets.only(top: 16), child: Text('Tenta novamente dentro de $waitSeconds segundos.')),
           const SizedBox(height: 24),
@@ -107,7 +107,7 @@ class _ParentUnlockPageState extends State<ParentUnlockPage> {
           TextButton(onPressed: busy ? null : forgotPin, child: const Text('Esqueci-me do PIN')),
         ])),
         const SizedBox(height: 20),
-        const Text('A área dos pais volta a bloquear após cinco minutos sem atividade.', textAlign: TextAlign.center,
+        const Text('A área do responsável volta a bloquear após cinco minutos sem atividade.', textAlign: TextAlign.center,
           style: TextStyle(color: AppColors.muted, fontSize: 13)),
         if (widget.onCancel != null) ...[
           const SizedBox(height: 16),

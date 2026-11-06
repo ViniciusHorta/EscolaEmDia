@@ -8,8 +8,8 @@ import '../../../shared/widgets/pin/app_pin_input.dart';
 import '../data/parent_access_service.dart';
 import '../data/parent_pin_service.dart';
 
-/// Recuperação do PIN parental: confirmar a palavra-passe da conta e definir um
-/// PIN novo. Devolve `true` se a área dos pais ficou desbloqueada com o novo PIN.
+/// Recuperação do PIN do responsável: confirmar a palavra-passe da conta e definir um
+/// PIN novo. Devolve `true` se a área do responsável ficou desbloqueada com o novo PIN.
 class ParentPinResetPage extends StatefulWidget {
   const ParentPinResetPage({super.key, required this.service, required this.access});
   final ParentPinService service;
@@ -124,7 +124,7 @@ class _ParentPinResetPageState extends State<ParentPinResetPage> {
           padding: EdgeInsets.all(MediaQuery.sizeOf(context).width < 640 ? 16 : 32),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             OnboardingHeader(
-              title: 'Recuperar PIN parental',
+              title: 'Recuperar PIN do responsável',
               step: step == _Step.password ? 1 : 2,
               total: 2,
               section: step == _Step.password ? 'Confirmar identidade' : 'Novo PIN',
@@ -142,7 +142,7 @@ class _ParentPinResetPageState extends State<ParentPinResetPage> {
   Widget passwordStep() => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
     Text('Confirma que és tu', textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineMedium),
     const SizedBox(height: 12),
-    Text('Para proteger a área dos pais, introduz a palavra-passe da conta${email == null ? '' : ' $email'}.',
+    Text('Para proteger a área do responsável, introduz a palavra-passe da conta${email == null ? '' : ' $email'}.',
       textAlign: TextAlign.center,
       style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.muted)),
     const SizedBox(height: 28),
@@ -178,7 +178,7 @@ class _ParentPinResetPageState extends State<ParentPinResetPage> {
   Widget pinStep() {
     final confirming = step == _Step.confirmPin;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Text(confirming ? 'Confirma o novo PIN' : 'Define um novo PIN parental',
+      Text(confirming ? 'Confirma o novo PIN' : 'Define um novo PIN do responsável',
         textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineMedium),
       const SizedBox(height: 12),
       Text(confirming
@@ -189,7 +189,7 @@ class _ParentPinResetPageState extends State<ParentPinResetPage> {
       const SizedBox(height: 28),
       Center(child: AppPinInput(
         key: ValueKey(inputVersion),
-        label: confirming ? 'Repetir novo PIN' : 'Novo PIN parental',
+        label: confirming ? 'Repetir novo PIN' : 'Novo PIN do responsável',
         enabled: !busy,
         errorText: error,
         onChanged: (value) => setState(() { pin = value; error = null; }),
@@ -202,7 +202,7 @@ class _ParentPinResetPageState extends State<ParentPinResetPage> {
         onPressed: busy || pin.length != 4 ? null : continuePin,
       ),
       const SizedBox(height: 18),
-      const Text('Ao guardar, todos os dispositivos com a área dos pais aberta voltam a pedir o PIN.',
+      const Text('Ao guardar, todos os dispositivos com a área do responsável aberta voltam a pedir o PIN.',
         textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted, fontSize: 13)),
     ]);
   }

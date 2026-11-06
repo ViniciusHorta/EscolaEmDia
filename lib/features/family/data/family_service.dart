@@ -30,6 +30,14 @@ class FamilyService {
     }),
   );
 
+  /// Atualiza alcunha, ano e avatar. O PIN só é enviado quando o adulto o altera.
+  Future<ChildProfile> updateChild(ChildProfile child, ChildProfileUpdate update) async => ChildProfile.fromJson(
+    await _request('/v1/families/${child.familyId}/children/${child.id}', method: HttpMethod.put, body: {
+      'displayName': update.displayName, 'schoolYear': update.schoolYear,
+      'avatarId': update.avatarId, if (update.pin != null) 'pin': update.pin,
+    }),
+  );
+
   Future<List<Map>> _list(String path) async {
     final result = <Map>[];
     String? cursor;
@@ -57,10 +65,11 @@ class FamilyService {
       var session = client.auth.currentSession;
       if (session?.isExpired == true) session = (await client.auth.refreshSession()).session;
       if (session == null) throw const FamilyException('A tua sessão terminou. Entra novamente na conta.');
-      final capability = method == HttpMethod.post ? parentToken?.call() : null;
-      if (method == HttpMethod.post && capability == null) {
+      final needsParent = method != HttpMethod.get;
+      final capability = needsParent ? parentToken?.call() : null;
+      if (needsParent && capability == null) {
         onParentLocked?.call();
-        throw const FamilyException('Desbloqueia a área dos pais com o PIN parental.');
+        throw const FamilyException('Desbloqueia a área do responsável com o PIN do responsável.');
       }
       final response = await client.functions.invoke('families$path', method: method,
         body: body, queryParameters: query,

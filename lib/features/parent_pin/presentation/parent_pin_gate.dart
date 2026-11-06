@@ -47,7 +47,7 @@ class _ParentPinGateState extends State<ParentPinGate> {
           final error = snapshot.error;
           return AppPage(
             title: 'Vamos preparar o teu acesso',
-            subtitle: error is ParentPinException ? error.message : 'Não foi possível consultar o PIN parental.',
+            subtitle: error is ParentPinException ? error.message : 'Não foi possível consultar o PIN do responsável.',
             children: [
               AppButton(label: 'Tentar novamente', onPressed: exiting ? null : () => setState(() => status = service.isConfigured())),
               const SizedBox(height: 16),
@@ -57,7 +57,7 @@ class _ParentPinGateState extends State<ParentPinGate> {
           );
         }
         if (!snapshot.hasData) {
-          return const AppSplash(message: 'A preparar o acesso parental');
+          return const AppSplash(message: 'A preparar o acesso do responsável');
         }
         if (snapshot.data!) return widget.child;
         return ParentPinSetupPage(service: service, onSaved: () => setState(() => saved = true), onExit: widget.auth.signOut);

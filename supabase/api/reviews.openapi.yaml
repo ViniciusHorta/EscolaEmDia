@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: Escola em Dia — Revisão parental
+  title: Escola em Dia — Revisão do responsável
   version: 1.1.0
   description: >-
     Consulta e classificação de respostas abertas entregues. Cada pedido valida JWT
@@ -27,7 +27,7 @@ paths:
           $ref: '#/components/responses/error'
   /v1/families/{id}/reviewed-attempts:
     get:
-      summary: Consultar fichas concluídas com pelo menos uma classificação parental
+      summary: Consultar fichas concluídas com pelo menos uma classificação do responsável
       description: Mesmo formato e paginação da lista pendente; permite reabrir e alterar classificações.
       parameters:
         - $ref: '#/components/parameters/id'

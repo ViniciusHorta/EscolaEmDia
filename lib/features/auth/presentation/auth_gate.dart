@@ -117,7 +117,7 @@ class _AccountSessionPageState extends State<AccountSessionPage> {
     return AppPage(
       title: confirmed ? 'Bem-vindo à tua área familiar' : 'Confirma o teu e-mail',
       subtitle: confirmed
-          ? 'A tua sessão está iniciada e o PIN parental está configurado.'
+          ? 'A tua sessão está iniciada e o PIN do responsável está configurado.'
           : 'Abre o e-mail de confirmação para concluir a criação da conta.',
       children: [
         AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [

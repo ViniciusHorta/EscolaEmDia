@@ -1,12 +1,13 @@
 openapi: 3.0.3
 info:
   title: Escola em Dia — Famílias e crianças
-  version: 1.1.0
+  version: 1.2.0
   description: >-
     Subconjunto inicial do contrato acordado. GET/POST /v1/families e
-    GET/POST /v1/families/{id}/children. Adultos usam Supabase Auth.
-    Nenhuma resposta inclui PINs ou hashes. Convites, edição, encerramento
-    e autenticação infantil ainda não estão implementados.
+    GET/POST /v1/families/{id}/children e PUT
+    /v1/families/{id}/children/{childId}. Adultos usam Supabase Auth.
+    Nenhuma resposta inclui PINs ou hashes. Convites e encerramento ainda
+    não estão implementados.
 servers:
   - url: https://hhgxxvvreyhigxynrgmv.supabase.co/functions/v1/families
 security:
@@ -44,7 +45,7 @@ paths:
           parentUnlock: []
       summary: Criar família e associar o adulto numa única transação
       description: >-
-        Exige e-mail confirmado e PIN parental configurado. Repetir o mesmo
+        Exige e-mail confirmado e PIN do responsável configurado. Repetir o mesmo
         clientRequestId para o mesmo adulto devolve a mesma família sem
         criar outra associação ou evento. Um adulto pode ter várias famílias.
       requestBody:
@@ -106,8 +107,8 @@ paths:
           parentUnlock: []
       summary: Criar perfil e credencial infantil numa única transação
       description: >-
-        Requer adulto membro ativo e família ativa, e-mail confirmado e PIN
-        parental configurado. clientRequestId é também o UUID do perfil.
+        Requer adulto membro ativo e família ativa, e-mail confirmado e PIN do
+        responsável configurado. clientRequestId é também o UUID do perfil.
         Repetir o mesmo pedido não duplica o perfil. Reutilizar o identificador
         com outros dados devolve 409 REQUEST_CONFLICT. O PIN só é enviado
         por HTTPS à função e não é devolvido ou persistido no Flutter.
@@ -147,6 +148,65 @@ paths:
                 $ref: '#/components/schemas/Child'
         default:
           $ref: '#/components/responses/Error'
+  /v1/families/{id}/children/{childId}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: childId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    put:
+      security:
+        - adultSession: []
+          projectKey: []
+          parentUnlock: []
+      summary: Alterar alcunha, ano escolar, avatar e, opcionalmente, o PIN infantil
+      description: >-
+        Requer adulto membro ativo da família e área do responsável desbloqueada.
+        pin ausente ou null mantém o PIN atual. Com pin, o hash é substituído,
+        as sessões infantis ativas são revogadas e o bloqueio de tentativas é
+        limpo. A auditoria regista apenas os nomes dos campos alterados.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [displayName, schoolYear, avatarId]
+              properties:
+                displayName:
+                  type: string
+                  minLength: 1
+                  maxLength: 40
+                schoolYear:
+                  type: integer
+                  minimum: 1
+                  maximum: 4
+                avatarId:
+                  type: string
+                  enum: [fox, owl, bear, lynx, dolphin, rabbit]
+                pin:
+                  type: string
+                  nullable: true
+                  pattern: '^[0-9]{4}$'
+                  writeOnly: true
+      responses:
+        '200':
+          description: Perfil atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Child'
+        default:
+          $ref: '#/components/responses/Error'
 components:
   parameters:
     Cursor:
@@ -161,7 +221,7 @@ components:
       type: apiKey
       in: header
       name: X-Parent-Unlock
-      description: Autorização temporária emitida após validar o PIN parental
+      description: Autorização temporária emitida após validar o PIN do responsável
     adultSession:
       type: http
       scheme: bearer
@@ -207,7 +267,7 @@ components:
     Error:
       description: >-
         Erro padronizado. 400 pedido inválido; 401 sessão inválida;
-        403 e-mail/PIN parental em falta; 404 família inacessível;
+        403 e-mail/PIN do responsável em falta; 404 família ou criança inacessível;
         409 identificador reutilizado; 413 pedido demasiado grande;
         422 perfil inválido; 503 serviço indisponível; 500 erro interno.
       content:

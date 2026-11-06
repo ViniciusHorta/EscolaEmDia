@@ -158,7 +158,7 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
       if(items.isEmpty)return const AppCard(child:Column(children:[
         Icon(Icons.menu_book_rounded,size:56,color:AppColors.primary),SizedBox(height:18),
         Text('Ainda não tens fichas para fazer.',textAlign:TextAlign.center,style:TextStyle(fontSize:20,fontWeight:FontWeight.w700)),
-        SizedBox(height:10),Text('Quando os teus pais prepararem uma ficha, ela vai aparecer aqui.',textAlign:TextAlign.center),
+        SizedBox(height:10),Text('Quando o teu responsável preparar uma ficha, ela vai aparecer aqui.',textAlign:TextAlign.center),
       ]));
       Widget card(AssignedWorksheet item,{bool featured=false})=>Padding(padding:const EdgeInsets.only(bottom:16),
         child:(featured?AssignedWorksheetCard.new:AssignedWorksheetTile.new)(assignment:item,onStart:busy?null:()=>openAssignment(item),
@@ -295,7 +295,7 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
                     onHelp: () => showDialog<void>(context: context, builder: (dialog) => AlertDialog(
                       icon: const Icon(Icons.help_rounded, color: Color(0xFFFBBF24), size: 40),
                       title: const Text('Esqueceste o teu PIN?'),
-                      content: const Text('Não faz mal! Pede ajuda à mãe ou ao pai. Se te enganaste num número, toca em «Apagar» e tenta outra vez.'),
+                      content: const Text('Não faz mal! Pede ajuda ao teu responsável. Se te enganaste num número, toca em «Apagar» e tenta outra vez.'),
                       actions: [TextButton(onPressed: () => Navigator.pop(dialog), child: const Text('Está bem'))],
                     )),
                     onChanged: (value) => setState(() {pin = value; error = null;}))),
@@ -337,7 +337,7 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
           title: const Text('Mudar de utilizador'),
           onTap: () {Navigator.pop(sheet); changeUser();}),
         ListTile(leading: const Icon(Icons.lock_outline_rounded, color: AppColors.primary),
-          title: const Text('Área dos Pais'),
+          title: const Text('Área do Responsável'),
           onTap: () {Navigator.pop(sheet); widget.onOpenParents();}),
         ListTile(leading: const Icon(Icons.logout_rounded, color: AppColors.muted),
           title: const Text('Sair do dispositivo'),
@@ -424,7 +424,7 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
       ),
     ),
     const SizedBox(height: 16),
-    AppButton(label: 'Área dos Pais', icon: Icons.lock_outline_rounded, variant: AppButtonVariant.neutral,
+    AppButton(label: 'Área do Responsável', icon: Icons.lock_outline_rounded, variant: AppButtonVariant.neutral,
       onPressed: busy ? null : widget.onOpenParents),
     const SizedBox(height: 8),
     Center(child: TextButton(onPressed: busy ? null : exitDevice,
@@ -516,7 +516,7 @@ class _StudyTopBar extends StatelessWidget {
           ])),
           const SizedBox(width: 8),
           IconButton.filledTonal(
-            onPressed: busy ? null : onParents, tooltip: 'Área dos Pais',
+            onPressed: busy ? null : onParents, tooltip: 'Área do Responsável',
             style: IconButton.styleFrom(backgroundColor: AppColors.softBlue, minimumSize: const Size(52, 52)),
             icon: const Icon(Icons.lock_outline_rounded, color: AppColors.amber)),
           const SizedBox(width: 8),
@@ -590,14 +590,14 @@ class _SectionLabel extends StatelessWidget {
   ]));
 }
 
-/// Perfil «Pais» no seletor: abre o pedido de PIN parental.
+/// Perfil «Responsável» no seletor: abre o pedido de PIN do responsável.
 class _ParentsCard extends StatelessWidget {
   const _ParentsCard({required this.onTap});
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) => Semantics(
-    button: true, excludeSemantics: true, label: 'Perfil Pais. Pede o PIN parental.',
+    button: true, excludeSemantics: true, label: 'Perfil Responsável. Pede o PIN do responsável.',
     child: Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppRadii.pill),
@@ -614,8 +614,8 @@ class _ParentsCard extends StatelessWidget {
               child: Icon(Icons.family_restroom_rounded, color: AppColors.amber)),
             const SizedBox(width: 14),
             const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Pais', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.text)),
-              Text('Entrar com o PIN parental', style: TextStyle(fontSize: 14, color: AppColors.muted)),
+              Text('Responsável', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.text)),
+              Text('Entrar com o PIN do responsável', style: TextStyle(fontSize: 14, color: AppColors.muted)),
             ])),
             const Icon(Icons.lock_outline_rounded, color: AppColors.muted),
           ]),

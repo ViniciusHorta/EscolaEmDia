@@ -3,7 +3,7 @@ info:
   title: Escola em Dia — Acompanhamento por criança
   version: 1.0.0
   description: >-
-    Consultas parentais de acompanhamento e histórico. Exigem JWT adulto confirmado,
+    Consultas do responsável de acompanhamento e histórico. Exigem JWT adulto confirmado,
     desbloqueio temporário ligado à sessão e pertença ativa à família da criança.
     Não devolvem respostas individuais, soluções, PINs ou tokens. Não guardam nota global.
 servers:

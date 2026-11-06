@@ -88,21 +88,21 @@ class _ParentPinSetupPageState extends State<ParentPinSetupPage> {
       child: Padding(
         padding: EdgeInsets.all(MediaQuery.sizeOf(context).width < 640 ? 16 : 32),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          OnboardingHeader(title: 'Configurar PIN Parental', step: 2, onBack: busy ? null : back),
+          OnboardingHeader(title: 'Configurar PIN do Responsável', step: 2, onBack: busy ? null : back),
           const SizedBox(height: 32),
           const Center(child: AppBadge(label: 'Passo 2 de 4 • Segurança', icon: Icons.verified_user_outlined)),
           const SizedBox(height: 20),
-          Text(confirming ? 'Confirma o teu PIN parental' : 'Define o teu PIN parental',
+          Text(confirming ? 'Confirma o PIN do responsável' : 'Define o PIN do responsável',
             textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 12),
           Text(confirming
               ? 'Repete os mesmos 4 dígitos para garantir que ficou tudo certo.'
-              : 'Escolhe um código de 4 dígitos para o acesso à área parental.',
+              : 'Escolhe um código de 4 dígitos para o acesso à área do responsável.',
             textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.muted)),
           const SizedBox(height: 28),
           Center(child: AppPinInput(
             key: ValueKey(inputVersion),
-            label: confirming ? 'Repetir PIN' : 'PIN parental',
+            label: confirming ? 'Repetir PIN' : 'PIN do responsável',
             enabled: !busy,
             errorText: error,
             onChanged: (value) => setState(() { pin = value; error = null; }),
@@ -122,7 +122,7 @@ class _ParentPinSetupPageState extends State<ParentPinSetupPage> {
             onPressed: busy || pin.length != 4 ? null : continueSetup,
           ),
           const SizedBox(height: 18),
-          const Text('O PIN parental é uma proteção adicional. A tua conta continua a usar o e-mail e a palavra-passe.',
+          const Text('O PIN do responsável é uma proteção adicional. A tua conta continua a usar o e-mail e a palavra-passe.',
             textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted, fontSize: 13)),
           const SizedBox(height: 20),
           TextButton(onPressed: busy ? null : () async {

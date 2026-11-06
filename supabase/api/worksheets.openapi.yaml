@@ -124,7 +124,7 @@ paths:
     post:
       summary: Disponibilizar uma versão de ficha à criança
       description: >-
-        Transação valida autorização parental, membro/família ativos e ano escolar,
+        Transação valida autorização do responsável, membro/família ativos e ano escolar,
         grava a atribuição e auditoria em conjunto. Repetir o mesmo clientRequestId
         não duplica a atribuição. Uma versão só pode estar ativa uma vez por criança.
         A realização e repetição da ficha serão representadas por tentativas futuras.
@@ -178,7 +178,7 @@ components:
     Error:
       description: >-
         error com code/message/requestId. 400 pedido inválido, 401 sessão inválida,
-        403 área parental bloqueada, 404 perfil/ficha inacessível, 409 pedido reutilizado
+        403 área do responsável bloqueada, 404 perfil/ficha inacessível, 409 pedido reutilizado
         ou atribuição já ativa, 422 ano escolar incompatível, 503 indisponibilidade,
         500 erro interno. Não devolve detalhes da base de dados.
       content:

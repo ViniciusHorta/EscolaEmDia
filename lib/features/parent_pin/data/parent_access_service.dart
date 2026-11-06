@@ -114,7 +114,7 @@ class ParentAccessService extends ChangeNotifier {
       final message = payload is Map ? payload['message'] : null;
       final details = payload is Map ? payload['details'] : null;
       final retry = details is Map ? details['retryAfter'] : null;
-      throw ParentAccessException(message is String ? message : 'Não foi possível desbloquear a área dos pais.',
+      throw ParentAccessException(message is String ? message : 'Não foi possível desbloquear a área do responsável.',
         retryAfter: retry is num && retry > 0 ? retry.ceil() : null);
     } catch (_) {throw const ParentAccessException('Não foi possível ligar ao serviço. Tenta novamente.');}
   }
