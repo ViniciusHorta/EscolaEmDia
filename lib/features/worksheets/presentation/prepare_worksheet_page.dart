@@ -34,6 +34,8 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
   bool loading=true,busy=false,success=false;
   String? error;
   String requestId='';
+  /// Onde a criança responde às perguntas abertas: 'typed' (na app) ou 'paper' (no caderno).
+  String writtenAnswerMode='typed';
   int step=1;
   int generation=0;
 
@@ -86,7 +88,11 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
   Future<void> assign() async {
     if(busy||worksheet==null||child==null)return;
     setState((){busy=true;error=null;});
-    try{await widget.service.assign(child!.id,worksheet!.versionId,requestId);if(mounted)setState(()=>success=true);}
+    try{
+      await widget.service.assign(child!.id,worksheet!.versionId,requestId,
+        writtenAnswerMode:worksheet!.writtenCount>0?writtenAnswerMode:'typed');
+      if(mounted)setState(()=>success=true);
+    }
     on WorksheetException catch(failure){if(mounted)setState(()=>error=failure.message);}
     finally{if(mounted)setState(()=>busy=false);}
   }
@@ -119,7 +125,7 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
     ),
   );
 
-  void reset()=>setState((){step=1;success=false;worksheet=null;detail=null;proposals=[];error=null;requestId='';});
+  void reset()=>setState((){step=1;success=false;worksheet=null;detail=null;proposals=[];error=null;requestId='';writtenAnswerMode='typed';});
   Future<void> viewChild() async {
     if(busy||child==null)return;
     setState(()=>busy=true);
@@ -342,7 +348,28 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
         icon:Icons.lightbulb_outline_rounded,iconBackground:AppColors.coralSoft,iconColor:const Color(0xFFE5603E),
         title:'${item.writtenCount} ${item.writtenCount==1?'Pergunta Aberta / Reflexão':'Perguntas Abertas / Reflexão'}',
         badge:'Raciocínio',badgeBackground:AppColors.coralSoft,badgeColor:const Color(0xFFE5603E),
-        text:'Resposta escrita ou feita no caderno. Pode exigir papel e lápis e precisa da tua revisão no Painel do Responsável.'),
+        text:'Precisam da tua revisão no Painel do Responsável. Escolhe abaixo onde a criança responde.'),
+      if(item.writtenCount>0)...[
+        Padding(padding:const EdgeInsets.only(top:16,bottom:10),child:Semantics(header:true,
+          child:const Text('Onde responde às perguntas abertas?',
+            style:TextStyle(fontSize:18,fontWeight:FontWeight.w700,color:AppColors.text)))),
+        for(final (mode,icon,title,text) in const [
+          ('typed',Icons.edit_rounded,'Escrever na app','A criança escreve a resposta aqui. Lês o texto na revisão.'),
+          ('paper',Icons.menu_book_rounded,'No caderno','A criança resolve em papel e assinala que terminou. Confirmas no caderno.'),
+        ])Padding(padding:const EdgeInsets.only(bottom:10),child:Semantics(
+          button:true,selected:writtenAnswerMode==mode,inMutuallyExclusiveGroup:true,
+          child:AppCard(padding:const EdgeInsets.all(16),selected:writtenAnswerMode==mode,
+            onTap:busy?null:()=>setState((){if(writtenAnswerMode!=mode){writtenAnswerMode=mode;requestId=newRequestId();}}),
+            child:Row(children:[
+              Icon(writtenAnswerMode==mode?Icons.radio_button_checked_rounded:Icons.radio_button_off_rounded,color:AppColors.primary),
+              const SizedBox(width:12),
+              Icon(icon,color:AppColors.text),const SizedBox(width:10),
+              Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+                Text(title,style:const TextStyle(fontSize:16,fontWeight:FontWeight.w700,color:AppColors.text)),
+                Text(text,style:const TextStyle(fontSize:14,color:AppColors.muted)),
+              ])),
+            ])))),
+      ],
       _Expandable(icon:Icons.layers_outlined,title:'Ver temas abrangidos nesta ficha',children:[
         for(final name in item.topicNames)Padding(padding:const EdgeInsets.only(bottom:8),child:Row(children:[
           const Icon(Icons.check_rounded,color:AppColors.success,size:20),const SizedBox(width:8),Expanded(child:Text(name))])),

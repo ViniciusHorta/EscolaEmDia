@@ -17,10 +17,12 @@ class WorksheetService {
   Future<List<WorksheetSummary>> proposals(String subjectId,int year,Set<String> topicIds) async =>
       (await _list('/v1/worksheets',{'subjectId':subjectId,'schoolYear':'$year','topicIds':topicIds.join(',')})).map(WorksheetSummary.fromJson).toList();
   Future<Map> detail(WorksheetSummary worksheet) => _request('/v1/worksheets/${worksheet.id}',query:{'versionId':worksheet.versionId});
-  Future<void> assign(String childId,String versionId,String requestId) async {
+  /// [writtenAnswerMode]: 'typed' (a criança escreve na app) ou 'paper' (resolve no caderno).
+  Future<void> assign(String childId,String versionId,String requestId,{String writtenAnswerMode='typed'}) async {
     final result=await _request('/v1/children/$childId/assignments',method:HttpMethod.post,
-      body:{'worksheetVersionId':versionId,'clientRequestId':requestId});
-    if(result['childId']!=childId || result['worksheetVersionId']!=versionId || result['status']!='active') {
+      body:{'worksheetVersionId':versionId,'clientRequestId':requestId,'writtenAnswerMode':writtenAnswerMode});
+    if(result['childId']!=childId || result['worksheetVersionId']!=versionId || result['status']!='active'
+      || result['writtenAnswerMode']!=writtenAnswerMode) {
       throw const WorksheetException('Não foi possível confirmar a disponibilização da ficha. Tenta novamente.');
     }
   }

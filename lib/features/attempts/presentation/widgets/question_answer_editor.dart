@@ -4,8 +4,11 @@ import '../../../../shared/widgets/app_card.dart';
 import '../../domain/attempt_models.dart';
 
 class QuestionAnswerEditor extends StatefulWidget {
-  const QuestionAnswerEditor({super.key,required this.question,required this.value,required this.enabled,required this.onChanged});
+  const QuestionAnswerEditor({super.key,required this.question,required this.value,required this.enabled,required this.onChanged,
+    this.writtenAnswerMode='typed'});
   final AttemptQuestion question;
+  /// Definido pelo responsável na atribuição: 'typed' (escreve aqui) ou 'paper' (no caderno). A criança não escolhe.
+  final String writtenAnswerMode;
   final Map<String,dynamic> value;
   final bool enabled;
   final ValueChanged<Map<String,dynamic>> onChanged;
@@ -13,12 +16,11 @@ class QuestionAnswerEditor extends StatefulWidget {
 }
 class _QuestionAnswerEditorState extends State<QuestionAnswerEditor> {
   late final TextEditingController text;
-  bool paper=false;
-  @override void initState(){super.initState();text=TextEditingController(text:widget.value['text'] as String? ?? '');paper=widget.value['mode']=='paper';}
+  bool get paper=>widget.writtenAnswerMode=='paper';
+  @override void initState(){super.initState();text=TextEditingController(text:widget.value['text'] as String? ?? '');}
   @override void didUpdateWidget(covariant QuestionAnswerEditor oldWidget){
     super.didUpdateWidget(oldWidget);
     if(widget.value['mode']=='typed'&&widget.value['text']!=text.text)text.text=widget.value['text'] as String? ?? '';
-    if(widget.value['mode']=='paper')paper=true;
   }
   @override void dispose(){text.dispose();super.dispose();}
   void write(String value)=>widget.onChanged(value.trim().isEmpty?{'mode':'unanswered'}:{'mode':'typed','text':value});
@@ -49,10 +51,6 @@ class _QuestionAnswerEditorState extends State<QuestionAnswerEditor> {
         icon:const Icon(Icons.refresh_rounded),label:const Text('Limpar resposta'))),
     ]);
     return Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
-      _ModeToggle(paper:paper,enabled:widget.enabled,
-        onWrite:(){setState(()=>paper=false);write(text.text);},
-        onPaper:(){setState(()=>paper=true);widget.onChanged({'mode':'unanswered'});}),
-      const SizedBox(height:20),
       AppCard(child:paper?Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
         const Row(children:[
           Icon(Icons.menu_book_rounded,color:AppColors.primary),SizedBox(width:10),
@@ -127,40 +125,6 @@ class _ChoiceOption extends StatelessWidget {
             ?const CircleAvatar(radius:20,backgroundColor:AppColors.primary,child:Icon(Icons.check_rounded,color:Colors.white,size:24))
             :const CircleAvatar(radius:20,backgroundColor:AppColors.softBlue),
         ]))),
-      ),
-    ),
-  );
-}
-
-/// Alternância «Escrever aqui» / «No caderno» em pílulas dentro de uma calha.
-class _ModeToggle extends StatelessWidget {
-  const _ModeToggle({required this.paper,required this.enabled,required this.onWrite,required this.onPaper});
-  final bool paper,enabled;
-  final VoidCallback onWrite,onPaper;
-  @override Widget build(BuildContext context)=>Container(
-    padding:const EdgeInsets.all(8),
-    decoration:BoxDecoration(color:AppColors.blueBorder.withValues(alpha:0.6),borderRadius:BorderRadius.circular(AppRadii.pill)),
-    child:Row(children:[
-      Expanded(child:_pill('Escrever aqui',Icons.edit_rounded,!paper,enabled&&paper?onWrite:null)),
-      const SizedBox(width:8),
-      Expanded(child:_pill('No caderno',Icons.edit_note_rounded,paper,enabled&&!paper?onPaper:null)),
-    ]),
-  );
-  Widget _pill(String label,IconData icon,bool selected,VoidCallback? onTap)=>Semantics(
-    button:true,selected:selected,excludeSemantics:true,label:label,
-    child:Container(
-      decoration:BoxDecoration(borderRadius:BorderRadius.circular(AppRadii.pill),
-        boxShadow:[BoxShadow(color:selected?AppColors.primaryPressed:AppColors.blueBorder,offset:const Offset(0,4))]),
-      child:Material(
-        color:selected?AppColors.primary:AppColors.surface,
-        shape:const StadiumBorder(),
-        child:InkWell(customBorder:const StadiumBorder(),onTap:onTap,child:Padding(
-          padding:const EdgeInsets.symmetric(horizontal:12,vertical:14),
-          child:Row(mainAxisAlignment:MainAxisAlignment.center,children:[
-            Icon(icon,size:22,color:selected?Colors.white:AppColors.text),const SizedBox(width:8),
-            Flexible(child:Text(label,maxLines:1,overflow:TextOverflow.ellipsis,
-              style:TextStyle(fontSize:16,fontWeight:FontWeight.w700,color:selected?Colors.white:AppColors.text))),
-          ]))),
       ),
     ),
   );

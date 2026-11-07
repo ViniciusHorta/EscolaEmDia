@@ -166,7 +166,7 @@ class _WorksheetAttemptPageState extends State<WorksheetAttemptPage> {
                 ],
               ])),
               const SizedBox(height:24),
-              QuestionAnswerEditor(key:ValueKey('${data.id}-${q.id}-${controller.viewVersion}'),question:q,value:controller.values[q.id]??{'mode':'unanswered'},enabled:enabled,onChanged:controller.edit),
+              QuestionAnswerEditor(key:ValueKey('${data.id}-${q.id}-${controller.viewVersion}'),question:q,writtenAnswerMode:data.writtenAnswerMode,value:controller.values[q.id]??{'mode':'unanswered'},enabled:enabled,onChanged:controller.edit),
               if(controller.problem!=null)...[
                 const SizedBox(height:20),Semantics(liveRegion:true,child:AppCard(color:AppColors.softBlue,child:Text(controller.problem!))),
                 const SizedBox(height:12),

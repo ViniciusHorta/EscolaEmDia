@@ -1,0 +1,14 @@
+{
+  "name": "Escola em Dia",
+  "short_name": "Escola em Dia",
+  "description": "Fichas de Português e Matemática para o 1.º ciclo, em família.",
+  "lang": "pt-PT",
+  "start_url": "/",
+  "display": "browser",
+  "background_color": "#FBF9FF",
+  "theme_color": "#5845CA",
+  "icons": [
+    { "src": "/apple-touch-icon.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

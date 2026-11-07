@@ -1,0 +1,42 @@
+# Escola em Dia
+
+> Aplicação web de apoio ao estudo em família para crianças do 1.º ciclo do ensino básico em Portugal (1.º ao 4.º ano). Os pais preparam fichas curtas de Português e Matemática, a criança resolve-as no seu próprio perfil protegido por PIN e os pais revêem as respostas e acompanham o progresso.
+
+## Factos principais
+
+- Público: pais, mães e encarregados de educação de crianças do 1.º ao 4.º ano, em Portugal.
+- Idioma: português europeu (pt-PT).
+- Disciplinas: Português e Matemática.
+- Tipos de pergunta: escolha múltipla, verdadeiro ou falso e resposta aberta.
+- Plataforma: aplicação web; funciona no navegador do telemóvel, tablet ou computador. Não é preciso instalar nada.
+- Contas: só o adulto responsável cria conta (maior de 18 anos). As crianças não precisam de e-mail; usam um perfil criado pelo responsável, protegido por um PIN infantil.
+- Área do responsável: protegida por um PIN próprio, separado do da criança.
+- Várias crianças: cada uma tem o seu perfil, PIN, fichas e progresso.
+- Publicidade: a aplicação não tem anúncios.
+- Natureza: complemento ao estudo em casa; não substitui a escola, os professores nem acompanhamento pedagógico ou clínico.
+
+## Como funciona
+
+1. Criar a conta da família e adicionar um perfil por criança, com o ano escolar e um PIN.
+2. Preparar a ficha: escolher a disciplina e os temas; a aplicação propõe as perguntas e o responsável pode tirar ou trocar perguntas.
+3. A criança entra com o PIN e resolve a ficha ao seu ritmo.
+4. O responsável revê as respostas abertas, vê o resultado e o que precisa de reforço.
+
+## Ligações
+
+- [Site](https://escolaemdia.me/): apresentação, como funciona e perguntas frequentes.
+- [Aplicação — criar conta](https://app.escolaemdia.me/): registo da família.
+- [Aplicação — entrar](https://app.escolaemdia.me/?modo=entrar): início de sessão.
+- [Termos e Condições](https://escolaemdia.me/termos-e-condicoes)
+- [Política de Privacidade](https://escolaemdia.me/politica-de-privacidade)
+- [Política de cookies](https://escolaemdia.me/cookies)
+
+## Perguntas frequentes
+
+- **O que é a Escola em Dia?** Uma aplicação de apoio ao estudo em família para o 1.º ciclo, com fichas curtas de Português e Matemática que a criança resolve e os pais revêem.
+- **Para que idades é?** Crianças do 1.º ao 4.º ano (1.º ciclo do ensino básico em Portugal).
+- **Que disciplinas há?** Português e Matemática; estão a ser acrescentados novos temas.
+- **É preciso instalar?** Não. Funciona no navegador e pode ser adicionada ao ecrã principal.
+- **A criança precisa de e-mail?** Não. Só o responsável cria conta.
+- **Mais do que um filho?** Sim, um perfil por criança.
+- **Substitui a escola ou o explicador?** Não, é um complemento.

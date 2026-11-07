@@ -143,9 +143,17 @@ paths:
                 worksheetVersionId:
                   type: string
                   format: uuid
+                writtenAnswerMode:
+                  type: string
+                  enum: [typed, paper]
+                  default: typed
+                  description: >-
+                    Onde a criança responde às perguntas abertas, decidido pelo responsável:
+                    typed (escreve na app) ou paper (resolve no caderno). A criança não pode alterar.
+                    Repetir o mesmo clientRequestId com outro modo devolve REQUEST_CONFLICT.
       responses:
         '201':
-          description: id, childId, worksheetVersionId, assignedAt e status da atribuição confirmada
+          description: id, childId, worksheetVersionId, assignedAt, status e writtenAnswerMode da atribuição confirmada
         default:
           $ref: '#/components/responses/Error'
 components:

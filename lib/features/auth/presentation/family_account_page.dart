@@ -27,7 +27,8 @@ class _FamilyAccountPageState extends State<FamilyAccountPage> {
   final form = GlobalKey<FormState>();
   final email = TextEditingController();
   final password = TextEditingController();
-  AccountMode mode = AccountMode.register;
+  // O site institucional liga para `?modo=entrar` no botão «Entrar».
+  AccountMode mode = Uri.base.queryParameters['modo'] == 'entrar' ? AccountMode.login : AccountMode.register;
   bool showPassword = false;
   bool acceptedTerms = false;
   bool showTermsError = false;

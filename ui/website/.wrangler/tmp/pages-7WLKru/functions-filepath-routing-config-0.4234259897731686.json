@@ -1,0 +1,21 @@
+{
+  "routes": [
+    {
+      "routePath": "/politica-de-privacidade",
+      "mountPath": "/",
+      "method": "",
+      "module": [
+        "politica-de-privacidade.js:onRequest"
+      ]
+    },
+    {
+      "routePath": "/termos-e-condicoes",
+      "mountPath": "/",
+      "method": "",
+      "module": [
+        "termos-e-condicoes.js:onRequest"
+      ]
+    }
+  ],
+  "baseURL": "/"
+}

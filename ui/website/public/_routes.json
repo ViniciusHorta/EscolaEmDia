@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "include": ["/politica-de-privacidade", "/termos-e-condicoes"],
+  "exclude": []
+}

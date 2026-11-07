@@ -128,7 +128,9 @@ paths:
       summary: Consultar tentativa e respostas da própria criança
       description: >-
         Inclui id, attemptNumber, assignmentId, childId, worksheetVersionId, status, startedAt,
-        writable, title, subjectName, instructions, text, audioText, questions e answers.
+        writable, writtenAnswerMode (typed|paper, definido pelo responsável na atribuição; respostas
+        abertas noutro modo são rejeitadas com INVALID_ANSWER), title, subjectName, instructions,
+        text, audioText, questions e answers.
         As perguntas incluem apenas id/type/prompt e opções id/text; não incluem
         correctAnswer, explanation ou outros campos reservados.
         Uma tentativa de atribuição retirada continua consultável, mas não editável.

@@ -257,12 +257,18 @@ Deno.serve(async (req: Request) => {
           typeof body !== "object" ||
           Array.isArray(body) ||
           Object.keys(body).some(
-            (k) => k !== "clientRequestId" && k !== "worksheetVersionId",
+            (k) =>
+              k !== "clientRequestId" &&
+              k !== "worksheetVersionId" &&
+              k !== "writtenAnswerMode",
           ) ||
           typeof body.clientRequestId !== "string" ||
           !uuid.test(body.clientRequestId) ||
           typeof body.worksheetVersionId !== "string" ||
-          !uuid.test(body.worksheetVersionId)
+          !uuid.test(body.worksheetVersionId) ||
+          (body.writtenAnswerMode !== undefined &&
+            body.writtenAnswerMode !== "typed" &&
+            body.writtenAnswerMode !== "paper")
         )
           return fail(400, "INVALID_REQUEST");
         const { data, error } = await admin.rpc("assign_worksheet_to_child", {
@@ -272,6 +278,7 @@ Deno.serve(async (req: Request) => {
           p_child_id: childId,
           p_version_id: body.worksheetVersionId,
           p_request_id: body.clientRequestId,
+          p_written_answer_mode: body.writtenAnswerMode ?? "typed",
         });
         if (error?.code === "23505") return fail(409, "REQUEST_CONFLICT");
         if (error || !data) return fail(503, "STORAGE_UNAVAILABLE");
