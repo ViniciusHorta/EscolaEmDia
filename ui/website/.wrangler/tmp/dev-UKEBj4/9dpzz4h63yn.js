@@ -1855,11 +1855,7 @@ function transformRoutingRuleToRegExp(rule) {
 __name(transformRoutingRuleToRegExp, "transformRoutingRuleToRegExp");
 
 // .wrangler/tmp/pages-L0SMKr/9dpzz4h63yn.js
-var define_ROUTES_default = {
-  version: 1,
-  include: ["/politica-de-privacidade", "/termos-e-condicoes"],
-  exclude: []
-};
+var define_ROUTES_default = { version: 1, include: ["/*"], exclude: [] };
 var routes2 = define_ROUTES_default;
 var pages_dev_pipeline_default = {
   fetch(request, env2, context2) {

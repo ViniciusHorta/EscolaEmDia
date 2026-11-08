@@ -1,9 +1,5 @@
 // <define:__ROUTES__>
-var define_ROUTES_default = {
-  version: 1,
-  include: ["/politica-de-privacidade", "/termos-e-condicoes"],
-  exclude: []
-};
+var define_ROUTES_default = { version: 1, include: ["/*"], exclude: [] };
 
 // ../../../../../.npm/_npx/32026684e21afda6/node_modules/wrangler/templates/pages-dev-pipeline.ts
 import worker from "/Users/viniciushorta/Documents/Projetos/escola-em-dia/ui/website/.wrangler/tmp/pages-L0SMKr/functionsWorker-0.34444878219409847.mjs";
