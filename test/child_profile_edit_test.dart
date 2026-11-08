@@ -42,6 +42,14 @@ void main() {
     expect(find.text('1.º Ciclo'), findsOneWidget);
     expect(find.text('2.º Ciclo'), findsOneWidget);
     expect(find.text('3.º Ciclo'), findsOneWidget);
+    // Só os anos do ciclo selecionado (o do ano atual da criança) são mostrados.
+    expect(find.text('2.º Ano de Escolaridade'), findsOneWidget);
+    expect(find.text('9.º Ano de Escolaridade'), findsNothing);
+    await tester.ensureVisible(find.text('3.º Ciclo'));
+    await tester.tap(find.text('3.º Ciclo'));
+    await tester.pump();
+    expect(find.text('1.º Ano de Escolaridade'), findsNothing);
+    expect(updates, isEmpty);
     await tester.ensureVisible(find.text('9.º Ano de Escolaridade'));
     await tester.tap(find.text('9.º Ano de Escolaridade'));
     await tester.tap(find.text('Guardar alterações'));
