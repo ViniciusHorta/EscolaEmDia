@@ -1,9 +1,12 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../billing/domain/billing_models.dart';
 import '../domain/worksheet_models.dart';
 
 class WorksheetException implements Exception {
-  const WorksheetException(this.message);
+  const WorksheetException(this.message,{this.code});
   final String message;
+  /// Código do servidor (ex.: DAILY_ASSIGNMENT_LIMIT_REACHED), quando existe.
+  final String? code;
 }
 class WorksheetService {
   const WorksheetService(this.client,{required this.parentToken,required this.onParentLocked});
@@ -17,6 +20,9 @@ class WorksheetService {
   /// Com [childId], cada ficha traz quantas vezes essa criança já a fez.
   Future<List<WorksheetSummary>> proposals(String subjectId,int year,Set<String> topicIds,{String? childId}) async =>
       (await _list('/v1/worksheets',{'subjectId':subjectId,'schoolYear':'$year','topicIds':topicIds.join(','),if(childId!=null)'childId':childId})).map(WorksheetSummary.fromJson).toList();
+  /// Plano e utilização de hoje da criança (vem na listagem das fichas atribuídas).
+  Future<ChildDailyAccess?> childAccess(String childId) async =>
+      ChildDailyAccess.tryParse((await _request('/v1/children/$childId/assignments'))['access']);
   Future<Map> detail(WorksheetSummary worksheet) => _request('/v1/worksheets/${worksheet.id}',query:{'versionId':worksheet.versionId});
   /// [writtenAnswerMode]: 'typed' (a criança escreve na app) ou 'paper' (resolve no caderno).
   Future<void> assign(String childId,String versionId,String requestId,{String writtenAnswerMode='typed'}) async {
@@ -55,7 +61,8 @@ class WorksheetService {
     on FunctionException catch(error){
       final data=error.details;final payload=data is Map?data['error']:null;
       if(payload is Map && payload['code']=='PARENT_LOCKED')onParentLocked();
-      throw WorksheetException(payload is Map && payload['message'] is String?payload['message'] as String:'Não foi possível aceder às fichas.');
+      throw WorksheetException(payload is Map && payload['message'] is String?payload['message'] as String:'Não foi possível aceder às fichas.',
+        code:payload is Map && payload['code'] is String?payload['code'] as String:null);
     }catch(_){throw const WorksheetException('Não foi possível ligar ao serviço. Tenta novamente.');}
   }
 }

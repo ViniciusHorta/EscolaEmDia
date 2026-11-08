@@ -6,6 +6,7 @@ import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/pin/app_pin_input.dart';
 import '../../family/data/family_service.dart';
+import '../../billing/domain/billing_models.dart';
 import '../../family/domain/family_models.dart';
 import '../data/child_session_service.dart';
 import '../../attempts/presentation/worksheet_attempt_page.dart';
@@ -46,6 +47,8 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
   String? feedbackAttemptId;
   AssignedWorksheet? activeAssignment;
   AssignedWorksheet? repeatCandidate;
+  /// Plano e utilização de hoje da criança autenticada (só para mensagens; sem ofertas).
+  ChildDailyAccess? dailyAccess;
   String? repeatFromAttemptId;
   int childTab = 0;
 
@@ -135,7 +138,12 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
   }
 
   Future<List<AssignedWorksheet>> fetchAssignments(String childId) async {
-    try {return await widget.sessions.assignments(childId);}
+    dailyAccess=null;
+    try {
+      final items=await widget.sessions.assignments(childId);
+      if(mounted&&authenticated?.id==childId)setState(()=>dailyAccess=widget.sessions.lastAccess);
+      return items;
+    }
     on ChildSessionException catch(failure){
       if(failure.ended && mounted && authenticated?.id==childId)setState((){authenticated=null;activeAssignment=null;feedbackAttemptId=null;repeatCandidate=null;repeatFromAttemptId=null;});
       rethrow;
@@ -168,6 +176,7 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
       final paused=items.where((item)=>item.stage==AssignmentStage.paused).toList();
       final delivered=items.where((item)=>item.stage==AssignmentStage.delivered).toList();
       return Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+        if(dailyNotice() case final notice?)Padding(padding:const EdgeInsets.only(bottom:16),child:notice),
         for(final item in todo)card(item,featured:true),
         if(paused.isNotEmpty)...[
           if(todo.isNotEmpty)const SizedBox(height:12),
@@ -190,18 +199,58 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
       feedbackAttemptId=assignment.latestCompletedAttemptId;
     });
   }
+  /// Mensagem para a criança quando não pode começar uma ficha nova (null = pode).
+  /// Retomar uma ficha em curso nunca é bloqueado.
+  String? startBlockedMessage(AssignedWorksheet assignment){
+    final access=dailyAccess;
+    if(access==null||access.isPremium)return null;
+    if(access.isLocked)return 'Ainda não podes começar fichas novas. Pede ajuda ao teu responsável.';
+    if(assignment.worksheet.isPremium)return 'Esta ficha não está disponível agora. Pede ajuda ao teu responsável.';
+    if(access.attemptQuotaReached)return 'Já fizeste a tua ficha de hoje. Muito bem! Volta amanhã para fazer outra.';
+    return null;
+  }
+  Widget? dailyNotice(){
+    final access=dailyAccess;
+    if(access==null||access.isPremium)return null;
+    final (emoji,title,text)=access.isLocked
+      ? ('🔒','Ainda não podes começar fichas novas','Pede ajuda ao teu responsável.')
+      : access.attemptQuotaReached
+        ? ('🌟','Já fizeste a tua ficha de hoje!','Muito bem! Volta amanhã para fazer outra.')
+        : (null,null,null);
+    if(title==null)return null;
+    return Semantics(liveRegion:true,child:AppCard(color:AppColors.softBlue,child:Row(children:[
+      ExcludeSemantics(child:Text(emoji!,style:const TextStyle(fontSize:36))),
+      const SizedBox(width:14),
+      Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+        Text(title,style:const TextStyle(fontSize:18,fontWeight:FontWeight.w700,color:AppColors.text)),
+        const SizedBox(height:4),Text(text!,style:const TextStyle(color:AppColors.muted)),
+      ])),
+    ])));
+  }
+  void showStartBlocked(String message)=>showDialog<void>(context:context,builder:(context)=>AlertDialog(
+    icon:const Text('🌙',style:TextStyle(fontSize:40)),
+    content:Text(message,textAlign:TextAlign.center,style:const TextStyle(fontSize:17,height:1.4)),
+    actions:[TextButton(onPressed:()=>Navigator.pop(context),child:const Text('Está bem'))],
+  ));
   void openAssignment(AssignedWorksheet assignment) {
     if(busy||authenticated?.id!=assignment.childId)return;
+    if(assignment.activeAttemptId==null){
+      final blocked=startBlockedMessage(assignment);
+      if(blocked!=null){showStartBlocked(blocked);return;}
+      dailyAccess=dailyAccess?.withNewAttempt();
+    }
     setState(() { activeAssignment=assignment;feedbackAttemptId=null;repeatCandidate=null;repeatFromAttemptId=null; });
   }
   void prepareRepeat(AssignedWorksheet assignment,String previousId) {
     if(busy||authenticated?.id!=assignment.childId)return;
+    final blocked=startBlockedMessage(assignment);
+    if(blocked!=null){showStartBlocked(blocked);return;}
     setState(() { activeAssignment=null;feedbackAttemptId=null;repeatCandidate=assignment;repeatFromAttemptId=previousId; });
   }
   void beginRepeat() {
     final candidate=repeatCandidate;
     if(candidate==null||repeatFromAttemptId==null||authenticated?.id!=candidate.childId)return;
-    setState(() { activeAssignment=candidate;feedbackAttemptId=null;repeatCandidate=null; });
+    setState(() { activeAssignment=candidate;feedbackAttemptId=null;repeatCandidate=null;dailyAccess=dailyAccess?.withNewAttempt(); });
   }
   void cancelRepeat() {
     setState(() {

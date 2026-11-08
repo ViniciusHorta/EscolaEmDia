@@ -5,6 +5,8 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/request_id.dart';
 import '../../../shared/widgets/app_badge.dart';
 import '../../../shared/widgets/premium_crown.dart';
+import '../../billing/domain/billing_models.dart';
+import '../../billing/presentation/premium_paywall.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/brand/app_logo.dart';
@@ -372,7 +374,16 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
             ])),
           ]),
           const SizedBox(height: 18),
-          const AppBadge(label: 'PIN definido', icon: Icons.lock_outline_rounded),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            const AppBadge(label: 'PIN definido', icon: Icons.lock_outline_rounded),
+            if (child.plan == 'locked') const AppBadge(label: 'Sem plano ativo', icon: Icons.lock_clock_rounded,
+              background: Color(0xFFFFF3CC), color: AppColors.amber),
+          ]),
+          if (child.plan == 'locked') ...[
+            const SizedBox(height: 12),
+            AppButton(label: 'Ativar Premium', icon: Icons.workspace_premium_rounded, variant: AppButtonVariant.success,
+              onPressed: () => showPremiumPaywall(context, childName: child.displayName, reason: PaywallReason.locked)),
+          ],
           const SizedBox(height: 18),
           AppButton(label: 'Ver acompanhamento', variant: AppButtonVariant.secondary,
             icon: Icons.insights_rounded, onPressed: () => setState(() { progressChildId = child.id; })),

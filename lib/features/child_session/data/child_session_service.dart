@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/config/supabase_config.dart';
+import '../../billing/domain/billing_models.dart';
 import '../../family/domain/family_models.dart';
 import '../../worksheets/domain/worksheet_models.dart';
 
@@ -85,12 +86,17 @@ class ChildSessionService {
     if (expiresAt != null && !expiresAt!.isAfter(DateTime.now())) _forget();
   }
 
+  /// Plano e utilização de hoje, da última chamada a [assignments]. Na área da criança
+  /// serve só para mensagens (nunca para mostrar ofertas ou preços).
+  ChildDailyAccess? lastAccess;
+
   Future<List<AssignedWorksheet>> assignments(String childId) async {
     final result=<AssignedWorksheet>[]; String? cursor; final seen=<String>{};
     do {
       final uri=Uri.parse('${SupabaseConfig.url}/functions/v1/worksheets/v1/children/$childId/assignments')
         .replace(queryParameters:cursor==null?null:{'cursor':cursor});
       final page=await _sendChildRequest(uri,'GET');
+      if(cursor==null)lastAccess=ChildDailyAccess.tryParse(page['access']);
       final items=page['items'];
       if(items is! List || items.any((item)=>item is! Map))throw const ChildSessionException('Não foi possível carregar as fichas.');
       result.addAll(items.cast<Map>().map(AssignedWorksheet.fromJson));

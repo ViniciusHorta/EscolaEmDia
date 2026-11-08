@@ -7,6 +7,8 @@ import '../../../shared/widgets/app_badge.dart';
 import '../../../shared/widgets/premium_crown.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_card.dart';
+import '../../billing/domain/billing_models.dart';
+import '../../billing/presentation/premium_paywall.dart';
 import '../../family/domain/family_models.dart';
 import '../data/worksheet_service.dart';
 import '../domain/worksheet_models.dart';
@@ -38,15 +40,57 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
   /// Onde a criança responde às perguntas abertas: 'typed' (na app) ou 'paper' (no caderno).
   String writtenAnswerMode='typed';
   int step=1;
+  /// Plano e utilização de hoje da criança selecionada (null enquanto carrega ou se falhar).
+  ChildDailyAccess? access;
   int generation=0;
 
-  @override void initState(){super.initState();child=widget.children.isEmpty?null:widget.children.first;loadSubjects();}
+  @override void initState(){super.initState();child=widget.children.isEmpty?null:widget.children.first;loadSubjects();loadAccess();}
   @override void dispose(){topicSearch.dispose();worksheetSearch.dispose();super.dispose();}
   Future<void> loadSubjects() async {
     setState((){loading=true;error=null;});
     try{final data=await widget.service.subjects();if(!mounted)return;setState(()=>subjects=data);}
     on WorksheetException catch(failure){if(mounted)setState(()=>error=failure.message);}
     finally{if(mounted)setState(()=>loading=false);}
+  }
+  Future<void> loadAccess() async {
+    final profile=child;if(profile==null)return;
+    setState(()=>access=null);
+    try{
+      final data=await widget.service.childAccess(profile.id);
+      if(mounted&&child?.id==profile.id)setState(()=>access=data);
+    }catch(_){/* Sem resumo: o servidor continua a aplicar os limites. */}
+  }
+  /// Motivo para mostrar a oferta em vez de disponibilizar (null = pode disponibilizar).
+  PaywallReason? blockReason(WorksheetSummary? item){
+    final current=access;if(current==null||current.isPremium)return null;
+    if(current.isLocked)return PaywallReason.locked;
+    if(item!=null&&item.isPremium)return PaywallReason.premiumWorksheet;
+    if(current.assignmentQuotaReached)return PaywallReason.dailyLimit;
+    return null;
+  }
+  void openPaywall(PaywallReason reason)=>showPremiumPaywall(context,childName:child?.displayName??'a criança',
+    reason:reason,freeMaxQuestions:access?.freeMaxQuestions);
+  Widget planNotice(){
+    final current=access;final name=child?.displayName??'';
+    if(current==null||current.isPremium)return const SizedBox.shrink();
+    final (text,cta)=current.isLocked
+      ? ('$name ainda não tem plano ativo: a vaga gratuita da família já está ocupada. Ativa o Premium para lhe disponibilizar fichas.',PaywallReason.locked)
+      : current.assignmentQuotaReached
+        ? ('Já disponibilizaste a ficha de hoje a $name. No plano gratuito é 1 ficha por dia — amanhã podes preparar outra.',PaywallReason.dailyLimit)
+        : ('Plano gratuito: 1 ficha por dia e catálogo Free${current.freeMaxQuestions==null?'':' (até ${current.freeMaxQuestions} perguntas)'}.',PaywallReason.general);
+    final strong=cta!=PaywallReason.general;
+    return Padding(padding:const EdgeInsets.only(top:14),child:AppCard(
+      padding:const EdgeInsets.all(16),color:strong?const Color(0xFFFFF3CC):AppColors.softBlue,
+      child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+        Row(crossAxisAlignment:CrossAxisAlignment.start,children:[
+          Icon(strong?Icons.lock_clock_rounded:Icons.info_outline_rounded,color:strong?AppColors.amber:AppColors.primary),
+          const SizedBox(width:12),
+          Expanded(child:Text(text,style:const TextStyle(fontSize:14,height:1.4,color:AppColors.text))),
+        ]),
+        const SizedBox(height:8),
+        Padding(padding:const EdgeInsets.only(left:24),child:TextButton.icon(onPressed:()=>openPaywall(cta),
+          icon:const Icon(Icons.workspace_premium_rounded,color:PremiumCrown.color),label:const Text('Conhecer Premium'))),
+      ])));
   }
   Future<void> loadTopics() async {
     final target=subject; final profile=child;if(target==null||profile==null)return;
@@ -93,8 +137,15 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
       await widget.service.assign(child!.id,worksheet!.versionId,requestId,
         writtenAnswerMode:worksheet!.writtenCount>0?writtenAnswerMode:'typed');
       if(mounted)setState(()=>success=true);
+      loadAccess();
     }
-    on WorksheetException catch(failure){if(mounted)setState(()=>error=failure.message);}
+    on WorksheetException catch(failure){
+      if(!mounted)return;
+      final reason=paywallReasonForCode(failure.code);
+      if(reason==null){setState(()=>error=failure.message);return;}
+      loadAccess();
+      openPaywall(reason);
+    }
     finally{if(mounted)setState(()=>busy=false);}
   }
   bool worksheetMatches(WorksheetSummary item,String query)=>
@@ -126,6 +177,9 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
     ),
   );
 
+  Widget tierBadge(WorksheetSummary item,{bool compact=false})=>item.isPremium
+    ? AppBadge(label:'Premium',icon:compact?null:Icons.workspace_premium_rounded,background:const Color(0xFFFFF3CC),color:AppColors.amber)
+    : AppBadge(label:'Free',background:AppColors.successSoft,color:AppColors.success);
   String historyLabel(WorksheetSummary item){
     final times=item.timesCompleted??0;final name=child?.displayName??'A criança';
     if(times==0)return '$name ainda não fez esta ficha';
@@ -213,8 +267,9 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
       SingleChildScrollView(scrollDirection:Axis.horizontal,clipBehavior:Clip.none,child:Row(children:[
         for(final profile in widget.children)Padding(padding:const EdgeInsets.only(right:12),child:_ChildOption(
           child:profile,selected:child?.id==profile.id,
-          onTap:busy||loading?null:(){if(child?.id==profile.id)return;setState(()=>child=profile);if(subject!=null)loadTopics();})),
+          onTap:busy||loading?null:(){if(child?.id==profile.id)return;setState(()=>child=profile);loadAccess();if(subject!=null)loadTopics();})),
       ])),
+      planNotice(),
       sectionTitle('Disciplina principal',trailing:const AppBadge(label:'Obrigatório',background:AppColors.amberSoft,color:AppColors.amber)),
       if(subjects.isEmpty&&!loading)const Text('O catálogo ainda não tem disciplinas disponíveis.'),
       LayoutBuilder(builder:(context,constraints){
@@ -304,6 +359,7 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
       AppCard(padding:const EdgeInsets.all(22),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
         Wrap(spacing:8,runSpacing:8,children:[
           const AppBadge(label:'Proposta de Ficha Selecionada',icon:Icons.star_rounded,background:Color(0xFFFEA619),color:Color(0xFF4A2D00)),
+          tierBadge(item),
           AppBadge(label:'Dimensão ${item.sizeLabel.toLowerCase()}',background:AppColors.successSoft,color:AppColors.success),
           if(item.timesCompleted!=null)AppBadge(label:historyLabel(item),icon:Icons.history_rounded,
             background:item.timesCompleted==0?AppColors.softBlue:AppColors.amberSoft,
@@ -343,6 +399,7 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
           selected:candidate.versionId==item.versionId,onTap:busy?null:()=>chooseProposal(candidate),
           child:Row(children:[Icon(candidate.versionId==item.versionId?Icons.check_circle_rounded:Icons.circle_outlined,color:AppColors.primary),
             const SizedBox(width:12),Expanded(child:Text(candidate.title,style:const TextStyle(fontWeight:FontWeight.w600))),
+            Padding(padding:const EdgeInsets.only(right:10),child:tierBadge(candidate,compact:true)),
             Text('${candidate.questionCount} perg.${(candidate.timesCompleted??0)>0?' • feita ${candidate.timesCompleted}×':''}',style:const TextStyle(color:AppColors.muted))]))),
       ],
       Padding(padding:const EdgeInsets.only(top:28,bottom:14),child:Row(children:[
@@ -398,7 +455,13 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
       ]),
       feedback(),
       const SizedBox(height:24),
-      AppButton(label:'Disponibilizar ficha a ${child!.displayName} 🚀',variant:AppButtonVariant.success,loading:busy,onPressed:busy?null:assign),
+      planNotice(),
+      const SizedBox(height:16),
+      if(blockReason(item) case final reason?)
+        AppButton(label:reason==PaywallReason.premiumWorksheet?'Desbloquear esta ficha com Premium':'Ativar Premium para ${child!.displayName}',
+          icon:Icons.workspace_premium_rounded,variant:AppButtonVariant.success,onPressed:busy?null:()=>openPaywall(reason))
+      else
+        AppButton(label:'Disponibilizar ficha a ${child!.displayName} 🚀',variant:AppButtonVariant.success,loading:busy,onPressed:busy?null:assign),
       const SizedBox(height:12),
       AppButton(label:'Voltar e mudar temas',icon:Icons.arrow_back_rounded,variant:AppButtonVariant.neutral,onPressed:busy?null:reset),
     ]));

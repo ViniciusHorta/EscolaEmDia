@@ -11,11 +11,14 @@ class SchoolTopic {
   factory SchoolTopic.fromJson(Map value) => SchoolTopic(value['id'] as String, value['name'] as String);
 }
 class WorksheetSummary {
-  const WorksheetSummary({required this.id,required this.versionId,required this.title,required this.subjectName,required this.schoolYear,required this.questionCount,required this.choiceCount,required this.writtenCount,required this.topicNames,required this.isSample,this.timesCompleted,this.lastCompletedAt});
+  const WorksheetSummary({required this.id,required this.versionId,required this.title,required this.subjectName,required this.schoolYear,required this.questionCount,required this.choiceCount,required this.writtenCount,required this.topicNames,required this.isSample,this.accessTier='premium',this.timesCompleted,this.lastCompletedAt});
   final String id,versionId,title,subjectName;
   final int schoolYear,questionCount,choiceCount,writtenCount;
   final List<String> topicNames;
   final bool isSample;
+  /// free | premium. Fichas Premium só podem ser disponibilizadas a crianças Premium.
+  final String accessTier;
+  bool get isPremium => accessTier=='premium';
   /// Quantas vezes a criança escolhida já entregou esta ficha (null quando o pedido não indicou criança).
   final int? timesCompleted;
   final DateTime? lastCompletedAt;
@@ -24,7 +27,7 @@ class WorksheetSummary {
     id:value['id'] as String,versionId:value['versionId'] as String,title:value['title'] as String,
     subjectName:value['subjectName'] as String,schoolYear:value['schoolYear'] as int,
     questionCount:value['questionCount'] as int,choiceCount:value['choiceCount'] as int,writtenCount:value['writtenCount'] as int,
-    topicNames:(value['topicNames'] as List).cast<String>(),isSample:value['isSample']==true,
+    topicNames:(value['topicNames'] as List).cast<String>(),isSample:value['isSample']==true,accessTier:value['accessTier'] as String? ?? 'premium',
     timesCompleted:(value['childHistory'] as Map?)?['timesCompleted'] as int?,
     lastCompletedAt:switch((value['childHistory'] as Map?)?['lastCompletedAt']){final String at=>DateTime.parse(at).toLocal(),_=>null});
 }
