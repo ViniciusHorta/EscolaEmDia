@@ -1,7 +1,7 @@
 {
   "name": "Escola em Dia",
   "short_name": "Escola em Dia",
-  "description": "Fichas de Português e Matemática para o 1.º ciclo, em família.",
+  "description": "Fichas de Português e Matemática do 1.º ao 9.º ano, em família.",
   "lang": "pt-PT",
   "start_url": "/",
   "display": "browser",

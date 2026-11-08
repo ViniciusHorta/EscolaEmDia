@@ -1,26 +1,20 @@
 var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
-// .wrangler/tmp/pages-L0SMKr/functionsWorker-0.34444878219409847.mjs
-import { Writable } from "node:stream";
-import { EventEmitter } from "node:events";
-var __defProp2 = Object.defineProperty;
-var __name2 = /* @__PURE__ */ __name((target, value) => __defProp2(target, "name", { value, configurable: true }), "__name");
+// ../../../../../../.npm/_npx/32026684e21afda6/node_modules/unenv/dist/runtime/_internal/utils.mjs
 // @__NO_SIDE_EFFECTS__
 function createNotImplementedError(name) {
   return new Error(`[unenv] ${name} is not implemented yet!`);
 }
 __name(createNotImplementedError, "createNotImplementedError");
-__name2(createNotImplementedError, "createNotImplementedError");
 // @__NO_SIDE_EFFECTS__
 function notImplemented(name) {
-  const fn = /* @__PURE__ */ __name2(() => {
+  const fn = /* @__PURE__ */ __name(() => {
     throw /* @__PURE__ */ createNotImplementedError(name);
   }, "fn");
   return Object.assign(fn, { __unenv__: true });
 }
 __name(notImplemented, "notImplemented");
-__name2(notImplemented, "notImplemented");
 // @__NO_SIDE_EFFECTS__
 function notImplementedClass(name) {
   return class {
@@ -31,7 +25,8 @@ function notImplementedClass(name) {
   };
 }
 __name(notImplementedClass, "notImplementedClass");
-__name2(notImplementedClass, "notImplementedClass");
+
+// ../../../../../../.npm/_npx/32026684e21afda6/node_modules/unenv/dist/runtime/node/internal/perf_hooks/performance.mjs
 var _timeOrigin = globalThis.performance?.timeOrigin ?? Date.now();
 var _performanceNow = globalThis.performance?.now ? globalThis.performance.now.bind(globalThis.performance) : () => Date.now() - _timeOrigin;
 var nodeTiming = {
@@ -60,9 +55,6 @@ var PerformanceEntry = class {
   static {
     __name(this, "PerformanceEntry");
   }
-  static {
-    __name2(this, "PerformanceEntry");
-  }
   __unenv__ = true;
   detail;
   entryType = "event";
@@ -88,10 +80,7 @@ var PerformanceEntry = class {
 };
 var PerformanceMark = class PerformanceMark2 extends PerformanceEntry {
   static {
-    __name(this, "PerformanceMark2");
-  }
-  static {
-    __name2(this, "PerformanceMark");
+    __name(this, "PerformanceMark");
   }
   entryType = "mark";
   constructor() {
@@ -105,17 +94,11 @@ var PerformanceMeasure = class extends PerformanceEntry {
   static {
     __name(this, "PerformanceMeasure");
   }
-  static {
-    __name2(this, "PerformanceMeasure");
-  }
   entryType = "measure";
 };
 var PerformanceResourceTiming = class extends PerformanceEntry {
   static {
     __name(this, "PerformanceResourceTiming");
-  }
-  static {
-    __name2(this, "PerformanceResourceTiming");
   }
   entryType = "resource";
   serverTiming = [];
@@ -144,9 +127,6 @@ var PerformanceObserverEntryList = class {
   static {
     __name(this, "PerformanceObserverEntryList");
   }
-  static {
-    __name2(this, "PerformanceObserverEntryList");
-  }
   __unenv__ = true;
   getEntries() {
     return [];
@@ -162,9 +142,6 @@ var Performance = class {
   static {
     __name(this, "Performance");
   }
-  static {
-    __name2(this, "Performance");
-  }
   __unenv__ = true;
   timeOrigin = _timeOrigin;
   eventCounts = /* @__PURE__ */ new Map();
@@ -173,7 +150,7 @@ var Performance = class {
   navigation = void 0;
   timing = void 0;
   timerify(_fn, _options) {
-    throw /* @__PURE__ */ createNotImplementedError("Performance.timerify");
+    throw createNotImplementedError("Performance.timerify");
   }
   get nodeTiming() {
     return nodeTiming;
@@ -238,13 +215,13 @@ var Performance = class {
     this._resourceTimingBufferSize = maxSize;
   }
   addEventListener(type, listener, options) {
-    throw /* @__PURE__ */ createNotImplementedError("Performance.addEventListener");
+    throw createNotImplementedError("Performance.addEventListener");
   }
   removeEventListener(type, listener, options) {
-    throw /* @__PURE__ */ createNotImplementedError("Performance.removeEventListener");
+    throw createNotImplementedError("Performance.removeEventListener");
   }
   dispatchEvent(event) {
-    throw /* @__PURE__ */ createNotImplementedError("Performance.dispatchEvent");
+    throw createNotImplementedError("Performance.dispatchEvent");
   }
   toJSON() {
     return this;
@@ -253,9 +230,6 @@ var Performance = class {
 var PerformanceObserver = class {
   static {
     __name(this, "PerformanceObserver");
-  }
-  static {
-    __name2(this, "PerformanceObserver");
   }
   __unenv__ = true;
   static supportedEntryTypes = [];
@@ -267,10 +241,10 @@ var PerformanceObserver = class {
     return [];
   }
   disconnect() {
-    throw /* @__PURE__ */ createNotImplementedError("PerformanceObserver.disconnect");
+    throw createNotImplementedError("PerformanceObserver.disconnect");
   }
   observe(options) {
-    throw /* @__PURE__ */ createNotImplementedError("PerformanceObserver.observe");
+    throw createNotImplementedError("PerformanceObserver.observe");
   }
   bind(fn) {
     return fn;
@@ -289,6 +263,8 @@ var PerformanceObserver = class {
   }
 };
 var performance = globalThis.performance && "addEventListener" in globalThis.performance ? globalThis.performance : new Performance();
+
+// ../../../../../../.npm/_npx/32026684e21afda6/node_modules/@cloudflare/unenv-preset/dist/runtime/polyfill/performance.mjs
 if (!("__unenv__" in performance)) {
   const proto = Performance.prototype;
   for (const key of Object.getOwnPropertyNames(proto)) {
@@ -308,8 +284,15 @@ globalThis.PerformanceMeasure = PerformanceMeasure;
 globalThis.PerformanceObserver = PerformanceObserver;
 globalThis.PerformanceObserverEntryList = PerformanceObserverEntryList;
 globalThis.PerformanceResourceTiming = PerformanceResourceTiming;
+
+// ../../../../../../.npm/_npx/32026684e21afda6/node_modules/unenv/dist/runtime/node/console.mjs
+import { Writable } from "node:stream";
+
+// ../../../../../../.npm/_npx/32026684e21afda6/node_modules/unenv/dist/runtime/mock/noop.mjs
 var noop_default = Object.assign(() => {
 }, { __unenv__: true });
+
+// ../../../../../../.npm/_npx/32026684e21afda6/node_modules/unenv/dist/runtime/node/console.mjs
 var _console = globalThis.console;
 var _ignoreErrors = true;
 var _stderr = new Writable();
@@ -340,6 +323,8 @@ var Console = _console?.Console ?? /* @__PURE__ */ notImplementedClass("console.
 var _times = /* @__PURE__ */ new Map();
 var _stdoutErrorHandler = noop_default;
 var _stderrErrorHandler = noop_default;
+
+// ../../../../../../.npm/_npx/32026684e21afda6/node_modules/@cloudflare/unenv-preset/dist/runtime/node/console.mjs
 var workerdConsole = globalThis["console"];
 var {
   assert,
@@ -379,8 +364,12 @@ Object.assign(workerdConsole, {
   _times
 });
 var console_default = workerdConsole;
+
+// ../../../../../../.npm/_npx/32026684e21afda6/node_modules/wrangler/_virtual_unenv_global_polyfill-@cloudflare-unenv-preset-node-console
 globalThis.console = console_default;
-var hrtime = /* @__PURE__ */ Object.assign(/* @__PURE__ */ __name2(/* @__PURE__ */ __name(function hrtime2(startTime) {
+
+// ../../../../../../.npm/_npx/32026684e21afda6/node_modules/unenv/dist/runtime/node/internal/process/hrtime.mjs
+var hrtime = /* @__PURE__ */ Object.assign(/* @__PURE__ */ __name(function hrtime2(startTime) {
   const now = Date.now();
   const seconds = Math.trunc(now / 1e3);
   const nanos = now % 1e3 * 1e6;
@@ -394,15 +383,17 @@ var hrtime = /* @__PURE__ */ Object.assign(/* @__PURE__ */ __name2(/* @__PURE__ 
     return [diffSeconds, diffNanos];
   }
   return [seconds, nanos];
-}, "hrtime2"), "hrtime"), { bigint: /* @__PURE__ */ __name2(/* @__PURE__ */ __name(function bigint() {
+}, "hrtime"), { bigint: /* @__PURE__ */ __name(function bigint() {
   return BigInt(Date.now() * 1e6);
-}, "bigint"), "bigint") });
+}, "bigint") });
+
+// ../../../../../../.npm/_npx/32026684e21afda6/node_modules/unenv/dist/runtime/node/internal/process/process.mjs
+import { EventEmitter } from "node:events";
+
+// ../../../../../../.npm/_npx/32026684e21afda6/node_modules/unenv/dist/runtime/node/internal/tty/read-stream.mjs
 var ReadStream = class {
   static {
     __name(this, "ReadStream");
-  }
-  static {
-    __name2(this, "ReadStream");
   }
   fd;
   isRaw = false;
@@ -415,12 +406,11 @@ var ReadStream = class {
     return this;
   }
 };
+
+// ../../../../../../.npm/_npx/32026684e21afda6/node_modules/unenv/dist/runtime/node/internal/tty/write-stream.mjs
 var WriteStream = class {
   static {
     __name(this, "WriteStream");
-  }
-  static {
-    __name2(this, "WriteStream");
   }
   fd;
   columns = 80;
@@ -466,13 +456,14 @@ var WriteStream = class {
     return false;
   }
 };
+
+// ../../../../../../.npm/_npx/32026684e21afda6/node_modules/unenv/dist/runtime/node/internal/process/node-version.mjs
 var NODE_VERSION = "22.14.0";
+
+// ../../../../../../.npm/_npx/32026684e21afda6/node_modules/unenv/dist/runtime/node/internal/process/process.mjs
 var Process = class _Process extends EventEmitter {
   static {
-    __name(this, "_Process");
-  }
-  static {
-    __name2(this, "Process");
+    __name(this, "Process");
   }
   env;
   hrtime;
@@ -585,58 +576,58 @@ var Process = class _Process extends EventEmitter {
   }
   // --- unimplemented methods ---
   umask() {
-    throw /* @__PURE__ */ createNotImplementedError("process.umask");
+    throw createNotImplementedError("process.umask");
   }
   getBuiltinModule() {
     return void 0;
   }
   getActiveResourcesInfo() {
-    throw /* @__PURE__ */ createNotImplementedError("process.getActiveResourcesInfo");
+    throw createNotImplementedError("process.getActiveResourcesInfo");
   }
   exit() {
-    throw /* @__PURE__ */ createNotImplementedError("process.exit");
+    throw createNotImplementedError("process.exit");
   }
   reallyExit() {
-    throw /* @__PURE__ */ createNotImplementedError("process.reallyExit");
+    throw createNotImplementedError("process.reallyExit");
   }
   kill() {
-    throw /* @__PURE__ */ createNotImplementedError("process.kill");
+    throw createNotImplementedError("process.kill");
   }
   abort() {
-    throw /* @__PURE__ */ createNotImplementedError("process.abort");
+    throw createNotImplementedError("process.abort");
   }
   dlopen() {
-    throw /* @__PURE__ */ createNotImplementedError("process.dlopen");
+    throw createNotImplementedError("process.dlopen");
   }
   setSourceMapsEnabled() {
-    throw /* @__PURE__ */ createNotImplementedError("process.setSourceMapsEnabled");
+    throw createNotImplementedError("process.setSourceMapsEnabled");
   }
   loadEnvFile() {
-    throw /* @__PURE__ */ createNotImplementedError("process.loadEnvFile");
+    throw createNotImplementedError("process.loadEnvFile");
   }
   disconnect() {
-    throw /* @__PURE__ */ createNotImplementedError("process.disconnect");
+    throw createNotImplementedError("process.disconnect");
   }
   cpuUsage() {
-    throw /* @__PURE__ */ createNotImplementedError("process.cpuUsage");
+    throw createNotImplementedError("process.cpuUsage");
   }
   setUncaughtExceptionCaptureCallback() {
-    throw /* @__PURE__ */ createNotImplementedError("process.setUncaughtExceptionCaptureCallback");
+    throw createNotImplementedError("process.setUncaughtExceptionCaptureCallback");
   }
   hasUncaughtExceptionCaptureCallback() {
-    throw /* @__PURE__ */ createNotImplementedError("process.hasUncaughtExceptionCaptureCallback");
+    throw createNotImplementedError("process.hasUncaughtExceptionCaptureCallback");
   }
   initgroups() {
-    throw /* @__PURE__ */ createNotImplementedError("process.initgroups");
+    throw createNotImplementedError("process.initgroups");
   }
   openStdin() {
-    throw /* @__PURE__ */ createNotImplementedError("process.openStdin");
+    throw createNotImplementedError("process.openStdin");
   }
   assert() {
-    throw /* @__PURE__ */ createNotImplementedError("process.assert");
+    throw createNotImplementedError("process.assert");
   }
   binding() {
-    throw /* @__PURE__ */ createNotImplementedError("process.binding");
+    throw createNotImplementedError("process.binding");
   }
   // --- attached interfaces ---
   permission = { has: /* @__PURE__ */ notImplemented("process.permission.has") };
@@ -662,7 +653,7 @@ var Process = class _Process extends EventEmitter {
     external: 0,
     heapTotal: 0,
     heapUsed: 0
-  }), { rss: /* @__PURE__ */ __name2(() => 0, "rss") });
+  }), { rss: /* @__PURE__ */ __name(() => 0, "rss") });
   // --- undefined props ---
   mainModule = void 0;
   domain = void 0;
@@ -703,6 +694,8 @@ var Process = class _Process extends EventEmitter {
   _send = void 0;
   _linkedBinding = void 0;
 };
+
+// ../../../../../../.npm/_npx/32026684e21afda6/node_modules/@cloudflare/unenv-preset/dist/runtime/node/process.mjs
 var globalProcess = globalThis["process"];
 var getBuiltinModule = globalProcess.getBuiltinModule;
 var workerdProcess = getBuiltinModule("node:process");
@@ -931,7 +924,11 @@ var _process = {
   _linkedBinding
 };
 var process_default = _process;
+
+// ../../../../../../.npm/_npx/32026684e21afda6/node_modules/wrangler/_virtual_unenv_global_polyfill-@cloudflare-unenv-preset-node-process
 globalThis.process = process_default;
+
+// _lib/legal.js
 var LEGAL_API = "https://hhgxxvvreyhigxynrgmv.supabase.co/functions/v1/legal/v1/documents";
 var SITE = "https://escolaemdia.me";
 var CACHE_SECONDS = 600;
@@ -939,8 +936,8 @@ var PAGES = {
   privacy: { path: "/politica-de-privacidade", label: "Pol\xEDtica de Privacidade" },
   terms: { path: "/termos-e-condicoes", label: "Termos e Condi\xE7\xF5es" }
 };
-var esc = /* @__PURE__ */ __name2((s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"), "esc");
-var slug = /* @__PURE__ */ __name2((s) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60), "slug");
+var esc = /* @__PURE__ */ __name((s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"), "esc");
+var slug = /* @__PURE__ */ __name((s) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60), "slug");
 function inline(text) {
   let h = esc(text);
   h = h.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
@@ -952,7 +949,6 @@ function inline(text) {
   return h;
 }
 __name(inline, "inline");
-__name2(inline, "inline");
 function renderMarkdown(md) {
   const lines = md.replace(/\r\n?/g, "\n").split("\n");
   const out = [];
@@ -961,19 +957,19 @@ function renderMarkdown(md) {
   let para = [];
   let list = null;
   const used = /* @__PURE__ */ new Set();
-  const flushPara = /* @__PURE__ */ __name2(() => {
+  const flushPara = /* @__PURE__ */ __name(() => {
     if (para.length) {
       out.push(`<p>${inline(para.join(" "))}</p>`);
       para = [];
     }
   }, "flushPara");
-  const flushList = /* @__PURE__ */ __name2(() => {
+  const flushList = /* @__PURE__ */ __name(() => {
     if (list) {
       out.push(`<ul>${list.map((li) => `<li>${inline(li)}</li>`).join("")}</ul>`);
       list = null;
     }
   }, "flushList");
-  const flush = /* @__PURE__ */ __name2(() => {
+  const flush = /* @__PURE__ */ __name(() => {
     flushPara();
     flushList();
   }, "flush");
@@ -1017,8 +1013,7 @@ function renderMarkdown(md) {
   return { title: title2, html: out.join("\n"), toc };
 }
 __name(renderMarkdown, "renderMarkdown");
-__name2(renderMarkdown, "renderMarkdown");
-var fmtDate = /* @__PURE__ */ __name2((iso) => {
+var fmtDate = /* @__PURE__ */ __name((iso) => {
   try {
     return new Intl.DateTimeFormat("pt-PT", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Lisbon" }).format(new Date(iso));
   } catch {
@@ -1035,7 +1030,6 @@ async function fetchDocuments() {
   return Array.isArray(data.items) ? data.items : [];
 }
 __name(fetchDocuments, "fetchDocuments");
-__name2(fetchDocuments, "fetchDocuments");
 function layout({ title: title2, description, canonical, body, status = 200, robots = "index, follow" }) {
   const html = `<!DOCTYPE html>
 <html lang="pt-PT">
@@ -1104,7 +1098,6 @@ ${body}
   });
 }
 __name(layout, "layout");
-__name2(layout, "layout");
 async function renderLegalPage(kind) {
   const page = PAGES[kind];
   const canonical = SITE + page.path;
@@ -1138,7 +1131,7 @@ async function renderLegalPage(kind) {
   const tocHtml = toc.length > 2 ? `<nav class="doc__toc" aria-label="\xCDndice"><strong>\xCDndice</strong><ul>${toc.map((t) => `<li><a href="#${t.id}">${inline(t.text)}</a></li>`).join("")}</ul></nav>` : "";
   return layout({
     title: `${page.label} \u2014 Escola em Dia`,
-    description: `${page.label} da Escola em Dia, a aplica\xE7\xE3o de apoio ao estudo em fam\xEDlia para o 1.\xBA ciclo. Vers\xE3o ${doc.version}, em vigor desde ${fmtDate(doc.publishedAt)}.`,
+    description: `${page.label} da Escola em Dia, a aplica\xE7\xE3o de apoio ao estudo em fam\xEDlia para crian\xE7as do 1.\xBA ao 9.\xBA ano. Vers\xE3o ${doc.version}, em vigor desde ${fmtDate(doc.publishedAt)}.`,
     canonical,
     body: `    <article class="doc doc--legal container container--narrow">
       <p class="eyebrow">Documento legal</p>
@@ -1156,9 +1149,105 @@ ${html}
   });
 }
 __name(renderLegalPage, "renderLegalPage");
-__name2(renderLegalPage, "renderLegalPage");
-var onRequest = /* @__PURE__ */ __name2(({ request }) => request.method === "GET" || request.method === "HEAD" ? renderLegalPage("privacy") : new Response(null, { status: 405, headers: { allow: "GET, HEAD" } }), "onRequest");
-var onRequest2 = /* @__PURE__ */ __name2(({ request }) => request.method === "GET" || request.method === "HEAD" ? renderLegalPage("terms") : new Response(null, { status: 405, headers: { allow: "GET, HEAD" } }), "onRequest");
+
+// politica-de-privacidade.js
+var onRequest = /* @__PURE__ */ __name(({ request }) => request.method === "GET" || request.method === "HEAD" ? renderLegalPage("privacy") : new Response(null, { status: 405, headers: { allow: "GET, HEAD" } }), "onRequest");
+
+// termos-e-condicoes.js
+var onRequest2 = /* @__PURE__ */ __name(({ request }) => request.method === "GET" || request.method === "HEAD" ? renderLegalPage("terms") : new Response(null, { status: 405, headers: { allow: "GET, HEAD" } }), "onRequest");
+
+// _lib/subjects.js
+var SUPABASE_URL = "https://hhgxxvvreyhigxynrgmv.supabase.co";
+var PUBLISHABLE_KEY = "sb_publishable_7cBwufZF1sDnn_tUEJm57A_i0pCVDCF";
+var CACHE_SECONDS2 = 600;
+var CYCLES = [
+  { label: "1.\xBA ciclo", years: [1, 2, 3, 4] },
+  { label: "2.\xBA ciclo", years: [5, 6] },
+  { label: "3.\xBA ciclo", years: [7, 8, 9] }
+];
+var FAQ_QUESTION = "Que disciplinas h\xE1?";
+var esc2 = /* @__PURE__ */ __name((s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"), "esc");
+var joinPt = /* @__PURE__ */ __name((items) => items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} e ${items.at(-1)}`, "joinPt");
+async function fetchSubjects() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/site_subjects`, {
+      headers: { apikey: PUBLISHABLE_KEY, accept: "application/json" },
+      cf: { cacheTtl: CACHE_SECONDS2, cacheEverything: true }
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (!Array.isArray(data)) throw new Error("resposta inv\xE1lida");
+    const subjects = data.filter((s) => s && typeof s.name === "string" && s.name.trim() && Array.isArray(s.years)).map((s) => ({ name: s.name.trim(), years: s.years.map(Number) }));
+    return subjects.length ? subjects : null;
+  } catch (err) {
+    console.error("site_subjects fetch failed", err);
+    return null;
+  }
+}
+__name(fetchSubjects, "fetchSubjects");
+function subjectsAnswer(subjects) {
+  const parts = [];
+  const missing = [];
+  for (const cycle of CYCLES) {
+    const names = subjects.filter((s) => s.years.some((y) => cycle.years.includes(y))).map((s) => s.name);
+    if (names.length) parts.push(`${cycle.label}: ${joinPt(names)}`);
+    else missing.push(cycle.label.replace(" ciclo", ""));
+  }
+  const intro = parts.length === 1 ? `No ${parts[0]}.` : `${parts.join("; ")}.`;
+  const next = missing.length ? ` Estamos a acrescentar fichas e disciplinas, tamb\xE9m para o ${joinPt(missing)} ${missing.length > 1 ? "ciclos" : "ciclo"}.` : " Estamos a acrescentar novas fichas e disciplinas.";
+  return intro + next;
+}
+__name(subjectsAnswer, "subjectsAnswer");
+function applyToIndex(html, subjects) {
+  const answer = subjectsAnswer(subjects);
+  let out = html.replace(/(<p data-subjects-answer>)[\s\S]*?(<\/p>)/, (_, open, close) => `${open}${esc2(answer)}${close}`);
+  out = out.replace(/(<script type="application\/ld\+json">)([\s\S]*?)(<\/script>)/, (whole, open, json, close) => {
+    try {
+      const data = JSON.parse(json);
+      for (const node of data["@graph"] ?? []) {
+        if (Array.isArray(node.teaches)) node.teaches = subjects.map((s) => s.name);
+        if (node["@type"] === "FAQPage") {
+          const q = (node.mainEntity ?? []).find((e) => e.name === FAQ_QUESTION);
+          if (q?.acceptedAnswer) q.acceptedAnswer.text = answer;
+        }
+      }
+      return `${open}
+${JSON.stringify(data, null, 2).replace(/</g, "\\u003c")}
+  ${close}`;
+    } catch {
+      return whole;
+    }
+  });
+  return out;
+}
+__name(applyToIndex, "applyToIndex");
+function applyToLlms(text, subjects) {
+  const answer = subjectsAnswer(subjects);
+  return text.replace(/^- Disciplinas: .*$/m, `- Disciplinas: ${answer}`).replace(/^- \*\*Que disciplinas há\?\*\* .*$/m, `- **Que disciplinas h\xE1?** ${answer}`);
+}
+__name(applyToLlms, "applyToLlms");
+
+// _middleware.js
+var TARGETS = {
+  "/": { type: "text/html", apply: applyToIndex },
+  "/index.html": { type: "text/html", apply: applyToIndex },
+  "/llms.txt": { type: "text/plain", apply: applyToLlms }
+};
+async function onRequest3({ request, next }) {
+  const target = TARGETS[new URL(request.url).pathname];
+  const response = await next();
+  if (!target || request.method !== "GET" || response.status !== 200 || !(response.headers.get("content-type") ?? "").startsWith(target.type)) return response;
+  const subjects = await fetchSubjects();
+  if (!subjects) return response;
+  const body = target.apply(await response.text(), subjects);
+  const headers = new Headers(response.headers);
+  headers.delete("content-length");
+  headers.delete("etag");
+  return new Response(body, { status: 200, headers });
+}
+__name(onRequest3, "onRequest");
+
+// ../.wrangler/tmp/pages-Ou0wp6/functionsRoutes-0.7203478583425296.mjs
 var routes = [
   {
     routePath: "/politica-de-privacidade",
@@ -1173,8 +1262,17 @@ var routes = [
     method: "",
     middlewares: [],
     modules: [onRequest2]
+  },
+  {
+    routePath: "/",
+    mountPath: "/",
+    method: "",
+    middlewares: [onRequest3],
+    modules: []
   }
 ];
+
+// ../../../../../../.npm/_npx/32026684e21afda6/node_modules/path-to-regexp/dist.es2015/index.js
 function lexer(str) {
   var tokens = [];
   var i = 0;
@@ -1259,7 +1357,6 @@ function lexer(str) {
   return tokens;
 }
 __name(lexer, "lexer");
-__name2(lexer, "lexer");
 function parse(str, options) {
   if (options === void 0) {
     options = {};
@@ -1270,18 +1367,18 @@ function parse(str, options) {
   var key = 0;
   var i = 0;
   var path = "";
-  var tryConsume = /* @__PURE__ */ __name2(function(type) {
+  var tryConsume = /* @__PURE__ */ __name(function(type) {
     if (i < tokens.length && tokens[i].type === type)
       return tokens[i++].value;
   }, "tryConsume");
-  var mustConsume = /* @__PURE__ */ __name2(function(type) {
+  var mustConsume = /* @__PURE__ */ __name(function(type) {
     var value2 = tryConsume(type);
     if (value2 !== void 0)
       return value2;
     var _a2 = tokens[i], nextType = _a2.type, index = _a2.index;
     throw new TypeError("Unexpected ".concat(nextType, " at ").concat(index, ", expected ").concat(type));
   }, "mustConsume");
-  var consumeText = /* @__PURE__ */ __name2(function() {
+  var consumeText = /* @__PURE__ */ __name(function() {
     var result2 = "";
     var value2;
     while (value2 = tryConsume("CHAR") || tryConsume("ESCAPED_CHAR")) {
@@ -1289,7 +1386,7 @@ function parse(str, options) {
     }
     return result2;
   }, "consumeText");
-  var isSafe = /* @__PURE__ */ __name2(function(value2) {
+  var isSafe = /* @__PURE__ */ __name(function(value2) {
     for (var _i = 0, delimiter_1 = delimiter; _i < delimiter_1.length; _i++) {
       var char2 = delimiter_1[_i];
       if (value2.indexOf(char2) > -1)
@@ -1297,7 +1394,7 @@ function parse(str, options) {
     }
     return false;
   }, "isSafe");
-  var safePattern = /* @__PURE__ */ __name2(function(prefix2) {
+  var safePattern = /* @__PURE__ */ __name(function(prefix2) {
     var prev = result[result.length - 1];
     var prevText = prefix2 || (prev && typeof prev === "string" ? prev : "");
     if (prev && !prevText) {
@@ -1360,14 +1457,12 @@ function parse(str, options) {
   return result;
 }
 __name(parse, "parse");
-__name2(parse, "parse");
 function match(str, options) {
   var keys = [];
   var re = pathToRegexp(str, keys, options);
   return regexpToFunction(re, keys, options);
 }
 __name(match, "match");
-__name2(match, "match");
 function regexpToFunction(re, keys, options) {
   if (options === void 0) {
     options = {};
@@ -1381,7 +1476,7 @@ function regexpToFunction(re, keys, options) {
       return false;
     var path = m[0], index = m.index;
     var params = /* @__PURE__ */ Object.create(null);
-    var _loop_1 = /* @__PURE__ */ __name2(function(i2) {
+    var _loop_1 = /* @__PURE__ */ __name(function(i2) {
       if (m[i2] === void 0)
         return "continue";
       var key = keys[i2 - 1];
@@ -1400,17 +1495,14 @@ function regexpToFunction(re, keys, options) {
   };
 }
 __name(regexpToFunction, "regexpToFunction");
-__name2(regexpToFunction, "regexpToFunction");
 function escapeString(str) {
   return str.replace(/([.+*?=^!:${}()[\]|/\\])/g, "\\$1");
 }
 __name(escapeString, "escapeString");
-__name2(escapeString, "escapeString");
 function flags(options) {
   return options && options.sensitive ? "" : "i";
 }
 __name(flags, "flags");
-__name2(flags, "flags");
 function regexpToRegexp(path, keys) {
   if (!keys)
     return path;
@@ -1431,7 +1523,6 @@ function regexpToRegexp(path, keys) {
   return path;
 }
 __name(regexpToRegexp, "regexpToRegexp");
-__name2(regexpToRegexp, "regexpToRegexp");
 function arrayToRegexp(paths, keys, options) {
   var parts = paths.map(function(path) {
     return pathToRegexp(path, keys, options).source;
@@ -1439,12 +1530,10 @@ function arrayToRegexp(paths, keys, options) {
   return new RegExp("(?:".concat(parts.join("|"), ")"), flags(options));
 }
 __name(arrayToRegexp, "arrayToRegexp");
-__name2(arrayToRegexp, "arrayToRegexp");
 function stringToRegexp(path, keys, options) {
   return tokensToRegexp(parse(path, options), keys, options);
 }
 __name(stringToRegexp, "stringToRegexp");
-__name2(stringToRegexp, "stringToRegexp");
 function tokensToRegexp(tokens, keys, options) {
   if (options === void 0) {
     options = {};
@@ -1500,7 +1589,6 @@ function tokensToRegexp(tokens, keys, options) {
   return new RegExp(route, flags(options));
 }
 __name(tokensToRegexp, "tokensToRegexp");
-__name2(tokensToRegexp, "tokensToRegexp");
 function pathToRegexp(path, keys, options) {
   if (path instanceof RegExp)
     return regexpToRegexp(path, keys);
@@ -1509,7 +1597,8 @@ function pathToRegexp(path, keys, options) {
   return stringToRegexp(path, keys, options);
 }
 __name(pathToRegexp, "pathToRegexp");
-__name2(pathToRegexp, "pathToRegexp");
+
+// ../../../../../../.npm/_npx/32026684e21afda6/node_modules/wrangler/templates/pages-template-worker.ts
 var escapeRegex = /[.+?^${}()|[\]\\]/g;
 function getOriginalPathPrefix(requestPath, normalizedPrefix) {
   let end = 0;
@@ -1524,7 +1613,6 @@ function getOriginalPathPrefix(requestPath, normalizedPrefix) {
   return requestPath.slice(0, end);
 }
 __name(getOriginalPathPrefix, "getOriginalPathPrefix");
-__name2(getOriginalPathPrefix, "getOriginalPathPrefix");
 function* executeRequest(request) {
   const requestPath = new URL(request.url).pathname;
   const normalizedRequestPath = requestPath.replace(/\/+/g, "/");
@@ -1577,14 +1665,13 @@ function* executeRequest(request) {
   }
 }
 __name(executeRequest, "executeRequest");
-__name2(executeRequest, "executeRequest");
 var pages_template_worker_default = {
   async fetch(originalRequest, env2, workerContext) {
     let request = originalRequest;
     const handlerIterator = executeRequest(request);
     let data = {};
     let isFailOpen = false;
-    const next = /* @__PURE__ */ __name2(async (input, init) => {
+    const next = /* @__PURE__ */ __name(async (input, init) => {
       if (input !== void 0) {
         let url = input;
         if (typeof input === "string") {
@@ -1611,7 +1698,7 @@ var pages_template_worker_default = {
           },
           env: env2,
           waitUntil: workerContext.waitUntil.bind(workerContext),
-          passThroughOnException: /* @__PURE__ */ __name2(() => {
+          passThroughOnException: /* @__PURE__ */ __name(() => {
             isFailOpen = true;
           }, "passThroughOnException")
         };
@@ -1639,428 +1726,13 @@ var pages_template_worker_default = {
     }
   }
 };
-var cloneResponse = /* @__PURE__ */ __name2((response) => (
+var cloneResponse = /* @__PURE__ */ __name((response) => (
   // https://fetch.spec.whatwg.org/#null-body-status
   new Response(
     [101, 204, 205, 304].includes(response.status) ? null : response.body,
     response
   )
 ), "cloneResponse");
-var drainBody = /* @__PURE__ */ __name2(async (request, env2, _ctx, middlewareCtx) => {
-  try {
-    return await middlewareCtx.next(request, env2);
-  } finally {
-    try {
-      if (request.body !== null && !request.bodyUsed) {
-        const reader = request.body.getReader();
-        while (!(await reader.read()).done) {
-        }
-      }
-    } catch (e) {
-      console.error("Failed to drain the unused request body.", e);
-    }
-  }
-}, "drainBody");
-var middleware_ensure_req_body_drained_default = drainBody;
-function reduceError(e) {
-  return {
-    name: e?.name,
-    message: e?.message ?? String(e),
-    stack: e?.stack,
-    cause: e?.cause === void 0 ? void 0 : reduceError(e.cause)
-  };
-}
-__name(reduceError, "reduceError");
-__name2(reduceError, "reduceError");
-var jsonError = /* @__PURE__ */ __name2(async (request, env2, _ctx, middlewareCtx) => {
-  try {
-    return await middlewareCtx.next(request, env2);
-  } catch (e) {
-    const error3 = reduceError(e);
-    const body = JSON.stringify(error3);
-    const headers = {
-      "Content-Type": "application/json",
-      "MF-Experimental-Error-Stack": "true"
-    };
-    const encoded = encodeURIComponent(body);
-    if (encoded.length <= 8192) {
-      headers["MF-Experimental-Error-Stack-Payload"] = encoded;
-    }
-    return new Response(body, { status: 500, headers });
-  }
-}, "jsonError");
-var middleware_miniflare3_json_error_default = jsonError;
-var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
-  middleware_ensure_req_body_drained_default,
-  middleware_miniflare3_json_error_default
-];
-var middleware_insertion_facade_default = pages_template_worker_default;
-var __facade_middleware__ = [];
-function __facade_register__(...args) {
-  __facade_middleware__.push(...args.flat());
-}
-__name(__facade_register__, "__facade_register__");
-__name2(__facade_register__, "__facade_register__");
-function __facade_invokeChain__(request, env2, ctx, dispatch, middlewareChain) {
-  const [head, ...tail] = middlewareChain;
-  const middlewareCtx = {
-    dispatch,
-    next(newRequest, newEnv) {
-      return __facade_invokeChain__(newRequest, newEnv, ctx, dispatch, tail);
-    }
-  };
-  return head(request, env2, ctx, middlewareCtx);
-}
-__name(__facade_invokeChain__, "__facade_invokeChain__");
-__name2(__facade_invokeChain__, "__facade_invokeChain__");
-function __facade_invoke__(request, env2, ctx, dispatch, finalMiddleware) {
-  return __facade_invokeChain__(request, env2, ctx, dispatch, [
-    ...__facade_middleware__,
-    finalMiddleware
-  ]);
-}
-__name(__facade_invoke__, "__facade_invoke__");
-__name2(__facade_invoke__, "__facade_invoke__");
-var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
-  static {
-    __name(this, "___Facade_ScheduledController__");
-  }
-  constructor(scheduledTime, cron, noRetry) {
-    this.scheduledTime = scheduledTime;
-    this.cron = cron;
-    this.#noRetry = noRetry;
-  }
-  scheduledTime;
-  cron;
-  static {
-    __name2(this, "__Facade_ScheduledController__");
-  }
-  #noRetry;
-  noRetry() {
-    if (!(this instanceof ___Facade_ScheduledController__)) {
-      throw new TypeError("Illegal invocation");
-    }
-    this.#noRetry();
-  }
-};
-function wrapExportedHandler(worker) {
-  if (__INTERNAL_WRANGLER_MIDDLEWARE__ === void 0 || __INTERNAL_WRANGLER_MIDDLEWARE__.length === 0) {
-    return worker;
-  }
-  for (const middleware of __INTERNAL_WRANGLER_MIDDLEWARE__) {
-    __facade_register__(middleware);
-  }
-  const fetchDispatcher = /* @__PURE__ */ __name2(function(request, env2, ctx) {
-    if (worker.fetch === void 0) {
-      throw new Error("Handler does not export a fetch() function.");
-    }
-    return worker.fetch(request, env2, ctx);
-  }, "fetchDispatcher");
-  return {
-    ...worker,
-    fetch(request, env2, ctx) {
-      const dispatcher = /* @__PURE__ */ __name2(function(type, init) {
-        if (type === "scheduled" && worker.scheduled !== void 0) {
-          const controller = new __Facade_ScheduledController__(
-            Date.now(),
-            init.cron ?? "",
-            () => {
-            }
-          );
-          return worker.scheduled(controller, env2, ctx);
-        }
-      }, "dispatcher");
-      return __facade_invoke__(request, env2, ctx, dispatcher, fetchDispatcher);
-    }
-  };
-}
-__name(wrapExportedHandler, "wrapExportedHandler");
-__name2(wrapExportedHandler, "wrapExportedHandler");
-function wrapWorkerEntrypoint(klass) {
-  if (__INTERNAL_WRANGLER_MIDDLEWARE__ === void 0 || __INTERNAL_WRANGLER_MIDDLEWARE__.length === 0) {
-    return klass;
-  }
-  for (const middleware of __INTERNAL_WRANGLER_MIDDLEWARE__) {
-    __facade_register__(middleware);
-  }
-  return class extends klass {
-    #fetchDispatcher = /* @__PURE__ */ __name2((request, env2, ctx) => {
-      this.env = env2;
-      this.ctx = ctx;
-      if (super.fetch === void 0) {
-        throw new Error("Entrypoint class does not define a fetch() function.");
-      }
-      return super.fetch(request);
-    }, "#fetchDispatcher");
-    #dispatcher = /* @__PURE__ */ __name2((type, init) => {
-      if (type === "scheduled" && super.scheduled !== void 0) {
-        const controller = new __Facade_ScheduledController__(
-          Date.now(),
-          init.cron ?? "",
-          () => {
-          }
-        );
-        return super.scheduled(controller);
-      }
-    }, "#dispatcher");
-    fetch(request) {
-      return __facade_invoke__(
-        request,
-        this.env,
-        this.ctx,
-        this.#dispatcher,
-        this.#fetchDispatcher
-      );
-    }
-  };
-}
-__name(wrapWorkerEntrypoint, "wrapWorkerEntrypoint");
-__name2(wrapWorkerEntrypoint, "wrapWorkerEntrypoint");
-var WRAPPED_ENTRY;
-if (typeof middleware_insertion_facade_default === "object") {
-  WRAPPED_ENTRY = wrapExportedHandler(middleware_insertion_facade_default);
-} else if (typeof middleware_insertion_facade_default === "function") {
-  WRAPPED_ENTRY = wrapWorkerEntrypoint(middleware_insertion_facade_default);
-}
-var middleware_loader_entry_default = WRAPPED_ENTRY;
-
-// ../../../../../.npm/_npx/32026684e21afda6/node_modules/wrangler/templates/pages-dev-util.ts
-function isRoutingRuleMatch(pathname, routingRule) {
-  if (!pathname) {
-    throw new Error("Pathname is undefined.");
-  }
-  if (!routingRule) {
-    throw new Error("Routing rule is undefined.");
-  }
-  const ruleRegExp = transformRoutingRuleToRegExp(routingRule);
-  return pathname.match(ruleRegExp) !== null;
-}
-__name(isRoutingRuleMatch, "isRoutingRuleMatch");
-function transformRoutingRuleToRegExp(rule) {
-  let transformedRule;
-  if (rule === "/" || rule === "/*") {
-    transformedRule = rule;
-  } else if (rule.endsWith("/*")) {
-    transformedRule = `${rule.substring(0, rule.length - 2)}(/*)?`;
-  } else if (rule.endsWith("/")) {
-    transformedRule = `${rule.substring(0, rule.length - 1)}(/)?`;
-  } else if (rule.endsWith("*")) {
-    transformedRule = rule;
-  } else {
-    transformedRule = `${rule}(/)?`;
-  }
-  transformedRule = `^${transformedRule.replaceAll(/\./g, "\\.").replaceAll(/\*/g, ".*")}$`;
-  return new RegExp(transformedRule);
-}
-__name(transformRoutingRuleToRegExp, "transformRoutingRuleToRegExp");
-
-// .wrangler/tmp/pages-L0SMKr/9dpzz4h63yn.js
-var define_ROUTES_default = {
-  version: 1,
-  include: ["/politica-de-privacidade", "/termos-e-condicoes"],
-  exclude: []
-};
-var routes2 = define_ROUTES_default;
-var pages_dev_pipeline_default = {
-  fetch(request, env2, context2) {
-    const { pathname } = new URL(request.url);
-    for (const exclude of routes2.exclude) {
-      if (isRoutingRuleMatch(pathname, exclude)) {
-        return env2.ASSETS.fetch(request);
-      }
-    }
-    for (const include of routes2.include) {
-      if (isRoutingRuleMatch(pathname, include)) {
-        const workerAsHandler = middleware_loader_entry_default;
-        if (workerAsHandler.fetch === void 0) {
-          throw new TypeError("Entry point missing `fetch` handler");
-        }
-        return workerAsHandler.fetch(request, env2, context2);
-      }
-    }
-    return env2.ASSETS.fetch(request);
-  }
-};
-
-// ../../../../../.npm/_npx/32026684e21afda6/node_modules/wrangler/templates/middleware/middleware-ensure-req-body-drained.ts
-var drainBody2 = /* @__PURE__ */ __name(async (request, env2, _ctx, middlewareCtx) => {
-  try {
-    return await middlewareCtx.next(request, env2);
-  } finally {
-    try {
-      if (request.body !== null && !request.bodyUsed) {
-        const reader = request.body.getReader();
-        while (!(await reader.read()).done) {
-        }
-      }
-    } catch (e) {
-      console.error("Failed to drain the unused request body.", e);
-    }
-  }
-}, "drainBody");
-var middleware_ensure_req_body_drained_default2 = drainBody2;
-
-// ../../../../../.npm/_npx/32026684e21afda6/node_modules/wrangler/templates/middleware/middleware-miniflare3-json-error.ts
-function reduceError2(e) {
-  return {
-    name: e?.name,
-    message: e?.message ?? String(e),
-    stack: e?.stack,
-    cause: e?.cause === void 0 ? void 0 : reduceError2(e.cause)
-  };
-}
-__name(reduceError2, "reduceError");
-var jsonError2 = /* @__PURE__ */ __name(async (request, env2, _ctx, middlewareCtx) => {
-  try {
-    return await middlewareCtx.next(request, env2);
-  } catch (e) {
-    const error3 = reduceError2(e);
-    const body = JSON.stringify(error3);
-    const headers = {
-      "Content-Type": "application/json",
-      "MF-Experimental-Error-Stack": "true"
-    };
-    const encoded = encodeURIComponent(body);
-    if (encoded.length <= 8192) {
-      headers["MF-Experimental-Error-Stack-Payload"] = encoded;
-    }
-    return new Response(body, { status: 500, headers });
-  }
-}, "jsonError");
-var middleware_miniflare3_json_error_default2 = jsonError2;
-
-// .wrangler/tmp/bundle-P6TFDJ/middleware-insertion-facade.js
-var __INTERNAL_WRANGLER_MIDDLEWARE__2 = [
-  middleware_ensure_req_body_drained_default2,
-  middleware_miniflare3_json_error_default2
-];
-var middleware_insertion_facade_default2 = pages_dev_pipeline_default;
-
-// ../../../../../.npm/_npx/32026684e21afda6/node_modules/wrangler/templates/middleware/common.ts
-var __facade_middleware__2 = [];
-function __facade_register__2(...args) {
-  __facade_middleware__2.push(...args.flat());
-}
-__name(__facade_register__2, "__facade_register__");
-function __facade_invokeChain__2(request, env2, ctx, dispatch, middlewareChain) {
-  const [head, ...tail] = middlewareChain;
-  const middlewareCtx = {
-    dispatch,
-    next(newRequest, newEnv) {
-      return __facade_invokeChain__2(newRequest, newEnv, ctx, dispatch, tail);
-    }
-  };
-  return head(request, env2, ctx, middlewareCtx);
-}
-__name(__facade_invokeChain__2, "__facade_invokeChain__");
-function __facade_invoke__2(request, env2, ctx, dispatch, finalMiddleware) {
-  return __facade_invokeChain__2(request, env2, ctx, dispatch, [
-    ...__facade_middleware__2,
-    finalMiddleware
-  ]);
-}
-__name(__facade_invoke__2, "__facade_invoke__");
-
-// .wrangler/tmp/bundle-P6TFDJ/middleware-loader.entry.ts
-var __Facade_ScheduledController__2 = class ___Facade_ScheduledController__2 {
-  constructor(scheduledTime, cron, noRetry) {
-    this.scheduledTime = scheduledTime;
-    this.cron = cron;
-    this.#noRetry = noRetry;
-  }
-  scheduledTime;
-  cron;
-  static {
-    __name(this, "__Facade_ScheduledController__");
-  }
-  #noRetry;
-  noRetry() {
-    if (!(this instanceof ___Facade_ScheduledController__2)) {
-      throw new TypeError("Illegal invocation");
-    }
-    this.#noRetry();
-  }
-};
-function wrapExportedHandler2(worker) {
-  if (__INTERNAL_WRANGLER_MIDDLEWARE__2 === void 0 || __INTERNAL_WRANGLER_MIDDLEWARE__2.length === 0) {
-    return worker;
-  }
-  for (const middleware of __INTERNAL_WRANGLER_MIDDLEWARE__2) {
-    __facade_register__2(middleware);
-  }
-  const fetchDispatcher = /* @__PURE__ */ __name(function(request, env2, ctx) {
-    if (worker.fetch === void 0) {
-      throw new Error("Handler does not export a fetch() function.");
-    }
-    return worker.fetch(request, env2, ctx);
-  }, "fetchDispatcher");
-  return {
-    ...worker,
-    fetch(request, env2, ctx) {
-      const dispatcher = /* @__PURE__ */ __name(function(type, init) {
-        if (type === "scheduled" && worker.scheduled !== void 0) {
-          const controller = new __Facade_ScheduledController__2(
-            Date.now(),
-            init.cron ?? "",
-            () => {
-            }
-          );
-          return worker.scheduled(controller, env2, ctx);
-        }
-      }, "dispatcher");
-      return __facade_invoke__2(request, env2, ctx, dispatcher, fetchDispatcher);
-    }
-  };
-}
-__name(wrapExportedHandler2, "wrapExportedHandler");
-function wrapWorkerEntrypoint2(klass) {
-  if (__INTERNAL_WRANGLER_MIDDLEWARE__2 === void 0 || __INTERNAL_WRANGLER_MIDDLEWARE__2.length === 0) {
-    return klass;
-  }
-  for (const middleware of __INTERNAL_WRANGLER_MIDDLEWARE__2) {
-    __facade_register__2(middleware);
-  }
-  return class extends klass {
-    #fetchDispatcher = /* @__PURE__ */ __name((request, env2, ctx) => {
-      this.env = env2;
-      this.ctx = ctx;
-      if (super.fetch === void 0) {
-        throw new Error("Entrypoint class does not define a fetch() function.");
-      }
-      return super.fetch(request);
-    }, "#fetchDispatcher");
-    #dispatcher = /* @__PURE__ */ __name((type, init) => {
-      if (type === "scheduled" && super.scheduled !== void 0) {
-        const controller = new __Facade_ScheduledController__2(
-          Date.now(),
-          init.cron ?? "",
-          () => {
-          }
-        );
-        return super.scheduled(controller);
-      }
-    }, "#dispatcher");
-    fetch(request) {
-      return __facade_invoke__2(
-        request,
-        this.env,
-        this.ctx,
-        this.#dispatcher,
-        this.#fetchDispatcher
-      );
-    }
-  };
-}
-__name(wrapWorkerEntrypoint2, "wrapWorkerEntrypoint");
-var WRAPPED_ENTRY2;
-if (typeof middleware_insertion_facade_default2 === "object") {
-  WRAPPED_ENTRY2 = wrapExportedHandler2(middleware_insertion_facade_default2);
-} else if (typeof middleware_insertion_facade_default2 === "function") {
-  WRAPPED_ENTRY2 = wrapWorkerEntrypoint2(middleware_insertion_facade_default2);
-}
-var middleware_loader_entry_default2 = WRAPPED_ENTRY2;
 export {
-  __INTERNAL_WRANGLER_MIDDLEWARE__2 as __INTERNAL_WRANGLER_MIDDLEWARE__,
-  middleware_loader_entry_default2 as default
+  pages_template_worker_default as default
 };
-//# sourceMappingURL=9dpzz4h63yn.js.map

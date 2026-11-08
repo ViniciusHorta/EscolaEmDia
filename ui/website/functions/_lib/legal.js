@@ -191,7 +191,7 @@ export async function renderLegalPage(kind) {
 
   return layout({
     title: `${page.label} — Escola em Dia`,
-    description: `${page.label} da Escola em Dia, a aplicação de apoio ao estudo em família para o 1.º ciclo. Versão ${doc.version}, em vigor desde ${fmtDate(doc.publishedAt)}.`,
+    description: `${page.label} da Escola em Dia, a aplicação de apoio ao estudo em família para crianças do 1.º ao 9.º ano. Versão ${doc.version}, em vigor desde ${fmtDate(doc.publishedAt)}.`,
     canonical,
     body: `    <article class="doc doc--legal container container--narrow">
       <p class="eyebrow">Documento legal</p>

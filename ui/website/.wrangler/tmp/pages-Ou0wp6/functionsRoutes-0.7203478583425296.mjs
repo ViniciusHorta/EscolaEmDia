@@ -1,5 +1,6 @@
 import { onRequest as __politica_de_privacidade_js_onRequest } from "/Users/viniciushorta/Documents/Projetos/escola-em-dia/ui/website/functions/politica-de-privacidade.js"
 import { onRequest as __termos_e_condicoes_js_onRequest } from "/Users/viniciushorta/Documents/Projetos/escola-em-dia/ui/website/functions/termos-e-condicoes.js"
+import { onRequest as ___middleware_js_onRequest } from "/Users/viniciushorta/Documents/Projetos/escola-em-dia/ui/website/functions/_middleware.js"
 
 export const routes = [
     {
@@ -15,5 +16,12 @@ export const routes = [
       method: "",
       middlewares: [],
       modules: [__termos_e_condicoes_js_onRequest],
+    },
+  {
+      routePath: "/",
+      mountPath: "/",
+      method: "",
+      middlewares: [___middleware_js_onRequest],
+      modules: [],
     },
   ]

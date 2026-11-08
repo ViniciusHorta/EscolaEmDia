@@ -15,6 +15,14 @@
       "module": [
         "termos-e-condicoes.js:onRequest"
       ]
+    },
+    {
+      "routePath": "/",
+      "mountPath": "/",
+      "method": "",
+      "middleware": [
+        "_middleware.js:onRequest"
+      ]
     }
   ],
   "baseURL": "/"
