@@ -68,4 +68,37 @@ Para permitir a utilização das funcionalidades educativas, poderemos recolher:
 - Histórico de atividades;
 - Informações sobre o progresso escolar dentro da aplicação.
 
-Não exigimos às crianças que forneçam endereço de email, número de telefone, morada, nome completo ou data de nascimento para criar um perfil infantil
+Não exigimos às crianças que forneçam endereço de email, número de telefone, morada, nome completo ou data de nascimento para criar um perfil infantil.
+
+## [Secções 4 a 7 por redigir: finalidades e fundamentos jurídicos, subcontratantes e fornecedores, transferências internacionais, segurança]
+
+## 8. Conservação e eliminação dos dados
+
+Os dados pessoais são conservados enquanto a conta estiver ativa.
+
+O responsável pode eliminar a conta a qualquer momento na aplicação (Área do Responsável → menu da conta → «Eliminar conta») ou pedir a eliminação para suporte@escolaemdia.me, a partir do endereço de email da conta. As instruções estão em https://escolaemdia.me/eliminar-conta.
+
+Com a eliminação, são apagados de imediato:
+
+- Os dados da conta do responsável: email, palavra-passe, PIN do responsável, sessões e registo de aceite dos documentos legais;
+- Os perfis infantis: nome de apresentação, ano de escolaridade, avatar e PIN;
+- A atividade educativa: fichas atribuídas, respostas, revisões, classificações, progresso e histórico;
+- Os problemas reportados em perguntas das fichas.
+
+Quando outro adulto gere a mesma família, a família e os perfis infantis mantêm-se para esse adulto e é apagada apenas a conta de quem pediu a eliminação. As referências a essa conta no histórico (por exemplo, quem atribuiu ou reviu uma ficha) são removidas.
+
+Após a eliminação, conservam-se apenas:
+
+- Cópias de segurança da base de dados, até 30 dias, usadas exclusivamente para recuperação em caso de avaria e substituídas automaticamente;
+- Registos técnicos de acesso, sem conteúdo educativo nem dados das crianças, até 30 dias, para segurança e diagnóstico;
+- Faturas e registos de pagamento, quando tenha existido uma subscrição paga, durante 10 anos, para cumprimento de obrigações fiscais e contabilísticas.
+
+Os pedidos de eliminação enviados por email são respondidos no prazo máximo de 30 dias.
+
+## 9. Direitos dos titulares dos dados
+
+Nos termos do RGPD, os titulares dos dados (e os pais ou responsáveis legais, em representação das crianças) têm direito de acesso, retificação, apagamento, limitação do tratamento, portabilidade e oposição, e de retirar o consentimento a qualquer momento.
+
+Estes direitos podem ser exercidos através de suporte@escolaemdia.me. O direito ao apagamento pode também ser exercido diretamente na aplicação, conforme a secção 8.
+
+Os titulares têm ainda o direito de apresentar reclamação à Comissão Nacional de Proteção de Dados (CNPD), em www.cnpd.pt.

@@ -454,6 +454,9 @@ p { margin: 0; }
 .doc__body strong { color: var(--ink); }
 .doc__body hr { border: 0; border-top: 1px solid var(--line); margin: 36px 0; }
 .doc__body a { word-break: break-word; }
+.doc__steps { counter-reset: step; list-style: none; padding: 0; margin: 8px 0 20px; display: grid; gap: 12px; }
+.doc__steps li { counter-increment: step; position: relative; padding: 16px 18px 16px 64px; border-radius: 20px; background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow); color: var(--ink-soft); }
+.doc__steps li::before { content: counter(step); position: absolute; left: 16px; top: 14px; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--primary); color: #fff; font-weight: 800; font-size: 15px; }
 .doc__note { margin-top: 48px; padding: 20px 24px; border-radius: 22px; background: var(--bg-tint); }
 .doc__note p { margin-bottom: 6px; }
 @media (max-width: 560px) { .doc__toc ul { columns: 1; } }

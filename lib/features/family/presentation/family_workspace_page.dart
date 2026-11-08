@@ -1,3 +1,5 @@
+import '../../account/data/account_service.dart';
+import '../../account/presentation/delete_account_page.dart';
 import '../../legal/data/legal_service.dart';
 import '../../legal/presentation/legal_documents_page.dart';
 import 'package:flutter/material.dart';
@@ -306,6 +308,7 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
       onLock: () => parentAccess.lock(),
       onSignOut: signOut,
       onOpenLegal: () => LegalDocumentsPage.open(context, LegalService(widget.auth.client)),
+      onDeleteAccount: () => DeleteAccountPage.open(context, AccountService(widget.auth.client)),
       dashboard: ParentDashboard(
         key: ValueKey(selectedFamily!.id),
         familyId: selectedFamily!.id,

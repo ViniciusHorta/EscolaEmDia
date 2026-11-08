@@ -19,6 +19,8 @@ abstract final class AppColors {
   static const amber = Color(0xFF855300);
   static const amberSoft = Color(0xFFFFDDB8);
   static const error = Color(0xFFBA1A1A);
+  static const errorPressed = Color(0xFF8C1313);
+  static const errorSoft = Color(0xFFFFE4E1);
 }
 
 abstract final class AppSpacing {

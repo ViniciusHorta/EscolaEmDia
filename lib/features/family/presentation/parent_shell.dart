@@ -16,6 +16,7 @@ class ParentShell extends StatelessWidget {
     required this.onLock,
     required this.onSignOut,
     this.onOpenLegal,
+    this.onDeleteAccount,
     this.pendingCount = 0,
     this.busy = false,
   });
@@ -28,6 +29,7 @@ class ParentShell extends StatelessWidget {
   final VoidCallback onLock;
   final VoidCallback onSignOut;
   final VoidCallback? onOpenLegal;
+  final VoidCallback? onDeleteAccount;
   final int pendingCount;
   final bool busy;
 
@@ -118,6 +120,12 @@ class ParentShell extends StatelessWidget {
           leading: const Icon(Icons.logout_rounded, color: AppColors.error),
           title: const Text('Sair da conta'),
           onTap: () { Navigator.pop(sheet); onSignOut(); },
+        ),
+        if (onDeleteAccount != null) ListTile(
+          leading: const Icon(Icons.delete_forever_rounded, color: AppColors.error),
+          title: const Text('Eliminar conta'),
+          subtitle: const Text('Apaga a conta e todos os dados da família.'),
+          onTap: () { Navigator.pop(sheet); onDeleteAccount!(); },
         ),
       ]),
     )),

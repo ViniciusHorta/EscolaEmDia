@@ -1,0 +1,66 @@
+openapi: 3.0.3
+info:
+  title: Escola em Dia — Conta
+  version: 1.0.0
+  description: >-
+    Eliminação da conta do responsável e dos dados associados.
+    A função Supabase account acrescenta o prefixo /functions/v1/account.
+servers:
+  - url: https://hhgxxvvreyhigxynrgmv.supabase.co/functions/v1/account
+paths:
+  /v1/delete:
+    post:
+      operationId: deleteAccount
+      summary: Elimina a conta e os dados. Irreversível.
+      description: >-
+        Exige um JWT obtido com palavra-passe nos últimos cinco minutos (claim amr, método password).
+        Apaga as famílias em que a conta é o único adulto ativo (perfis infantis, fichas, tentativas,
+        respostas, revisões, relatos); nas restantes, só retira o membro. Depois apaga o utilizador
+        no Supabase Auth (aceites legais, PIN e desbloqueios em cascata). Repetir após uma falha é seguro.
+      security: [{ adultSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [confirmation]
+              properties:
+                confirmation: { type: string, enum: [ELIMINAR] }
+      responses:
+        '200':
+          description: Conta eliminada
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [deleted, familiesDeleted, familiesLeft, childrenDeleted]
+                properties:
+                  deleted: { type: boolean, enum: [true] }
+                  familiesDeleted: { type: integer }
+                  familiesLeft: { type: integer }
+                  childrenDeleted: { type: integer }
+        '401': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '503': { $ref: '#/components/responses/Error' }
+        default: { $ref: '#/components/responses/Error' }
+components:
+  securitySchemes:
+    adultSession: { type: http, scheme: bearer, bearerFormat: JWT }
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, requestId]
+          properties:
+            code: { type: string }
+            message: { type: string }
+            requestId: { type: string, format: uuid }
+  responses:
+    Error:
+      description: Erro
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }

@@ -32,3 +32,7 @@ verify_jwt = false
 [functions.legal]
 # Documents are public; acceptance routes validate adult Auth with auth.getUser(token).
 verify_jwt = false
+
+[functions.account]
+# Account deletion validates Auth with auth.getUser(token) and requires a recent password sign-in.
+verify_jwt = false

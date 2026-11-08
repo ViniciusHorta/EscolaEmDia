@@ -41,4 +41,10 @@ abstract final class LastProfileStore {
       await (await SharedPreferences.getInstance()).setString(key(adultId), jsonEncode(profile.toJson()));
     } catch (_) {}
   }
+
+  static Future<void> clear(String adultId) async {
+    try {
+      await (await SharedPreferences.getInstance()).remove(key(adultId));
+    } catch (_) {}
+  }
 }
