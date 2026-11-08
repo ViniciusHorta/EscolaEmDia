@@ -312,15 +312,17 @@ A Política de Privacidade descreve os dados recolhidos, as finalidades do trata
 
 ## 18. Encerramento e eliminação de contas
 
-Os utilizadores poderão solicitar o encerramento da conta através dos mecanismos disponibilizados na plataforma ou mediante contacto com o suporte.
+O responsável pode eliminar a sua conta a qualquer momento, sem custos, na aplicação (menu da conta → «Eliminar conta», na Área do Responsável) ou mediante pedido enviado para suporte@escolaemdia.me a partir do endereço de email da conta. As instruções estão disponíveis em https://escolaemdia.me/eliminar-conta.
 
-O encerramento de uma conta familiar poderá implicar a perda de acesso aos perfis infantis, às fichas realizadas e ao histórico educativo.
+A eliminação na aplicação é imediata e definitiva. Não existe período de recuperação: a conta, os perfis infantis, as fichas realizadas e o histórico educativo deixam de poder ser recuperados.
 
-Quando disponibilizado, poderá existir um período de recuperação de até 30 dias após o encerramento da família.
+Quando outro adulto gere a mesma família, a família e os perfis infantis mantêm-se disponíveis para esse adulto, sendo eliminada apenas a conta de quem fez o pedido.
 
-A eliminação dos dados pessoais será realizada nos termos da Política de Privacidade e da legislação aplicável.
+Os pedidos enviados por email são tratados no prazo máximo de 30 dias.
 
-Antes do encerramento da conta, o utilizador deverá verificar e cancelar eventuais subscrições ativas, quando necessário.
+A eliminação dos dados pessoais, incluindo os dados conservados por obrigação legal, é realizada nos termos da Política de Privacidade.
+
+A eliminação da conta não cancela subscrições contratadas através de lojas de aplicações (Google Play ou App Store), que devem ser canceladas pelo utilizador na respetiva loja antes da eliminação.
 
 O encerramento da conta não prejudica direitos ou obrigações legalmente existentes.
 

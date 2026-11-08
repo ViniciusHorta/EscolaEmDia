@@ -44,6 +44,16 @@ Termos de Utilização e Política de Privacidade são **versionados** e cada re
 - **Publicar**: `tools/admin` → separador «Documentos legais». Os rascunhos da primeira versão estão em `docs/legal/` e têm marcadores `[…]` (entidade, NIF, contactos, região, prazos) que **têm de ser preenchidos e revistos juridicamente antes de publicar** — uma versão publicada não pode ser alterada.
 - **API**: Edge Function `legal` (`supabase/api/legal.openapi.yaml`). Publicar com `supabase functions deploy legal --project-ref hhgxxvvreyhigxynrgmv`.
 
+## Eliminação de conta
+
+Exigida pelo RGPD (art. 17.º) e pelas lojas (Google Play e App Store).
+
+- **App**: Área do Responsável → menu da conta → «Eliminar conta» (`lib/features/account/`). Explica o que é apagado e pede a palavra-passe e a palavra ELIMINAR. Elimina de imediato, sem período de recuperação.
+- **API**: Edge Function `account`, `POST /v1/delete` (`supabase/api/account.openapi.yaml`). Exige um JWT obtido com palavra-passe nos últimos cinco minutos, tal como a redefinição do PIN. Chama `delete_account_data()` e depois `auth.admin.deleteUser()`. Se falhar a meio, repetir o pedido é seguro.
+- **Base de dados** (`202611080005_account_deletion.sql`): uma família em que a conta é o único adulto ativo é apagada em cascata (crianças, PINs, sessões, fichas atribuídas, tentativas, respostas, revisões, relatos). Numa família partilhada, só sai o membro e as autorias passam a `null`.
+- **Site**: https://escolaemdia.me/eliminar-conta (`ui/website/public/eliminar-conta.html`) é o URL indicado no Google Play. Inclui o pedido por e-mail para quem já não tem acesso à app.
+- **Publicar**: `supabase db push` e depois `supabase functions deploy account --project-ref <ref>`.
+
 ## Supabase — preparação para testar
 
 O projeto está configurado em `lib/core/config/supabase_config.dart` com o URL e a chave pública fornecidos. Esses valores são públicos e podem ser substituídos por `--dart-define=SUPABASE_URL=...` e `--dart-define=SUPABASE_PUBLISHABLE_KEY=...`. Nunca colocar uma chave secret ou service_role no Flutter.

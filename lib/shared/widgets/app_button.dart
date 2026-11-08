@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_tokens.dart';
 
 /// neutral: botão branco com contorno lavanda (DESIGN.md «Ghost / Neutral Button»).
-enum AppButtonVariant { primary, secondary, success, neutral }
+/// danger: ações irreversíveis (eliminar a conta).
+enum AppButtonVariant { primary, secondary, success, neutral, danger }
 
 class AppButton extends StatefulWidget {
   const AppButton(
@@ -72,6 +73,11 @@ class _AppButtonState extends State<AppButton> {
           AppColors.surface,
           AppColors.blueBorder,
           AppColors.text
+        ),
+      AppButtonVariant.danger => (
+          AppColors.error,
+          AppColors.errorPressed,
+          Colors.white
         ),
     };
     final duration = MediaQuery.disableAnimationsOf(context)

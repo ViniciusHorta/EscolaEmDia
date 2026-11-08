@@ -66,6 +66,10 @@ verify_jwt = false
 # Documents are public; acceptance routes validate adult Auth with auth.getUser(token).
 verify_jwt = false
 
+[functions.account]
+# Account deletion validates Auth with auth.getUser(token) and requires a recent password sign-in.
+verify_jwt = false
+
 [functions.billing]
 # Parent-only routes validate adult Auth and the temporary parental unlock in the handler.
 verify_jwt = false
