@@ -149,7 +149,7 @@ Deno.serve(async (req: Request) => {
     ].some((v) => v != null && !uuid.test(v)) ||
     (operation === "catalogue" && cursor != null && !catalogueCursor.test(cursor)) ||
     (accessTier !== null && accessTier !== "free" && accessTier !== "premium") ||
-    (year !== null && (!Number.isInteger(year) || year < 1 || year > 4)) ||
+    (year !== null && (!Number.isInteger(year) || year < 1 || year > 9)) ||
     topicIds.length > 20 ||
     topicIds.some((id) => !uuid.test(id))
   )

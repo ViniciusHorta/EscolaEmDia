@@ -13,3 +13,6 @@ supabase/functions/.env
 supabase/functions/.env.*
 !supabase/functions/.env.example
 supabase/.temp/
+
+# Wrangler (Cloudflare) local dev state and build output
+.wrangler/
