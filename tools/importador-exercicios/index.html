@@ -101,7 +101,7 @@
     <p class="hint">O tema é reutilizado se já existir para a disciplina e o ano; caso contrário é criado na importação.</p>
     <div class="grid">
       <div><label for="year">Ano escolar</label>
-        <select id="year"><option value="1">1.º Ano</option><option value="2">2.º Ano</option><option value="3" selected>3.º Ano</option><option value="4">4.º Ano</option></select></div>
+        <select id="year"><optgroup label="1.º Ciclo"><option value="1">1.º Ano</option><option value="2">2.º Ano</option><option value="3" selected>3.º Ano</option><option value="4">4.º Ano</option></optgroup><optgroup label="2.º Ciclo"><option value="5">5.º Ano</option><option value="6">6.º Ano</option></optgroup><optgroup label="3.º Ciclo"><option value="7">7.º Ano</option><option value="8">8.º Ano</option><option value="9">9.º Ano</option></optgroup></select></div>
       <div><label for="subject">Disciplina</label><input id="subject" list="subjects" value="Matemática" autocomplete="off"><datalist id="subjects"></datalist></div>
       <div><label for="topic">Tema</label><input id="topic" list="topics" placeholder="Escolhe ou escreve um tema" autocomplete="off"><datalist id="topics"></datalist></div>
     </div>
@@ -283,7 +283,7 @@ Regras validadas pela base de dados:
     const extra = $('extra').value.trim();
     $('promptInfo').textContent = total < 1 || total > 50 ? 'O total de perguntas tem de estar entre 1 e 50.' : `${total} perguntas no total.`;
     $('prompt').value =
-`És um professor do 1.º Ciclo do Ensino Básico em Portugal. Cria uma ficha de exercícios para uma criança do ${year}.º ano, na disciplina de ${subject}, sobre o tema «${topic}», alinhada com as Aprendizagens Essenciais.
+`És um professor do ${Number(year) >= 7 ? '3.º' : Number(year) >= 5 ? '2.º' : '1.º'} Ciclo do Ensino Básico em Portugal. Cria uma ficha de exercícios para uma criança do ${year}.º ano, na disciplina de ${subject}, sobre o tema «${topic}», alinhada com as Aprendizagens Essenciais.
 
 Composição (exatamente ${total} perguntas):
 • ${n.mc} de escolha múltipla ("multiple-choice") com 3 ou 4 opções e uma só resposta certa;

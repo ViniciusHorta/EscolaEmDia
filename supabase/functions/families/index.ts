@@ -305,7 +305,7 @@ Deno.serve(async (req: Request) => {
       [...body.displayName.trim()].length > 40 ||
       !Number.isInteger(body.schoolYear) ||
       body.schoolYear < 1 ||
-      body.schoolYear > 4 ||
+      body.schoolYear > 9 ||
       !avatars.has(body.avatarId) ||
       (!pinOptional &&
         (typeof body.pin !== "string" || !/^[0-9]{4}$/.test(body.pin)))

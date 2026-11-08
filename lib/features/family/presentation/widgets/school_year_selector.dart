@@ -1,22 +1,40 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_tokens.dart';
 
-/// Anos do 1.º Ciclo com a faixa etária habitual, em linhas táteis.
+/// Anos do 1.º, 2.º e 3.º Ciclos com a faixa etária habitual, em linhas táteis agrupadas por ciclo.
 class SchoolYearSelector extends StatelessWidget {
   const SchoolYearSelector({super.key, required this.value, required this.onChanged, this.enabled = true});
   final int value;
   final ValueChanged<int> onChanged;
   final bool enabled;
 
-  static const ages = {1: '6–7 anos', 2: '7–8 anos', 3: '8–9 anos', 4: '9–10 anos'};
+  static const ages = {
+    1: '6–7 anos', 2: '7–8 anos', 3: '8–9 anos', 4: '9–10 anos',
+    5: '10–11 anos', 6: '11–12 anos',
+    7: '12–13 anos', 8: '13–14 anos', 9: '14–15 anos',
+  };
+
+  /// Ciclos do ensino básico suportados e respetivos anos.
+  static const cycles = <String, List<int>>{
+    '1.º Ciclo': [1, 2, 3, 4],
+    '2.º Ciclo': [5, 6],
+    '3.º Ciclo': [7, 8, 9],
+  };
 
   @override
-  Widget build(BuildContext context) => Column(children: [
-    for (var year = 1; year <= 4; year++) Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: _YearRow(year: year, ages: ages[year]!, selected: value == year,
-        onTap: enabled ? () => onChanged(year) : null),
-    ),
+  Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+    for (final cycle in cycles.entries) ...[
+      Padding(
+        padding: EdgeInsets.only(bottom: 8, top: cycle.key == cycles.keys.first ? 0 : 8),
+        child: Semantics(header: true, child: Text(cycle.key,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.muted, letterSpacing: 0.3))),
+      ),
+      for (final year in cycle.value) Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: _YearRow(year: year, ages: ages[year]!, selected: value == year,
+          onTap: enabled ? () => onChanged(year) : null),
+      ),
+    ],
   ]);
 }
 

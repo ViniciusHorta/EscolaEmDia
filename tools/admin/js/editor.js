@@ -369,9 +369,10 @@
         : r.newVersion ? `Versão ${r.versionNumber} gravada como rascunho (os responsáveis não a veem ainda).`
         : r.publishedNow ? `Versão ${r.versionNumber} publicada ✓`
         : r.published ? 'Alterações gravadas ✓' : 'Rascunho gravado ✓';
-      ed.dirty = false;
+      // Depois de gravar, volta à lista de fichas (já atualizada).
+      ed = null;
+      A.worksheets.closeEditor();
       await A.app.reload();
-      await E.open(r.worksheetId);
       A.toast('ok', text);
     } catch (e) {
       A.fail(e);

@@ -209,7 +209,7 @@ class _ChildProfilePageState extends State<ChildProfilePage> {
                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary))),
               AvatarSelector(value: avatar, enabled: !busy, onChanged: (value) => setState(() => avatar = value)),
               const SizedBox(height: 26),
-              sectionLabel(Icons.school_outlined, 'Ano Escolar (1.º Ciclo do Ensino Básico)'),
+              sectionLabel(Icons.school_outlined, 'Ano Escolar (Ensino Básico)'),
               SchoolYearSelector(value: year, enabled: !busy, onChanged: (value) => setState(() => year = value)),
             ]))),
           ] else AppCard(child: Row(children: [

@@ -41,7 +41,7 @@ paths:
           schema:
             type: integer
             minimum: 1
-            maximum: 4
+            maximum: 9
       responses:
         '200':
           description: items com id, name, subjectId e schoolYear; nextCursor UUID ou null
@@ -62,7 +62,7 @@ paths:
           schema:
             type: integer
             minimum: 1
-            maximum: 4
+            maximum: 9
         - name: topicIds
           in: query
           description: UUIDs separados por vírgulas, máximo 20; correspondência exata dos temas

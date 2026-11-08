@@ -8,7 +8,7 @@ void main() {
   const child = ChildProfile(id: 'c1', familyId: 'f1', displayName: 'Rita', schoolYear: 2, avatarId: 'owl');
 
   Future<List<ChildProfileUpdate>> pump(WidgetTester tester) async {
-    tester.view.physicalSize = const Size(800, 2400);
+    tester.view.physicalSize = const Size(800, 4000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     final updates = <ChildProfileUpdate>[];
@@ -35,6 +35,18 @@ void main() {
     expect(updates.single.schoolYear, 2);
     expect(updates.single.avatarId, 'owl');
     expect(updates.single.pin, isNull);
+  });
+
+  testWidgets('permite escolher anos do 2.º e 3.º ciclos', (tester) async {
+    final updates = await pump(tester);
+    expect(find.text('1.º Ciclo'), findsOneWidget);
+    expect(find.text('2.º Ciclo'), findsOneWidget);
+    expect(find.text('3.º Ciclo'), findsOneWidget);
+    await tester.ensureVisible(find.text('9.º Ano de Escolaridade'));
+    await tester.tap(find.text('9.º Ano de Escolaridade'));
+    await tester.tap(find.text('Guardar alterações'));
+    await tester.pumpAndSettle();
+    expect(updates.single.schoolYear, 9);
   });
 
   testWidgets('alterar PIN exige confirmação e envia o novo PIN', (tester) async {

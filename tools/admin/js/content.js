@@ -192,7 +192,7 @@ Regras validadas pela base de dados:
   A.buildAiPrompt = ({ year, subject, topics, counts, extra, title }) => {
     const total = counts.mc + counts.tf + counts.wr;
     const topicText = topics.length ? topics.map((t) => `«${t}»`).join(' e ') : '(tema)';
-    return `És um professor do 1.º Ciclo do Ensino Básico em Portugal. Cria uma ficha de exercícios para uma criança do ${year}.º ano, na disciplina de ${subject || '(disciplina)'}, sobre ${topics.length > 1 ? 'os temas' : 'o tema'} ${topicText}, alinhada com as Aprendizagens Essenciais.${title ? `\nTítulo pretendido: «${title}».` : ''}
+    return `És um professor do ${Number(year) >= 7 ? '3.º' : Number(year) >= 5 ? '2.º' : '1.º'} Ciclo do Ensino Básico em Portugal. Cria uma ficha de exercícios para uma criança do ${year}.º ano, na disciplina de ${subject || '(disciplina)'}, sobre ${topics.length > 1 ? 'os temas' : 'o tema'} ${topicText}, alinhada com as Aprendizagens Essenciais.${title ? `\nTítulo pretendido: «${title}».` : ''}
 
 Composição (exatamente ${total} perguntas):
 • ${counts.mc} de escolha múltipla ("multiple-choice") com 3 ou 4 opções e uma só resposta certa;

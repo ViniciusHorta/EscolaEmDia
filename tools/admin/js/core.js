@@ -83,8 +83,12 @@ window.A = window.A || {};
   A.subjectOptions = (selected, allLabel) =>
     (allLabel ? `<option value="">${A.esc(allLabel)}</option>` : '') +
     A.state.subjects.map((s) => `<option value="${s.id}" ${s.id === selected ? 'selected' : ''}>${A.esc(s.name)}</option>`).join('');
-  A.yearOptions = (selected) => [1, 2, 3, 4]
-    .map((y) => `<option value="${y}" ${Number(selected) === y ? 'selected' : ''}>${y}.º Ano</option>`).join('');
+  // Anos escolares suportados, agrupados por ciclo do ensino básico.
+  A.CYCLES = [{ label: '1.º Ciclo', years: [1, 2, 3, 4] }, { label: '2.º Ciclo', years: [5, 6] }, { label: '3.º Ciclo', years: [7, 8, 9] }];
+  A.yearOptions = (selected, allLabel) =>
+    (allLabel ? `<option value="">${A.esc(allLabel)}</option>` : '') +
+    A.CYCLES.map((c) => `<optgroup label="${c.label}">` + c.years
+      .map((y) => `<option value="${y}" ${Number(selected) === y ? 'selected' : ''}>${y}.º Ano</option>`).join('') + '</optgroup>').join('');
 
   A.fmtDate = (iso) => iso ? new Date(iso).toLocaleString('pt-PT', { dateStyle: 'short', timeStyle: 'short' }) : '—';
 
