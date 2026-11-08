@@ -67,6 +67,9 @@
         <button class="ghost" data-act="back">← Fichas</button>
         <h2>${d ? 'Editar ficha' : 'Nova ficha'}</h2> ${statusBadge}
         ${d && d.isSample ? '<span class="badge grey">Exemplo</span>' : ''}
+        ${!d ? '<span class="badge premium" title="Fichas novas são Premium. Depois de gravar, podes mudá-la para Free na lista.">★ Premium</span>'
+          : d.accessTier === 'free' ? `<span class="badge ok" title="Máximo de ${d.freeMaxQuestions} perguntas">Free</span>`
+          : '<span class="badge premium">★ Premium</span>'}
       </div>
 
       <section>
@@ -252,6 +255,9 @@
     let status = ok ? '<span class="badge ok">Pronta a gravar</span>'
       : `<span class="badge err">${general.length + qErrCount} problema(s)</span> <span class="small">${esc(general.concat(qErrCount ? [`${qErrCount} pergunta(s) por completar.`] : []).join(' '))}</span>`;
     if (ed.dirty) status += ' <span class="badge warn">Alterações por gravar</span>';
+    if (ed.data && ed.data.accessTier === 'free' && ed.content.questions.length > ed.data.freeMaxQuestions) {
+      status += ` <span class="badge err">Ficha Free: máximo de ${ed.data.freeMaxQuestions} perguntas — não vai ser possível publicar</span>`;
+    }
     if (ed.data && latestPublished() && contentChanged()) status += ` <span class="badge">Vai criar a v${ed.data.latest.versionNumber + 1}</span>`;
     $('edStatus').innerHTML = status;
     $('edDraft').disabled = !ok;

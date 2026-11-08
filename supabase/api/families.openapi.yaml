@@ -263,6 +263,13 @@ components:
         createdAt:
           type: string
           format: date-time
+        plan:
+          type: string
+          nullable: true
+          enum: [premium, free, locked]
+          description: >-
+            Plano atual da criança (só para a área da família). Pode ser null em
+            create/update se o plano não puder ser lido.
   responses:
     Error:
       description: >-

@@ -325,6 +325,10 @@ components:
         à mesma atribuição; REPEAT_STATE_CHANGED (409) quando existe uma tentativa
         posterior e a lista precisa de atualização. OPERATION_REUSED (409) se o mesmo
         identificador for usado com conteúdo diferente.
+        Ao criar uma tentativa nova (403): DAILY_ATTEMPT_LIMIT_REACHED (criança Free já
+        iniciou as fichas do dia, novas ou repetidas; dia de Lisboa), PREMIUM_WORKSHEET_UNAVAILABLE
+        (ficha Premium para criança Free) e CHILD_PLAN_LOCKED. Retomar uma tentativa em curso
+        nunca é bloqueado. Mensagens destinadas à criança: nunca mencionam preços ou compras.
         Não inclui respostas completas nos logs ou erros.
       content:
         application/json:

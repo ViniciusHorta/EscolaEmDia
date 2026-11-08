@@ -9,16 +9,21 @@ class Family {
 }
 
 class ChildProfile {
-  const ChildProfile({required this.id, required this.familyId, required this.displayName, required this.schoolYear, required this.avatarId});
+  const ChildProfile({required this.id, required this.familyId, required this.displayName, required this.schoolYear, required this.avatarId, this.plan});
   final String id;
   final String familyId;
   final String displayName;
   final int schoolYear;
   final String avatarId;
+  /// premium | free | locked. Só vem preenchido nas respostas da área da família.
+  final String? plan;
+  bool get isPremium => plan == 'premium';
+  ChildProfile withPlanFrom(ChildProfile previous) => plan != null ? this : ChildProfile(
+    id: id, familyId: familyId, displayName: displayName, schoolYear: schoolYear, avatarId: avatarId, plan: previous.plan);
   factory ChildProfile.fromJson(Map value) => ChildProfile(
     id: value['id'] as String, familyId: value['familyId'] as String,
     displayName: value['displayName'] as String, schoolYear: value['schoolYear'] as int,
-    avatarId: value['avatarId'] as String,
+    avatarId: value['avatarId'] as String, plan: value['plan'] as String?,
   );
 }
 

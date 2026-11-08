@@ -10,11 +10,12 @@ import 'widgets/progress_stat_card.dart';
 import 'widgets/subject_progress_card.dart';
 
 class ChildProgressPage extends StatefulWidget {
-  const ChildProgressPage({super.key, required this.childId, required this.service, required this.onClose, required this.onReview});
+  const ChildProgressPage({super.key, required this.childId, required this.service, required this.onClose, required this.onReview, this.isPremium = false});
   final String childId;
   final ChildProgressService service;
   final VoidCallback onClose;
   final ValueChanged<String> onReview;
+  final bool isPremium;
   @override
   State<ChildProgressPage> createState() => _ChildProgressPageState();
 }
@@ -90,7 +91,7 @@ class _ChildProgressPageState extends State<ChildProgressPage> {
   Widget build(BuildContext context) {
     final data = progress;
     return AppPage(title: 'Acompanhamento', subtitle: data == null ? 'O percurso de cada criança, ao seu ritmo.'
-      : '${ChildAvatars.emoji(data.child.avatarId)} ${data.child.displayName} • ${data.child.schoolYear}.º Ano', children: [
+      : '${ChildAvatars.emoji(data.child.avatarId)} ${data.child.displayName}${widget.isPremium ? ' 👑' : ''} • ${data.child.schoolYear}.º Ano', children: [
       Wrap(spacing: 12, runSpacing: 12, children: [
         AppButton(label: 'Voltar aos perfis', expand: false, variant: AppButtonVariant.secondary, icon: Icons.arrow_back_rounded, onPressed: widget.onClose),
         AppButton(label: 'Atualizar', expand: false, icon: Icons.refresh_rounded, loading: loading, onPressed: busy ? null : load),

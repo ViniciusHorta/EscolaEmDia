@@ -25,6 +25,11 @@ Não publicar esta página: com a chave `service_role` tem acesso total à base.
 - **Documentos legais são imutáveis.** Cada publicação cria uma versão nova. «Exige novo aceite» obriga todos os responsáveis
   a aceitar no próximo acesso (com o resumo «O que mudou»); desmarcar só para correções menores. A primeira versão exige sempre aceite.
 
+- **Free / Premium.** Cada ficha tem um tipo de acesso (selo na lista; clicar alterna). Fichas novas são Premium.
+  Fichas Free não podem ser publicadas com mais perguntas do que o limite (`free_max_questions` em `billing_settings`,
+  6 por omissão) — a base recusa. Se o limite for reduzido, as fichas já publicadas continuam válidas e aparecem
+  com o selo «Acima do limite Free» (filtro próprio). Requer `202611070003_billing_limits.sql`.
+
 ## Estrutura
 
 - `js/core.js` — estado, chamadas RPC, mensagens, diálogos

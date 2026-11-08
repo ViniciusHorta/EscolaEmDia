@@ -4,6 +4,7 @@ import '../../../core/utils/request_id.dart';
 import '../../../core/utils/search_text.dart';
 import '../../../core/utils/subject_icons.dart';
 import '../../../shared/widgets/app_badge.dart';
+import '../../../shared/widgets/premium_crown.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../family/domain/family_models.dart';
@@ -55,7 +56,7 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
       // Sem temas, o catálogo devolve todas as fichas publicadas da disciplina e do ano.
       // Se falhar, a pesquisa continua a funcionar só pelo nome dos temas.
       final fetched=await Future.wait([widget.service.topics(target.id,profile.schoolYear),
-        widget.service.proposals(target.id,profile.schoolYear,const <String>{}).catchError((Object _)=>const <WorksheetSummary>[])]);
+        widget.service.proposals(target.id,profile.schoolYear,const <String>{},childId:profile.id).catchError((Object _)=>const <WorksheetSummary>[])]);
       if(mounted&&current==generation)setState((){topics=fetched[0] as List<SchoolTopic>;catalogue=fetched[1] as List<WorksheetSummary>;});
     }
     on WorksheetException catch(failure){if(mounted&&current==generation)setState(()=>error=failure.message);}
@@ -65,7 +66,7 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
     if(busy||child==null||subject==null||selectedTopics.isEmpty)return;
     setState((){busy=true;error=null;});
     try{
-      final data=await widget.service.proposals(subject!.id,child!.schoolYear,selectedTopics);
+      final data=await widget.service.proposals(subject!.id,child!.schoolYear,selectedTopics,childId:child!.id);
       if(!mounted)return;
       if(data.isEmpty){setState(()=>error='Ainda não existe uma ficha publicada para estes temas. Escolhe outra combinação.');return;}
       // O termo pesquisado nos temas passa para a seleção da ficha e escolhe a primeira que corresponde.
@@ -125,6 +126,13 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
     ),
   );
 
+  String historyLabel(WorksheetSummary item){
+    final times=item.timesCompleted??0;final name=child?.displayName??'A criança';
+    if(times==0)return '$name ainda não fez esta ficha';
+    final last=item.lastCompletedAt;
+    final when=last==null?'':' • última ${last.day.toString().padLeft(2,'0')}/${last.month.toString().padLeft(2,'0')}';
+    return '$name já fez ${times==1?'1 vez':'$times vezes'}$when';
+  }
   void reset()=>setState((){step=1;success=false;worksheet=null;detail=null;proposals=[];error=null;requestId='';writtenAnswerMode='typed';});
   Future<void> viewChild() async {
     if(busy||child==null)return;
@@ -287,7 +295,7 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
       Wrap(spacing:8,runSpacing:8,children:[
         AppBadge(label:'${item.subjectName} • ${item.schoolYear}.º Ano • ${item.topicNames.length} ${item.topicNames.length==1?'Tema':'Temas'}',
           icon:subjectIcon(item.subjectName)),
-        AppBadge(label:'Para ${child!.displayName}',icon:Icons.face_rounded,background:AppColors.softBlue,color:AppColors.text),
+        AppBadge(label:'Para ${child!.displayName}',icon:child!.isPremium?Icons.workspace_premium_rounded:Icons.face_rounded,background:AppColors.softBlue,color:AppColors.text),
         if(item.isSample)const AppBadge(label:'Ficha de exemplo',background:AppColors.amberSoft,color:AppColors.amber),
       ]),
       const SizedBox(height:16),
@@ -297,6 +305,9 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
         Wrap(spacing:8,runSpacing:8,children:[
           const AppBadge(label:'Proposta de Ficha Selecionada',icon:Icons.star_rounded,background:Color(0xFFFEA619),color:Color(0xFF4A2D00)),
           AppBadge(label:'Dimensão ${item.sizeLabel.toLowerCase()}',background:AppColors.successSoft,color:AppColors.success),
+          if(item.timesCompleted!=null)AppBadge(label:historyLabel(item),icon:Icons.history_rounded,
+            background:item.timesCompleted==0?AppColors.softBlue:AppColors.amberSoft,
+            color:item.timesCompleted==0?AppColors.text:AppColors.amber),
         ]),
         const SizedBox(height:18),
         Text(item.title,style:const TextStyle(fontSize:20,fontWeight:FontWeight.w700,color:AppColors.primary)),
@@ -332,7 +343,7 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
           selected:candidate.versionId==item.versionId,onTap:busy?null:()=>chooseProposal(candidate),
           child:Row(children:[Icon(candidate.versionId==item.versionId?Icons.check_circle_rounded:Icons.circle_outlined,color:AppColors.primary),
             const SizedBox(width:12),Expanded(child:Text(candidate.title,style:const TextStyle(fontWeight:FontWeight.w600))),
-            Text('${candidate.questionCount} perg.',style:const TextStyle(color:AppColors.muted))]))),
+            Text('${candidate.questionCount} perg.${(candidate.timesCompleted??0)>0?' • feita ${candidate.timesCompleted}×':''}',style:const TextStyle(color:AppColors.muted))]))),
       ],
       Padding(padding:const EdgeInsets.only(top:28,bottom:14),child:Row(children:[
         const Icon(Icons.donut_large_rounded,color:AppColors.coral),const SizedBox(width:10),
@@ -495,6 +506,7 @@ class _ChildOption extends StatelessWidget {
           Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
             Row(children:[
               Text(child.displayName,style:const TextStyle(fontSize:17,fontWeight:FontWeight.w700,color:AppColors.text)),
+              PremiumCrown(isPremium:child.isPremium),
               if(selected)...[const SizedBox(width:6),const Icon(Icons.verified_rounded,color:AppColors.primary,size:20)],
             ]),
             Text('${child.schoolYear}.º Ano${selected?' • Selecionado':''}',style:const TextStyle(fontSize:14,color:AppColors.muted)),

@@ -119,6 +119,16 @@ Deno.serve(async (req: Request) => {
         detectSessionInUrl: false,
       },
     });
+    // Plano da criança (premium | free | locked) para a área da família.
+    const childPlan = async (id: string): Promise<string | undefined> => {
+      const { data, error } = await admin.rpc("child_access", { p_child_id: id });
+      return error ? undefined : data?.plan;
+    };
+    // Acrescenta o plano à criança devolvida por create/update; sem plano se falhar.
+    const withPlan = async (child: any) =>
+      child && typeof child.id === "string"
+        ? { ...child, plan: (await childPlan(child.id)) ?? null }
+        : child;
     const {
       data: { user },
       error: authError,
@@ -214,14 +224,18 @@ Deno.serve(async (req: Request) => {
       const { data, error } = await query;
       if (error) return fail(503, "STORAGE_UNAVAILABLE");
       const rows = (data ?? []).slice(0, 50);
+      const plans = await Promise.all(rows.map((c) => childPlan(c.id)));
+      if (plans.some((p) => p === undefined))
+        return fail(503, "STORAGE_UNAVAILABLE");
       return reply(200, {
-        items: rows.map((c) => ({
+        items: rows.map((c, i) => ({
           id: c.id,
           familyId: c.family_id,
           displayName: c.display_name,
           schoolYear: c.school_year,
           avatarId: c.avatar_id,
           createdAt: c.created_at,
+          plan: plans[i],
         })),
         nextCursor: (data?.length ?? 0) > 50 ? rows[49].id : null,
       });
@@ -323,7 +337,7 @@ Deno.serve(async (req: Request) => {
         p_salt: null,
       });
       if (error) return handleRpcError(error);
-      return reply(200, data);
+      return reply(200, await withPlan(data));
     }
     const pepper = Deno.env.get("CHILD_PIN_PEPPER");
     if (!pepper || pepper.length < 32)
@@ -368,7 +382,7 @@ Deno.serve(async (req: Request) => {
         p_salt: hex(salt),
       });
       if (error) return handleRpcError(error);
-      return reply(200, data);
+      return reply(200, await withPlan(data));
     }
     const fingerprint = await sign(
       JSON.stringify([
@@ -394,7 +408,7 @@ Deno.serve(async (req: Request) => {
       p_fingerprint: hex(new Uint8Array(fingerprint)),
     });
     if (error) return handleRpcError(error);
-    return reply(201, data);
+    return reply(201, await withPlan(data));
   } catch {
     return fail(500, "INTERNAL_ERROR");
   }

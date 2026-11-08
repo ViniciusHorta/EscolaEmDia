@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/request_id.dart';
 import '../../../shared/widgets/app_badge.dart';
+import '../../../shared/widgets/premium_crown.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/brand/app_logo.dart';
@@ -212,13 +213,15 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
     return service.createChild(family.id, draft);
   }
 
+  Set<String> get premiumChildIds => {for (final c in children) if (c.isPremium) c.id};
+
   void profileSaved(ChildProfile child) => setState(() {
     children = [...children.where((item) => item.id != child.id), child];
     editing = false; savedChild = child; error = null; returnFamilyId = child.familyId;
   });
 
   void profileUpdated(ChildProfile child) => setState(() {
-    children = [for (final item in children) item.id == child.id ? child : item];
+    children = [for (final item in children) item.id == child.id ? child.withPlanFrom(item) : item];
     editingChild = null; error = null;
   });
 
@@ -259,12 +262,12 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
       const SizedBox(height: 16), exitButton(),
     ]);
     if (reviewingAttemptId != null) return ParentReviewPage(
-      key: ValueKey(reviewingAttemptId), attemptId: reviewingAttemptId!, service: pendingReviews,
+      key: ValueKey(reviewingAttemptId), attemptId: reviewingAttemptId!, service: pendingReviews, premiumChildIds: premiumChildIds,
       onClose: () => setState(() => reviewingAttemptId = null),
       onPrepareWorksheet: children.isEmpty ? null : () => setState(() {reviewingAttemptId = null; progressChildId = null; preparing = true;}),
     );
     if (progressChildId != null) return ChildProgressPage(
-      key: ValueKey(progressChildId), childId: progressChildId!, service: progressService,
+      key: ValueKey(progressChildId), childId: progressChildId!, service: progressService, isPremium: premiumChildIds.contains(progressChildId),
       onClose: () => setState(() { progressChildId = null; }),
       onReview: (attemptId) => setState(() { reviewingAttemptId = attemptId; }),
     );
@@ -360,7 +363,10 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
             ExcludeSemantics(child: Text(ChildAvatars.emoji(child.avatarId), style: const TextStyle(fontSize: 48))),
             const SizedBox(width: 16),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(child.displayName, style: Theme.of(context).textTheme.titleLarge),
+              Row(children: [
+                Flexible(child: Text(child.displayName, style: Theme.of(context).textTheme.titleLarge)),
+                PremiumCrown(isPremium: child.isPremium, size: 24),
+              ]),
               const SizedBox(height: 6),
               Text('${child.schoolYear}.º Ano • ${ChildAvatars.label(child.avatarId)}'),
             ])),
@@ -402,7 +408,10 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
         const SizedBox(height: 20),
         ExcludeSemantics(child: Text(ChildAvatars.emoji(child.avatarId), style: const TextStyle(fontSize: 64))),
         const SizedBox(height: 12),
-        Text(child.displayName, style: Theme.of(context).textTheme.headlineMedium),
+        Row(mainAxisSize: MainAxisSize.min, children: [
+          Flexible(child: Text(child.displayName, style: Theme.of(context).textTheme.headlineMedium)),
+          PremiumCrown(isPremium: child.isPremium, size: 28),
+        ]),
         const SizedBox(height: 8), Text('${child.schoolYear}.º Ano • PIN infantil definido'),
       ])),
       const SizedBox(height: 24),

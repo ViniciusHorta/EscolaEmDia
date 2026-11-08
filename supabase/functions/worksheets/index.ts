@@ -21,6 +21,12 @@ const messages: Record<string, string> = {
   REQUEST_CONFLICT:
     "Este pedido já foi usado para outra atribuição. Volta à proposta antes de continuar.",
   INVALID_REQUEST: "Verifica os dados do pedido.",
+  CHILD_PLAN_LOCKED:
+    "Este perfil precisa do Premium para receber novas fichas.",
+  PREMIUM_WORKSHEET_REQUIRED:
+    "Esta ficha faz parte do catálogo Premium.",
+  DAILY_ASSIGNMENT_LIMIT_REACHED:
+    "No plano gratuito, cada criança pode receber uma ficha por dia.",
   STORAGE_UNAVAILABLE: "Não foi possível aceder às fichas. Tenta novamente.",
   CORS_NOT_CONFIGURED:
     "A configuração de acesso está temporariamente indisponível.",
@@ -43,7 +49,15 @@ const meta = (row: any) => ({
   topicNames: row.topic_names,
   isSample: row.is_sample,
   versionNumber: row.version_number,
+  accessTier: row.access_tier,
 });
+// Catálogo ordenado Free → Premium; o cursor é "<tier>.<versionId>".
+const catalogueCursor = /^(free|premium)\.([0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12})$/i;
+const billingErrors = new Set([
+  "CHILD_PLAN_LOCKED",
+  "PREMIUM_WORKSHEET_REQUIRED",
+  "DAILY_ASSIGNMENT_LIMIT_REACHED",
+]);
 Deno.serve(async (req: Request) => {
   const requestId = crypto.randomUUID(),
     url = new URL(req.url);
@@ -112,7 +126,11 @@ Deno.serve(async (req: Request) => {
     return fail(405, "METHOD_NOT_ALLOWED");
   const cursor = url.searchParams.get("cursor"),
     subjectId = url.searchParams.get("subjectId"),
-    versionId = url.searchParams.get("versionId");
+    versionId = url.searchParams.get("versionId"),
+    accessTier = url.searchParams.get("accessTier"),
+    // No catálogo, childId (opcional) junta quantas vezes a criança já fez cada ficha.
+    catalogueChildId =
+      operation === "catalogue" ? url.searchParams.get("childId") : null;
   const yearRaw = url.searchParams.get("schoolYear"),
     year = yearRaw === null ? null : Number(yearRaw);
   const topicIds = [
@@ -121,9 +139,16 @@ Deno.serve(async (req: Request) => {
     ),
   ];
   if (
-    [cursor, subjectId, versionId, assignmentRoute?.[1], detailRoute?.[1]].some(
-      (v) => v != null && !uuid.test(v),
-    ) ||
+    [
+      operation === "catalogue" ? null : cursor,
+      subjectId,
+      versionId,
+      catalogueChildId,
+      assignmentRoute?.[1],
+      detailRoute?.[1],
+    ].some((v) => v != null && !uuid.test(v)) ||
+    (operation === "catalogue" && cursor != null && !catalogueCursor.test(cursor)) ||
+    (accessTier !== null && accessTier !== "free" && accessTier !== "premium") ||
     (year !== null && (!Number.isInteger(year) || year < 1 || year > 4)) ||
     topicIds.length > 20 ||
     topicIds.some((id) => !uuid.test(id))
@@ -147,7 +172,7 @@ Deno.serve(async (req: Request) => {
     let actorId: string | undefined,
       authSessionId: string | undefined,
       unlockHash: string | undefined;
-    const childId = assignmentRoute?.[1];
+    const childId = assignmentRoute?.[1] ?? catalogueChildId ?? undefined;
     if (token.startsWith("chd_")) {
       if (
         operation !== "assignments" ||
@@ -287,7 +312,7 @@ Deno.serve(async (req: Request) => {
             ? data.error
             : "STORAGE_UNAVAILABLE";
           return fail(
-            code === "PARENT_LOCKED"
+            code === "PARENT_LOCKED" || billingErrors.has(code)
               ? 403
               : code === "CHILD_NOT_FOUND" || code === "WORKSHEET_NOT_FOUND"
                 ? 404
@@ -313,7 +338,14 @@ Deno.serve(async (req: Request) => {
       const { data, error } = await query;
       if (error) return fail(503, "STORAGE_UNAVAILABLE");
       const rows = (data ?? []).slice(0, 50);
-      if (!rows.length) return reply(200, { items: [], nextCursor: null });
+      // Plano e utilização do dia (sem ofertas: a mesma resposta serve a criança).
+      const { data: access, error: accessError } = await admin.rpc(
+        "child_daily_access",
+        { p_child_id: childId },
+      );
+      if (accessError || !access) return fail(503, "STORAGE_UNAVAILABLE");
+      if (!rows.length)
+        return reply(200, { items: [], nextCursor: null, access });
       const { data: catalogue, error: catalogueError } = await admin
         .from("worksheet_catalogue")
         .select("*")
@@ -348,6 +380,7 @@ Deno.serve(async (req: Request) => {
           worksheet: meta(byVersion.get(r.worksheet_version_id)),
         })),
         nextCursor: (data?.length ?? 0) > 50 ? rows[49].id : null,
+        access,
       });
     }
     if (operation === "detail") {
@@ -413,21 +446,64 @@ Deno.serve(async (req: Request) => {
       .select("*")
       .eq("worksheet_status", "published")
       .eq("is_latest", true)
+      .order("access_tier")
       .order("version_id")
       .limit(51);
+    if (accessTier) query = query.eq("access_tier", accessTier);
     if (subjectId) query = query.eq("subject_id", subjectId);
     if (year !== null) query = query.eq("school_year", year);
     if (topicIds.length)
       query = query
         .contains("topic_ids", topicIds)
         .containedBy("topic_ids", topicIds);
-    if (cursor) query = query.gt("version_id", cursor);
+    if (cursor) {
+      const [, tier, id] = catalogueCursor.exec(cursor)!;
+      query = query.or(
+        `access_tier.gt.${tier},and(access_tier.eq.${tier},version_id.gt.${id})`,
+      );
+    }
     const { data, error } = await query;
     if (error) return fail(503, "STORAGE_UNAVAILABLE");
     const rows = (data ?? []).slice(0, 50);
+    // Histórico da criança por ficha (todas as versões): tentativas entregues.
+    const history = new Map<string, { count: number; last: string }>();
+    if (childId && rows.length) {
+      const { data: done, error: doneError } = await admin
+        .from("worksheet_attempts")
+        .select("submitted_at,worksheet_versions!inner(worksheet_id)")
+        .eq("child_id", childId)
+        .not("submitted_at", "is", null)
+        .in(
+          "worksheet_versions.worksheet_id",
+          [...new Set(rows.map((r) => r.worksheet_id))],
+        );
+      if (doneError) return fail(503, "STORAGE_UNAVAILABLE");
+      for (const a of done ?? []) {
+        const id = (a as any).worksheet_versions.worksheet_id;
+        const h = history.get(id);
+        if (!h) history.set(id, { count: 1, last: a.submitted_at });
+        else {
+          h.count++;
+          if (a.submitted_at > h.last) h.last = a.submitted_at;
+        }
+      }
+    }
     return reply(200, {
-      items: rows.map(meta),
-      nextCursor: (data?.length ?? 0) > 50 ? rows[49].version_id : null,
+      items: rows.map((r) =>
+        childId
+          ? {
+              ...meta(r),
+              childHistory: {
+                timesCompleted: history.get(r.worksheet_id)?.count ?? 0,
+                lastCompletedAt: history.get(r.worksheet_id)?.last ?? null,
+              },
+            }
+          : meta(r),
+      ),
+      nextCursor:
+        (data?.length ?? 0) > 50
+          ? `${rows[49].access_tier}.${rows[49].version_id}`
+          : null,
     });
   } catch {
     return fail(500, "INTERNAL_ERROR");

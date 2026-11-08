@@ -3,6 +3,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/request_id.dart';
 import '../../../core/utils/subject_icons.dart';
 import '../../../shared/widgets/app_badge.dart';
+import '../../../shared/widgets/premium_crown.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../family/domain/family_models.dart';
@@ -18,11 +19,12 @@ enum _Stage { summary, review, finalize, result }
 /// Cada classificação é gravada no servidor no momento em que é escolhida; a
 /// ficha fica concluída quando não restam respostas por rever.
 class ParentReviewPage extends StatefulWidget {
-  const ParentReviewPage({super.key, required this.attemptId, required this.service, required this.onClose, this.onPrepareWorksheet});
+  const ParentReviewPage({super.key, required this.attemptId, required this.service, required this.onClose, this.onPrepareWorksheet, this.premiumChildIds = const {}});
   final String attemptId;
   final PendingReviewsService service;
   final VoidCallback onClose;
   final VoidCallback? onPrepareWorksheet;
+  final Set<String> premiumChildIds;
   @override
   State<ParentReviewPage> createState() => _ParentReviewPageState();
 }
@@ -256,7 +258,7 @@ class _ParentReviewPageState extends State<ParentReviewPage> {
     final written = data.questions.where((q) => !q.automatic).toList();
     final pending = s.pendingReview;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      _WorksheetHeader(data: data),
+      _WorksheetHeader(data: data, isPremium: widget.premiumChildIds.contains(data.child.id)),
       const SizedBox(height: 20),
       _Banner(
         color: pending > 0 ? const Color(0xFFFCE9DC) : AppColors.successSoft,
@@ -677,8 +679,9 @@ class _ReviewTopBar extends StatelessWidget {
 }
 
 class _WorksheetHeader extends StatelessWidget {
-  const _WorksheetHeader({required this.data});
+  const _WorksheetHeader({required this.data, this.isPremium = false});
   final ParentAttemptReview data;
+  final bool isPremium;
   @override
   Widget build(BuildContext context) => AppCard(padding: const EdgeInsets.all(20), child: Row(children: [
     ExcludeSemantics(child: CircleAvatar(radius: 34, backgroundColor: AppColors.lavender,
@@ -688,8 +691,11 @@ class _WorksheetHeader extends StatelessWidget {
       Text('FICHA DE ${data.summary.subjectName.toUpperCase()}', maxLines: 1, overflow: TextOverflow.ellipsis,
         style: const TextStyle(fontSize: 13, letterSpacing: 1.2, fontWeight: FontWeight.w700, color: AppColors.primary)),
       const SizedBox(height: 2),
-      Text('${data.child.displayName} (${data.child.schoolYear}.º Ano)${data.summary.attemptNumber > 1 ? ' • Tentativa ${data.summary.attemptNumber}' : ''}',
-        style: const TextStyle(fontSize: 14, color: AppColors.muted)),
+      Row(children: [
+        Flexible(child: Text('${data.child.displayName} (${data.child.schoolYear}.º Ano)${data.summary.attemptNumber > 1 ? ' • Tentativa ${data.summary.attemptNumber}' : ''}',
+          style: const TextStyle(fontSize: 14, color: AppColors.muted))),
+        PremiumCrown(isPremium: isPremium, size: 16),
+      ]),
       const SizedBox(height: 2),
       Text(data.summary.title, maxLines: 2, overflow: TextOverflow.ellipsis,
         style: const TextStyle(fontSize: 22, height: 1.25, fontWeight: FontWeight.w700, color: AppColors.text)),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/subject_icons.dart';
 import '../../../shared/widgets/app_badge.dart';
+import '../../../shared/widgets/premium_crown.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../family/domain/family_models.dart';
@@ -286,7 +287,10 @@ class _ChildTab extends StatelessWidget {
                   child: Text(ChildAvatars.emoji(child.avatarId), style: const TextStyle(fontSize: 26))),
                 const SizedBox(width: 12),
                 Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-                  Text(child.displayName, style: TextStyle(color: foreground, fontSize: 17, fontWeight: FontWeight.w700)),
+                  Row(mainAxisSize: MainAxisSize.min, children: [
+                    Text(child.displayName, style: TextStyle(color: foreground, fontSize: 17, fontWeight: FontWeight.w700)),
+                    PremiumCrown(isPremium: child.isPremium),
+                  ]),
                   Text('${child.schoolYear}.º Ano', style: TextStyle(
                     color: selected ? Colors.white.withValues(alpha: 0.85) : AppColors.muted, fontSize: 14)),
                 ]),
@@ -461,8 +465,11 @@ class _EnterChildCard extends StatelessWidget {
           child: Text(ChildAvatars.emoji(child.avatarId), style: const TextStyle(fontSize: 28)))),
         const SizedBox(width: 14),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Hora de estudar, ${child.displayName}?', style: const TextStyle(
-            fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.text)),
+          Row(children: [
+            Flexible(child: Text('Hora de estudar, ${child.displayName}?', style: const TextStyle(
+              fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.text))),
+            PremiumCrown(isPremium: child.isPremium),
+          ]),
           const SizedBox(height: 2),
           const Text('Entrega o dispositivo. A área do responsável volta a pedir o PIN.',
             style: TextStyle(color: AppColors.muted, fontSize: 14)),

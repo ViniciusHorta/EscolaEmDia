@@ -33,6 +33,8 @@ window.A = window.A || {};
     NO_PUBLISHED_VERSION: 'A ficha ainda não tem nenhuma versão publicada. Abre-a e usa «Guardar e publicar».',
     INVALID_STATUS: 'Estado inválido.',
     REPORT_NOT_FOUND: 'O relato não existe.',
+    FREE_WORKSHEET_TOO_MANY_QUESTIONS: 'Fichas Free não podem ter mais perguntas do que o limite do plano gratuito. Reduz as perguntas ou muda a ficha para Premium.',
+    INVALID_TIER: 'Tipo de acesso inválido (Free ou Premium).',
     MIGRATION_MISSING: 'As funções de administração não existem na base. Aplica a migração 202611060001_admin_catalogue_management.sql.',
   };
   class ApiError extends Error {
@@ -60,6 +62,10 @@ window.A = window.A || {};
     if (!res.ok) {
       if (body && (body.code === 'PGRST202' || body.code === '42883')) throw new ApiError('MIGRATION_MISSING');
       if (res.status === 401 || res.status === 403) throw new ApiError('AUTH', 'Chave sem permissão. Usa a chave service_role legacy (JWT).');
+      // Erros lançados pela base (raise exception) com código conhecido.
+      if (body && A.errorText[body.message]) {
+        throw new ApiError(body.message, A.errorText[body.message] + (body.details ? ' ' + body.details : ''));
+      }
       throw new ApiError('HTTP', (body && (body.message || body.hint)) || `HTTP ${res.status}: ${text.slice(0, 200)}`);
     }
     if (body && typeof body === 'object' && !Array.isArray(body) && body.error) throw new ApiError(body.error);

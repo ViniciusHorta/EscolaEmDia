@@ -14,8 +14,9 @@ class WorksheetService {
   Future<List<SchoolSubject>> subjects() async => (await _list('/v1/subjects')).map(SchoolSubject.fromJson).toList();
   Future<List<SchoolTopic>> topics(String subjectId,int year) async =>
       (await _list('/v1/topics',{'subjectId':subjectId,'schoolYear':'$year'})).map(SchoolTopic.fromJson).toList();
-  Future<List<WorksheetSummary>> proposals(String subjectId,int year,Set<String> topicIds) async =>
-      (await _list('/v1/worksheets',{'subjectId':subjectId,'schoolYear':'$year','topicIds':topicIds.join(',')})).map(WorksheetSummary.fromJson).toList();
+  /// Com [childId], cada ficha traz quantas vezes essa criança já a fez.
+  Future<List<WorksheetSummary>> proposals(String subjectId,int year,Set<String> topicIds,{String? childId}) async =>
+      (await _list('/v1/worksheets',{'subjectId':subjectId,'schoolYear':'$year','topicIds':topicIds.join(','),if(childId!=null)'childId':childId})).map(WorksheetSummary.fromJson).toList();
   Future<Map> detail(WorksheetSummary worksheet) => _request('/v1/worksheets/${worksheet.id}',query:{'versionId':worksheet.versionId});
   /// [writtenAnswerMode]: 'typed' (a criança escreve na app) ou 'paper' (resolve no caderno).
   Future<void> assign(String childId,String versionId,String requestId,{String writtenAnswerMode='typed'}) async {
