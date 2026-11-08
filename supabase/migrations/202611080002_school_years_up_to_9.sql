@@ -1,9 +1,8 @@
 begin;
 
--- Todo o ensino básico: os anos escolares válidos passam de 1–4 (1.º ciclo) para 1–9
--- (2.º ciclo: 5.º–6.º; 3.º ciclo: 7.º–9.º). Alarga os CHECK das tabelas e redefine as
--- funções que validavam explicitamente o intervalo (corpo igual às versões anteriores,
--- só muda o limite).
+-- 3.º ciclo do ensino básico: os anos escolares válidos passam de 1–6 para 1–9
+-- (7.º, 8.º e 9.º anos). Alarga os CHECK das tabelas e redefine as funções que validavam
+-- explicitamente o intervalo (corpo igual a 202611080001, só muda o limite).
 
 alter table public.children drop constraint if exists children_school_year_check;
 alter table public.children add constraint children_school_year_check check (school_year between 1 and 9);
