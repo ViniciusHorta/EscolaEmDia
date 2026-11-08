@@ -8,19 +8,51 @@ import '../domain/billing_models.dart';
 /// Nas fases de pagamento passa a vir do produto da loja.
 const premiumPriceLabel = '3,99 €/mês';
 
+/// Abre o pagamento; devolve uma mensagem de erro ou null quando o browser já foi redirecionado.
+typedef PremiumSubscribe = Future<String?> Function();
+
 /// Oferta Premium. SÓ para a área do responsável — nunca mostrar à criança.
-Future<void> showPremiumPaywall(BuildContext context, {required String childName, required PaywallReason reason, int? freeMaxQuestions}) =>
+/// Sem [onSubscribe] (ex.: app móvel antes das lojas) o botão explica que o pagamento chega em breve.
+Future<void> showPremiumPaywall(BuildContext context, {required String childName, required PaywallReason reason,
+    int? freeMaxQuestions, PremiumSubscribe? onSubscribe}) =>
   showModalBottomSheet<void>(
     context: context, isScrollControlled: true, showDragHandle: true, backgroundColor: AppColors.surface,
     shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.card))),
-    builder: (context) => _PremiumPaywall(childName: childName, reason: reason, freeMaxQuestions: freeMaxQuestions),
+    builder: (context) => _PremiumPaywall(childName: childName, reason: reason, freeMaxQuestions: freeMaxQuestions,
+      onSubscribe: onSubscribe),
   );
 
-class _PremiumPaywall extends StatelessWidget {
-  const _PremiumPaywall({required this.childName, required this.reason, this.freeMaxQuestions});
+class _PremiumPaywall extends StatefulWidget {
+  const _PremiumPaywall({required this.childName, required this.reason, this.freeMaxQuestions, this.onSubscribe});
   final String childName;
   final PaywallReason reason;
   final int? freeMaxQuestions;
+  final PremiumSubscribe? onSubscribe;
+  @override
+  State<_PremiumPaywall> createState() => _PremiumPaywallState();
+}
+
+class _PremiumPaywallState extends State<_PremiumPaywall> {
+  bool busy = false;
+  String? error;
+  String get childName => widget.childName;
+  PaywallReason get reason => widget.reason;
+  int? get freeMaxQuestions => widget.freeMaxQuestions;
+
+  Future<void> subscribe() async {
+    final action = widget.onSubscribe;
+    if (action == null) {
+      await showDialog<void>(context: context, builder: (context) => AlertDialog(
+        title: const Text('Pagamento em breve'),
+        content: const Text('A subscrição ainda não está disponível nesta versão. Em breve vais poder ativar o Premium aqui.'),
+        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Ok'))],
+      ));
+      return;
+    }
+    setState(() {busy = true; error = null;});
+    final failure = await action();
+    if (mounted) setState(() {busy = false; error = failure;});
+  }
 
   String get headline => switch (reason) {
     PaywallReason.dailyLimit => '$childName já recebeu a ficha de hoje',
@@ -61,14 +93,15 @@ class _PremiumPaywall extends StatelessWidget {
         ]),
       ),
       const SizedBox(height: 18),
+      if (error != null) Padding(padding: const EdgeInsets.only(bottom: 12), child: Semantics(liveRegion: true,
+        child: Text(error!, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.error)))),
       AppButton(label: 'Ativar Premium para $childName', icon: Icons.workspace_premium_rounded, variant: AppButtonVariant.success,
-        onPressed: () => showDialog<void>(context: context, builder: (context) => AlertDialog(
-          title: const Text('Pagamento em breve'),
-          content: const Text('A subscrição ainda não está disponível nesta versão. Em breve vais poder ativar o Premium aqui.'),
-          actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Ok'))],
-        ))),
+        loading: busy, onPressed: busy ? null : subscribe),
       const SizedBox(height: 10),
-      AppButton(label: 'Agora não', variant: AppButtonVariant.neutral, onPressed: () => Navigator.pop(context)),
+      AppButton(label: 'Agora não', variant: AppButtonVariant.neutral, onPressed: busy ? null : () => Navigator.pop(context)),
+      if (widget.onSubscribe != null) const Padding(padding: EdgeInsets.only(top: 10),
+        child: Text('Pagamento seguro com Stripe. Vais sair da app para concluir.', textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 13, color: AppColors.muted))),
     ]),
   ));
 }

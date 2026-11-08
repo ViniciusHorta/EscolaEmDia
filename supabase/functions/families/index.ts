@@ -120,10 +120,14 @@ Deno.serve(async (req: Request) => {
       },
     });
     // Plano da criança (premium | free | locked) para a área da família.
-    const childPlan = async (id: string): Promise<string | undefined> => {
+    const childAccess = async (id: string): Promise<{ plan: string; subscription: any } | undefined> => {
       const { data, error } = await admin.rpc("child_access", { p_child_id: id });
-      return error ? undefined : data?.plan;
+      return error || !data?.plan ? undefined : data;
     };
+    const childPlan = async (id: string) => (await childAccess(id))?.plan;
+    // Resumo da assinatura para a área da família (sem identificadores externos).
+    const subscriptionSummary = (s: any) =>
+      s ? { channel: s.channel, status: s.status, autoRenew: s.autoRenew, currentPeriodEnd: s.currentPeriodEnd } : null;
     // Acrescenta o plano à criança devolvida por create/update; sem plano se falhar.
     const withPlan = async (child: any) =>
       child && typeof child.id === "string"
@@ -224,7 +228,7 @@ Deno.serve(async (req: Request) => {
       const { data, error } = await query;
       if (error) return fail(503, "STORAGE_UNAVAILABLE");
       const rows = (data ?? []).slice(0, 50);
-      const plans = await Promise.all(rows.map((c) => childPlan(c.id)));
+      const plans = await Promise.all(rows.map((c) => childAccess(c.id)));
       if (plans.some((p) => p === undefined))
         return fail(503, "STORAGE_UNAVAILABLE");
       return reply(200, {
@@ -235,7 +239,8 @@ Deno.serve(async (req: Request) => {
           schoolYear: c.school_year,
           avatarId: c.avatar_id,
           createdAt: c.created_at,
-          plan: plans[i],
+          plan: plans[i]!.plan,
+          subscription: subscriptionSummary(plans[i]!.subscription),
         })),
         nextCursor: (data?.length ?? 0) > 50 ? rows[49].id : null,
       });

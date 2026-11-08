@@ -14,11 +14,13 @@ import '../data/worksheet_service.dart';
 import '../domain/worksheet_models.dart';
 
 class PrepareWorksheetPage extends StatefulWidget {
-  const PrepareWorksheetPage({super.key,required this.children,required this.service,required this.onClose,required this.onViewChild});
+  const PrepareWorksheetPage({super.key,required this.children,required this.service,required this.onClose,required this.onViewChild,this.subscribeFor});
   final List<ChildProfile> children;
   final WorksheetService service;
   final VoidCallback onClose;
   final Future<void> Function(String) onViewChild;
+  /// Abre o pagamento para a criança (null = pagamento ainda indisponível nesta plataforma).
+  final PremiumSubscribe? Function(String childId)? subscribeFor;
   @override State<PrepareWorksheetPage> createState()=>_PrepareWorksheetPageState();
 }
 class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
@@ -69,7 +71,8 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
     return null;
   }
   void openPaywall(PaywallReason reason)=>showPremiumPaywall(context,childName:child?.displayName??'a criança',
-    reason:reason,freeMaxQuestions:access?.freeMaxQuestions);
+    reason:reason,freeMaxQuestions:access?.freeMaxQuestions,
+    onSubscribe:child==null?null:widget.subscribeFor?.call(child!.id));
   Widget planNotice(){
     final current=access;final name=child?.displayName??'';
     if(current==null||current.isPremium)return const SizedBox.shrink();

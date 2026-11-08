@@ -270,6 +270,15 @@ components:
           description: >-
             Plano atual da criança (só para a área da família). Pode ser null em
             create/update se o plano não puder ser lido.
+        subscription:
+          type: object
+          nullable: true
+          description: Assinatura viva (só na listagem). Sem identificadores externos.
+          properties:
+            channel: {type: string, enum: [manual, stripe, google_play, app_store]}
+            status: {type: string, enum: [active, in_grace]}
+            autoRenew: {type: boolean}
+            currentPeriodEnd: {type: string, format: date-time}
   responses:
     Error:
       description: >-

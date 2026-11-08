@@ -65,3 +65,11 @@ verify_jwt = false
 [functions.legal]
 # Documents are public; acceptance routes validate adult Auth with auth.getUser(token).
 verify_jwt = false
+
+[functions.billing]
+# Parent-only routes validate adult Auth and the temporary parental unlock in the handler.
+verify_jwt = false
+
+[functions.stripe-webhook]
+# Called by Stripe; authenticated by the Stripe-Signature header (STRIPE_WEBHOOK_SECRET).
+verify_jwt = false

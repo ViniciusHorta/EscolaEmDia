@@ -1,0 +1,67 @@
+openapi: 3.0.3
+info:
+  title: Escola em Dia — Pagamentos Web (Stripe)
+  version: 1.0.0
+  description: >-
+    Só para o responsável autenticado com a área parental desbloqueada (X-Parent-Unlock).
+    Estes pedidos NÃO ativam o Premium: a assinatura só muda quando o webhook do Stripe
+    (função stripe-webhook, autenticada pela assinatura Stripe-Signature) confirma o pagamento.
+    Os URLs de regresso usam a origem web do pedido (cabeçalho Origin, validado por CORS):
+    ?billing=success&child={id}&session_id=…, ?billing=cancel&child={id} e ?billing=portal.
+servers:
+  - url: https://hhgxxvvreyhigxynrgmv.supabase.co/functions/v1/billing
+security:
+  - adultSession: []
+    parentUnlock: []
+paths:
+  /v1/children/{childId}/checkout:
+    post:
+      summary: Criar uma sessão Stripe Checkout (assinatura mensal) para tornar a criança Premium
+      description: >-
+        Cria/reutiliza o cliente Stripe da família, expira checkouts abertos da mesma criança
+        e devolve o URL do checkout. A assinatura leva metadata family_id/child_id.
+      parameters:
+        - name: childId
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [clientRequestId]
+              properties:
+                clientRequestId: {type: string, format: uuid, description: Chave de idempotência do pedido}
+      responses:
+        '201':
+          description: '{url, sessionId}'
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/families/{familyId}/portal:
+    post:
+      summary: Abrir o portal do cliente Stripe (cancelar, trocar cartão, faturas)
+      parameters:
+        - name: familyId
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: '{url}'
+        default:
+          $ref: '#/components/responses/Error'
+components:
+  securitySchemes:
+    adultSession: {type: http, scheme: bearer}
+    parentUnlock: {type: apiKey, in: header, name: X-Parent-Unlock}
+  responses:
+    Error:
+      description: >-
+        400 INVALID_REQUEST | CHECKOUT_WEB_ONLY (sem Origin: apps móveis usam as lojas);
+        401 AUTH_REQUIRED; 403 PARENT_LOCKED | EMAIL_NOT_CONFIRMED | ORIGIN_NOT_ALLOWED;
+        404 CHILD_NOT_FOUND | FAMILY_NOT_FOUND | NO_STRIPE_CUSTOMER;
+        409 CHILD_ALREADY_PREMIUM | MAX_PREMIUM_CHILDREN_REACHED;
+        502 PAYMENTS_UNAVAILABLE (erro do Stripe); 503 serviço indisponível.

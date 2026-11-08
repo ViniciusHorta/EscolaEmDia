@@ -1,10 +1,13 @@
 import '../../legal/data/legal_service.dart';
 import '../../legal/presentation/legal_documents_page.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/request_id.dart';
 import '../../../shared/widgets/app_badge.dart';
 import '../../../shared/widgets/premium_crown.dart';
+import '../../billing/data/billing_service.dart';
 import '../../billing/domain/billing_models.dart';
 import '../../billing/presentation/premium_paywall.dart';
 import '../../../shared/widgets/app_button.dart';
@@ -45,6 +48,10 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
   late final WorksheetService worksheets;
   late final PendingReviewsService pendingReviews;
   late final ChildProgressService progressService;
+  late final BillingService billing;
+  /// Regresso do Stripe Checkout/portal (?billing=success|cancel|portal&child=…), só na Web.
+  final Map<String, String> billingReturn = kIsWeb ? Map.of(Uri.base.queryParameters) : const {};
+  bool billingHandled = false;
   bool preparing = false;
   ParentTab parentTab = ParentTab.dashboard;
   int pendingCount = 0;
@@ -81,6 +88,7 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
     pendingReviews=PendingReviewsService(widget.auth.client,parentToken:()=>parentAccess.token,onParentLocked:parentAccess.forget);
     progressService = ChildProgressService(widget.auth.client,parentToken:()=>parentAccess.token,onParentLocked:parentAccess.forget);
     worksheets = WorksheetService(widget.auth.client,parentToken:()=>parentAccess.token,onParentLocked:parentAccess.forget);
+    billing = BillingService(widget.auth.client, parentToken: () => parentAccess.token, onParentLocked: parentAccess.forget);
     initializeWorkspace();
   }
 
@@ -196,11 +204,148 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
         editing = available.isEmpty || (selected != null && profiles.isEmpty);
         if (selected != null && profiles.isNotEmpty) returnFamilyId = selected.id;
       });
+      if (!billingHandled && selected != null && billingReturn['billing'] != null) {
+        billingHandled = true;
+        handleBillingReturn();
+      }
     } on FamilyException catch (failure) {
       if (mounted) setState(() => error = failure.message);
     } catch (_) {
       if (mounted) setState(() => error = 'Não foi possível carregar a tua família. Tenta novamente.');
     } finally {if (mounted) setState(() => loading = false);}
+  }
+
+  /// Pagamento Web (Stripe Checkout). Nas apps móveis o pagamento chega com as lojas (Fases 5–6).
+  PremiumSubscribe? subscribeFor(String childId) => !kIsWeb ? null : () async {
+    try {
+      final url = await billing.checkoutUrl(childId);
+      if (!await launchUrl(url, webOnlyWindowName: '_self')) return 'Não foi possível abrir o pagamento.';
+      return null;
+    } on BillingException catch (failure) {
+      if (failure.code == 'CHILD_ALREADY_PREMIUM') load();
+      return failure.message;
+    }
+  };
+
+  Future<void> manageSubscription() async {
+    final family = selectedFamily;
+    if (family == null) return;
+    try {
+      final url = await billing.portalUrl(family.id);
+      if (!await launchUrl(url, webOnlyWindowName: '_self')) throw const BillingException('Não foi possível abrir a gestão da subscrição.');
+    } on BillingException catch (failure) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(failure.message)));
+    }
+  }
+
+  /// O Premium é ativado pelo webhook do Stripe: depois do pagamento, aguardamos a confirmação.
+  Future<void> handleBillingReturn() async {
+    final kind = billingReturn['billing'], childId = billingReturn['child'];
+    final messenger = ScaffoldMessenger.of(context);
+    String name() => children.where((c) => c.id == childId).firstOrNull?.displayName ?? 'a criança';
+    if (kind == 'cancel') {
+      messenger.showSnackBar(const SnackBar(content: Text('Pagamento cancelado. Não foi cobrado nada.')));
+      return;
+    }
+    if (kind != 'success' || childId == null) return;
+    messenger.showSnackBar(SnackBar(duration: const Duration(seconds: 30),
+      content: Text('Pagamento recebido! A ativar o Premium de ${name()}…')));
+    for (var i = 0; i < 10 && !children.any((c) => c.id == childId && c.isPremium); i++) {
+      await Future<void>.delayed(const Duration(seconds: 3));
+      final family = selectedFamily;
+      if (!mounted || family == null) return;
+      try {
+        final profiles = await service.listChildren(family.id);
+        if (mounted) setState(() => children = profiles);
+      } catch (_) {/* tenta de novo */}
+    }
+    if (!mounted) return;
+    final active = children.any((c) => c.id == childId && c.isPremium);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(SnackBar(content: Text(active
+      ? 'Premium ativo para ${name()} 🎉'
+      : 'O pagamento foi recebido. O Premium fica ativo dentro de instantes — atualiza a página daqui a pouco.')));
+  }
+
+  String shortDate(DateTime value) => '${value.day.toString().padLeft(2, '0')}/${value.month.toString().padLeft(2, '0')}/${value.year}';
+
+  /// Estado da assinatura no cartão da criança (só Premium).
+  String? subscriptionText(ChildProfile child) {
+    final sub = child.subscription;
+    if (!child.isPremium || sub == null) return null;
+    final end = sub.currentPeriodEnd;
+    return sub.inGrace
+      ? 'Pagamento em atraso — atualiza o cartão para manter o Premium.'
+      : !sub.isStripe
+        ? (end == null ? 'Premium oferecido.' : 'Premium oferecido até ${shortDate(end)}.')
+        : sub.autoRenew
+          ? (end == null ? 'Subscrição ativa.' : 'Renova a ${shortDate(end)} • $premiumPriceLabel')
+          : (end == null ? 'Subscrição cancelada.' : 'Cancelada — Premium até ${shortDate(end)}.');
+  }
+
+  List<Widget> subscriptionInfo(ChildProfile child) {
+    final text = subscriptionText(child);
+    if (text == null) return const [];
+    return [
+      const SizedBox(height: 12),
+      Text(text, style: TextStyle(fontSize: 14,
+        color: child.subscription!.inGrace ? AppColors.error : AppColors.muted)),
+    ];
+  }
+
+  /// Detalhe da assinatura de uma criança (menu ⋮ → Ver assinatura).
+  void showSubscriptionSheet(ChildProfile child) {
+    final sub = child.subscription;
+    final planLabel = child.isPremium ? 'Premium' : child.plan == 'free' ? 'Gratuito' : 'Sem plano ativo';
+    final origin = switch (sub?.channel) {
+      'stripe' => 'Cartão (pagamento web)',
+      'google_play' => 'Google Play',
+      'app_store' => 'App Store',
+      'manual' => 'Oferta da Escola em Dia',
+      _ => null,
+    };
+    Widget row(String label, String value) => Padding(padding: const EdgeInsets.only(bottom: 10), child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start, children: [
+        SizedBox(width: 110, child: Text(label, style: const TextStyle(color: AppColors.muted))),
+        Expanded(child: Text(value, style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.text))),
+      ]));
+    showModalBottomSheet<void>(
+      context: context, showDragHandle: true, isScrollControlled: true, backgroundColor: AppColors.surface,
+      builder: (sheetContext) => SafeArea(child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Row(children: [
+            Flexible(child: Text('Assinatura de ${child.displayName}', style: Theme.of(context).textTheme.titleLarge)),
+            PremiumCrown(isPremium: child.isPremium, size: 24),
+          ]),
+          const SizedBox(height: 18),
+          row('Plano', planLabel),
+          if (origin != null) row('Origem', origin),
+          if (subscriptionText(child) case final text?) row('Estado', text),
+          if (!child.isPremium) row('Inclui', child.plan == 'free'
+            ? '1 ficha por dia e catálogo Free.'
+            : 'A vaga gratuita da família está ocupada por outra criança.'),
+          const SizedBox(height: 8),
+          if (sub != null && sub.isStripe && kIsWeb)
+            AppButton(label: 'Gerir assinatura', icon: Icons.credit_card_rounded, variant: AppButtonVariant.secondary,
+              onPressed: () {Navigator.pop(sheetContext); manageSubscription();}),
+          if (sub != null && sub.isStripe && kIsWeb) const Padding(padding: EdgeInsets.only(top: 8),
+            child: Text('Cancelar, trocar o cartão ou ver faturas.', textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 13, color: AppColors.muted))),
+          if (sub != null && (sub.channel == 'google_play' || sub.channel == 'app_store'))
+            Text('Esta assinatura é gerida na ${origin!}.', textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.muted)),
+          if (!child.isPremium)
+            AppButton(label: 'Ativar Premium', icon: Icons.workspace_premium_rounded, variant: AppButtonVariant.success,
+              onPressed: () {
+                Navigator.pop(sheetContext);
+                showPremiumPaywall(context, childName: child.displayName,
+                  reason: child.plan == 'locked' ? PaywallReason.locked : PaywallReason.general,
+                  onSubscribe: subscribeFor(child.id));
+              }),
+        ]),
+      )),
+    );
   }
 
   Future<ChildProfile> save(ChildProfileDraft draft) async {
@@ -274,6 +419,7 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
       onReview: (attemptId) => setState(() { reviewingAttemptId = attemptId; }),
     );
     if (preparing) return PrepareWorksheetPage(children: List<ChildProfile>.unmodifiable(children),service:worksheets,
+      subscribeFor: subscribeFor,
       onClose:()=>setState(()=>preparing=false),onViewChild:(childId) async {
         setState((){preferredChildId=childId;preparing=false;});
         await enterChildMode();
@@ -356,11 +502,8 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
     ])),
   ]);
 
-  Widget familyTab() => tabList([
-    LayoutBuilder(builder: (context, constraints) {
-      final width = constraints.maxWidth >= 700 ? (constraints.maxWidth - 20) / 2 : constraints.maxWidth;
-      return Wrap(spacing: 20, runSpacing: 20, children: [for (final child in children)
-        SizedBox(width: width, child: AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+  /// Cartão de uma criança no separador Família.
+  Widget childCard(ChildProfile child) => AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             ExcludeSemantics(child: Text(ChildAvatars.emoji(child.avatarId), style: const TextStyle(fontSize: 48))),
             const SizedBox(width: 16),
@@ -372,6 +515,19 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
               const SizedBox(height: 6),
               Text('${child.schoolYear}.º Ano • ${ChildAvatars.label(child.avatarId)}'),
             ])),
+            PopupMenuButton<String>(
+              tooltip: 'Mais opções de ${child.displayName}',
+              icon: const Icon(Icons.more_vert_rounded, color: AppColors.muted),
+              enabled: !exiting,
+              onSelected: (action) {
+                if (action == 'edit') setState(() => editingChild = child);
+                if (action == 'subscription') showSubscriptionSheet(child);
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'edit', child: ListTile(leading: Icon(Icons.edit_rounded), title: Text('Editar perfil'))),
+                PopupMenuItem(value: 'subscription', child: ListTile(leading: Icon(Icons.workspace_premium_rounded), title: Text('Ver assinatura'))),
+              ],
+            ),
           ]),
           const SizedBox(height: 18),
           Wrap(spacing: 8, runSpacing: 8, children: [
@@ -382,19 +538,43 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
           if (child.plan == 'locked') ...[
             const SizedBox(height: 12),
             AppButton(label: 'Ativar Premium', icon: Icons.workspace_premium_rounded, variant: AppButtonVariant.success,
-              onPressed: () => showPremiumPaywall(context, childName: child.displayName, reason: PaywallReason.locked)),
+              onPressed: () => showPremiumPaywall(context, childName: child.displayName, reason: PaywallReason.locked,
+                onSubscribe: subscribeFor(child.id))),
           ],
+          // Criança Free: oferta discreta, sempre disponível (não só quando bate no limite).
+          if (child.plan == 'free') ...[
+            const SizedBox(height: 12),
+            AppButton(label: 'Passar a Premium', icon: Icons.workspace_premium_rounded, variant: AppButtonVariant.neutral,
+              onPressed: () => showPremiumPaywall(context, childName: child.displayName, reason: PaywallReason.general,
+                onSubscribe: subscribeFor(child.id))),
+          ],
+          ...subscriptionInfo(child),
+          const Spacer(),
           const SizedBox(height: 18),
           AppButton(label: 'Ver acompanhamento', variant: AppButtonVariant.secondary,
             icon: Icons.insights_rounded, onPressed: () => setState(() { progressChildId = child.id; })),
           const SizedBox(height: 12),
-          AppButton(label: 'Editar perfil', variant: AppButtonVariant.secondary,
-            icon: Icons.edit_rounded, onPressed: exiting ? null : () => setState(() { editingChild = child; })),
-          const SizedBox(height: 12),
           AppButton(label: 'Entrar como ${child.displayName}', variant: AppButtonVariant.success,
             icon: Icons.rocket_launch_rounded, loading: exiting,
             onPressed: exiting ? null : () => enterAsChild(child.id)),
-        ]))),
+  ]));
+
+  Widget familyTab() => tabList([
+    LayoutBuilder(builder: (context, constraints) {
+      // Web/ecrãs largos: grelha (até 3 colunas); telemóvel: um cartão por baixo do outro.
+      final columns = constraints.maxWidth >= 1000 ? 3 : constraints.maxWidth >= 640 ? 2 : 1;
+      // Linhas da grelha: todos os cartões de uma linha ficam com a altura do mais alto
+      // (IntrinsicHeight + stretch) e os botões principais alinham-se no fundo (Spacer).
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        for (var start = 0; start < children.length; start += columns) Padding(
+          padding: EdgeInsets.only(top: start == 0 ? 0 : 20),
+          child: IntrinsicHeight(child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            for (var i = start; i < start + columns; i++) ...[
+              if (i > start) const SizedBox(width: 20),
+              Expanded(child: i < children.length ? childCard(children[i]) : const SizedBox.shrink()),
+            ],
+          ])),
+        ),
       ]);
     }),
     const SizedBox(height: 28),

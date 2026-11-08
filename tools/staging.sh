@@ -5,6 +5,8 @@ set -euo pipefail
 
 STAGING_REF="ivtnjputmlsvbuakrzdw"
 STAGING_URL="https://${STAGING_REF}.supabase.co"
+# Chave pública (publishable) — pode estar no git. Segredos (Stripe, etc.) vão para
+# supabase/functions/.env.staging, que está fora do git.
 STAGING_PUBLISHABLE_KEY="sb_publishable_NWfWgS9UZbh25mplti0j0A_807dbcMb"
 
 cd "$(dirname "$0")/.."
@@ -19,6 +21,7 @@ Uso: tools/staging.sh <comando>
   db:dry            Mostra as migrations pendentes no staging
   db:push           Aplica as migrations pendentes no staging
   fn:deploy [nome]  Publica as edge functions (todas ou só uma) no staging
+  secrets           Envia supabase/functions/.env.staging (fora do git) para os secrets do staging
   sql "<query>"     Executa SQL no staging
   test <ficheiro>   Corre um teste SQL (transação com ROLLBACK) no staging
 EOF
@@ -39,6 +42,9 @@ case "$cmd" in
   db:dry)    supabase db push --remote="$STAGING_REF" --dry-run ;;
   db:push)   supabase db push --remote="$STAGING_REF" ;;
   fn:deploy) supabase functions deploy "$@" --remote="$STAGING_REF" ;;
+  secrets)
+    [ -f supabase/functions/.env.staging ] || { echo "Falta supabase/functions/.env.staging"; exit 1; }
+    supabase secrets set --env-file supabase/functions/.env.staging --remote="$STAGING_REF" ;;
   sql)       supabase db query --remote="$STAGING_REF" "$1" ;;
   test)      supabase db query --remote="$STAGING_REF" --file "$1" ;;
   *)         usage; exit 1 ;;
