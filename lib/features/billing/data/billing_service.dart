@@ -22,6 +22,18 @@ class BillingService {
   /// URL do portal do Stripe (cancelar, trocar cartão, faturas).
   Future<Uri> portalUrl(String familyId) async => _url(await _post('/v1/families/$familyId/portal', const {}));
 
+  /// Android: produto-vaga a comprar e identificador da família (obfuscatedAccountId).
+  Future<({String productId, String accountId})> playOffer(String childId) async {
+    final data = await _post('/v1/children/$childId/play/offer', const {});
+    final productId = data['productId'], accountId = data['obfuscatedAccountId'];
+    if (productId is! String || accountId is! String) throw const BillingException('Não foi possível preparar a compra.');
+    return (productId: productId, accountId: accountId);
+  }
+
+  /// Android: verifica a compra no servidor (API Google Play) e ativa o Premium. Devolve o plano.
+  Future<String?> verifyPlayPurchase(String productId, String purchaseToken) async =>
+      (await _post('/v1/play/purchases', {'productId': productId, 'purchaseToken': purchaseToken}))['plan'] as String?;
+
   Uri _url(Map data) {
     final url = Uri.tryParse('${data['url']}');
     if (url == null || url.scheme != 'https' || !url.host.endsWith('stripe.com')) {

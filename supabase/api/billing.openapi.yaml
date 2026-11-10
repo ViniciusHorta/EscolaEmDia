@@ -53,6 +53,46 @@ paths:
           description: '{url}'
         default:
           $ref: '#/components/responses/Error'
+  /v1/children/{childId}/play/offer:
+    post:
+      summary: Android — escolher o produto-vaga Google Play para a criança
+      description: >-
+        Valida o responsável e as regras (criança não Premium, limite da família), escolhe a primeira
+        vaga livre (premium_crianca_1..5) e regista a intenção de compra. A app compra esse produto com
+        obfuscatedAccountId = id da família. Não requer Origin (app nativa).
+      parameters:
+        - name: childId
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: '{productId, obfuscatedAccountId}'
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/play/purchases:
+    post:
+      summary: Android — verificar uma compra Google Play e ativar o Premium
+      description: >-
+        Lê a assinatura na Google Play Developer API (subscriptionsv2), confirma que pertence a uma
+        família do adulto, aplica o estado e faz acknowledge. Compras que não podem ser honradas são
+        revogadas com reembolso (PURCHASE_REFUSED). As notificações RTDN (play-notifications) aplicam
+        o mesmo estado de forma independente.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [productId, purchaseToken]
+              properties:
+                productId: {type: string, pattern: '^premium_crianca_[1-9][0-9]*$'}
+                purchaseToken: {type: string}
+      responses:
+        '200':
+          description: '{plan, childId}'
+        default:
+          $ref: '#/components/responses/Error'
 components:
   securitySchemes:
     adultSession: {type: http, scheme: bearer}
@@ -64,4 +104,6 @@ components:
         401 AUTH_REQUIRED; 403 PARENT_LOCKED | EMAIL_NOT_CONFIRMED | ORIGIN_NOT_ALLOWED;
         404 CHILD_NOT_FOUND | FAMILY_NOT_FOUND | NO_STRIPE_CUSTOMER;
         409 CHILD_ALREADY_PREMIUM | MAX_PREMIUM_CHILDREN_REACHED;
-        502 PAYMENTS_UNAVAILABLE (erro do Stripe); 503 serviço indisponível.
+        409 CHILD_ALREADY_PREMIUM; 422 PURCHASE_REFUSED (revogada e reembolsada) | NO_PURCHASE_INTENT;
+        502 PAYMENTS_UNAVAILABLE (erro do Stripe) | PURCHASE_NOT_VERIFIED (erro da Google Play);
+        503 serviço indisponível.

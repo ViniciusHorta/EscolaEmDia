@@ -1,9 +1,15 @@
 // Pagamentos Web (Stripe) — apenas para o responsável com a área parental desbloqueada.
 //   POST /v1/children/{childId}/checkout   {clientRequestId}  → {url, sessionId}
 //   POST /v1/families/{familyId}/portal                        → {url}
-// O Premium NÃO é ativado aqui: só o webhook (stripe-webhook) altera assinaturas.
+//   POST /v1/children/{childId}/play/offer                     → {productId, obfuscatedAccountId}  (Android)
+//   POST /v1/play/purchases   {productId, purchaseToken}      → {plan, childId}                    (Android)
+// Stripe: o Premium só é ativado pelo webhook (stripe-webhook).
+// Google Play: a compra é verificada na API da Google aqui (logo após a compra) e também
+// pelas notificações em tempo real (play-notifications); ambas aplicam o mesmo estado.
 import { createCors } from "../_shared/cors.ts";
 import { StripeError, stripeClient } from "../_shared/stripe.ts";
+import { PlayError, playClient, readServiceAccount } from "../_shared/google_play.ts";
+import { syncPlayPurchase } from "../_shared/play_sync.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const uuid = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
@@ -23,6 +29,8 @@ const messages: Record<string, string> = {
   CHILD_ALREADY_PREMIUM: "Esta criança já tem o Premium ativo.",
   MAX_PREMIUM_CHILDREN_REACHED: "A família já atingiu o número máximo de crianças Premium.",
   NO_STRIPE_CUSTOMER: "Ainda não existe nenhuma subscrição paga nesta família.",
+  PURCHASE_NOT_VERIFIED: "Não foi possível confirmar a compra com a Google Play. Tenta novamente.",
+  PURCHASE_REFUSED: "Esta compra não pôde ser associada a uma criança e foi reembolsada.",
   CHECKOUT_WEB_ONLY: "O pagamento com cartão está disponível na versão web.",
   PAYMENTS_UNAVAILABLE: "Os pagamentos estão temporariamente indisponíveis. Tenta novamente.",
   INVALID_REQUEST: "Verifica os dados do pedido.",
@@ -48,7 +56,10 @@ Deno.serve(async (req: Request) => {
     .replace(/^\/billing(?=\/|$)/, "");
   const checkoutRoute = /^\/v1\/children\/([^/]+)\/checkout$/.exec(path);
   const portalRoute = /^\/v1\/families\/([^/]+)\/portal$/.exec(path);
-  const operation = checkoutRoute ? "checkout" : portalRoute ? "portal" : "unknown";
+  const playOfferRoute = /^\/v1\/children\/([^/]+)\/play\/offer$/.exec(path);
+  const playPurchaseRoute = path === "/v1/play/purchases";
+  const operation = checkoutRoute ? "checkout" : portalRoute ? "portal" : playOfferRoute ? "play-offer"
+    : playPurchaseRoute ? "play-purchase" : "unknown";
   const corsPolicy = createCors(req, { methods: "POST, OPTIONS", parentUnlock: true, retryAfter: false });
   const reply = (status: number, body: unknown, code?: string) => {
     console.info(JSON.stringify({ requestId, domain: "billing", operation, status, ...(code ? { code } : {}) }));
@@ -65,11 +76,12 @@ Deno.serve(async (req: Request) => {
   if (corsPolicy.preflightResponse) return corsPolicy.preflightResponse;
   if (operation === "unknown") return fail(404, "ROUTE_NOT_FOUND");
   if (req.method !== "POST") return fail(405, "METHOD_NOT_ALLOWED");
-  const targetId = (checkoutRoute ?? portalRoute)![1];
-  if (!uuid.test(targetId)) return fail(400, "INVALID_REQUEST");
-  // Os URLs de regresso apontam para a origem web que fez o pedido (validada pelo CORS).
+  const targetId = (checkoutRoute ?? portalRoute ?? playOfferRoute)?.[1] ?? null;
+  if (targetId !== null && !uuid.test(targetId)) return fail(400, "INVALID_REQUEST");
+  const isPlay = Boolean(playOfferRoute || playPurchaseRoute);
+  // Stripe: os URLs de regresso apontam para a origem web que fez o pedido (validada pelo CORS).
   const origin = req.headers.get("origin");
-  if (!origin) return fail(400, "CHECKOUT_WEB_ONLY");
+  if (!isPlay && !origin) return fail(400, "CHECKOUT_WEB_ONLY");
 
   try {
     const projectUrl = Deno.env.get("SUPABASE_URL"),
@@ -77,7 +89,7 @@ Deno.serve(async (req: Request) => {
       stripeKey = Deno.env.get("STRIPE_SECRET_KEY"),
       priceId = Deno.env.get("STRIPE_PRICE_ID");
     if (!projectUrl || !serverKey) return fail(503, "STORAGE_UNAVAILABLE");
-    if (!stripeKey || !priceId) return fail(503, "PAYMENTS_UNAVAILABLE");
+    if (!isPlay && (!stripeKey || !priceId)) return fail(503, "PAYMENTS_UNAVAILABLE");
     const token = /^Bearer (\S+)$/i.exec(req.headers.get("authorization") ?? "")?.[1];
     if (!token || token.startsWith("chd_")) return fail(401, "AUTH_REQUIRED");
     const admin = createClient(projectUrl, serverKey, {
@@ -104,7 +116,44 @@ Deno.serve(async (req: Request) => {
     if (authzError) return fail(503, "STORAGE_UNAVAILABLE");
     if (!authorization || authorization.error) return fail(403, "PARENT_LOCKED");
 
-    const stripe = stripeClient(stripeKey);
+    if (isPlay) {
+      const serviceAccount = readServiceAccount(), packageName = Deno.env.get("PLAY_PACKAGE_NAME");
+      if (!serviceAccount || !packageName) return fail(503, "PAYMENTS_UNAVAILABLE");
+      if (playOfferRoute) {
+        const { data: offer, error } = await admin.rpc("billing_play_offer", { p_actor_id: user.id, p_child_id: targetId });
+        if (error || !offer) return fail(503, "STORAGE_UNAVAILABLE");
+        if (offer.error) return fail(statusFor[offer.error] ?? 400, offer.error);
+        // obfuscatedAccountId = família: liga a compra à família nas notificações da Google.
+        return reply(200, { productId: offer.productId, obfuscatedAccountId: offer.familyId });
+      }
+      let body: { productId?: unknown; purchaseToken?: unknown };
+      try {
+        const text = await req.text();
+        if (text.length > 4096) return fail(400, "INVALID_REQUEST");
+        body = JSON.parse(text);
+      } catch {
+        return fail(400, "INVALID_REQUEST");
+      }
+      if (typeof body?.purchaseToken !== "string" || body.purchaseToken.length < 10 || body.purchaseToken.length > 2048 ||
+          typeof body.productId !== "string" || !/^premium_crianca_[1-9][0-9]*$/.test(body.productId))
+        return fail(400, "INVALID_REQUEST");
+      const play = playClient(serviceAccount, packageName);
+      const rpc = async (fn: string, args: Record<string, unknown>) => {
+        const { data, error } = await admin.rpc(fn, args);
+        if (error) throw new Error(`${fn}: ${error.message}`);
+        return data;
+      };
+      // A compra tem de pertencer a uma família deste adulto (obfuscatedAccountId).
+      const remote = await play.subscription(body.purchaseToken);
+      const familyId = remote.externalAccountIdentifiers?.obfuscatedExternalAccountId;
+      if (!familyId || !uuid.test(familyId) || !(await rpc("billing_actor_in_family", { p_actor_id: user.id, p_family_id: familyId })))
+        return fail(404, "FAMILY_NOT_FOUND");
+      const result = await syncPlayPurchase(play, rpc, body.purchaseToken, { type: "app.purchase" });
+      if (result?.error) return fail(result.error === "CHILD_ALREADY_PREMIUM" ? 409 : 422, result.revoked ? "PURCHASE_REFUSED" : result.error);
+      return reply(200, { plan: result?.plan ?? null, childId: result?.childId ?? null });
+    }
+
+    const stripe = stripeClient(stripeKey!);
 
     if (portalRoute) {
       const { data: ctx, error } = await admin.rpc("billing_portal_context", { p_actor_id: user.id, p_family_id: targetId });
@@ -126,7 +175,7 @@ Deno.serve(async (req: Request) => {
       return fail(400, "INVALID_REQUEST");
     }
     if (typeof body?.clientRequestId !== "string" || !uuid.test(body.clientRequestId)) return fail(400, "INVALID_REQUEST");
-    const childId = targetId;
+    const childId = targetId!;
     const { data: ctx, error: ctxError } = await admin.rpc("billing_checkout_context", { p_actor_id: user.id, p_child_id: childId });
     if (ctxError || !ctx) return fail(503, "STORAGE_UNAVAILABLE");
     if (ctx.error) return fail(statusFor[ctx.error] ?? 400, ctx.error);
@@ -160,7 +209,7 @@ Deno.serve(async (req: Request) => {
         "managed_payments[enabled]": false,
         customer: customerId!,
         client_reference_id: childId,
-        "line_items[0][price]": priceId,
+        "line_items[0][price]": priceId!,
         "line_items[0][quantity]": 1,
         "metadata[family_id]": familyId,
         "metadata[child_id]": childId,
@@ -182,6 +231,10 @@ Deno.serve(async (req: Request) => {
     if (recordError) return fail(503, "STORAGE_UNAVAILABLE");
     return reply(201, { url: session.url, sessionId: session.id });
   } catch (error) {
+    if (error instanceof PlayError) {
+      console.error(JSON.stringify({ requestId, domain: "billing", playStatus: error.status, message: error.message }));
+      return fail(502, "PURCHASE_NOT_VERIFIED");
+    }
     if (error instanceof StripeError) {
       console.error(JSON.stringify({ requestId, domain: "billing", stripeStatus: error.status, stripeCode: error.code, message: error.message }));
       return fail(502, "PAYMENTS_UNAVAILABLE");

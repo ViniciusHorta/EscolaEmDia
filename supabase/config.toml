@@ -77,3 +77,7 @@ verify_jwt = false
 [functions.stripe-webhook]
 # Called by Stripe; authenticated by the Stripe-Signature header (STRIPE_WEBHOOK_SECRET).
 verify_jwt = false
+
+[functions.play-notifications]
+# Called by Google Pub/Sub push; authenticated by a shared secret in the URL and the state is always re-read from Google.
+verify_jwt = false

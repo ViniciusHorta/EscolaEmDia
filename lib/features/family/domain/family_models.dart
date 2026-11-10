@@ -32,18 +32,21 @@ class ChildProfile {
 
 /// Assinatura viva da criança (só na área da família).
 class ChildSubscriptionSummary {
-  const ChildSubscriptionSummary({required this.channel, required this.status, required this.autoRenew, this.currentPeriodEnd});
+  const ChildSubscriptionSummary({required this.channel, required this.status, required this.autoRenew, this.currentPeriodEnd, this.productId});
   final String channel; // manual | stripe | google_play | app_store
   final String status; // active | in_grace
   final bool autoRenew;
   final DateTime? currentPeriodEnd;
+  /// Produto da loja (premium_crianca_N) — para abrir a gestão na Google Play / App Store.
+  final String? productId;
   bool get isStripe => channel == 'stripe';
   bool get inGrace => status == 'in_grace';
   static ChildSubscriptionSummary? tryParse(Object? value) {
     if (value is! Map || value['channel'] is! String) return null;
     final end = value['currentPeriodEnd'];
     return ChildSubscriptionSummary(channel: value['channel'] as String, status: '${value['status']}',
-      autoRenew: value['autoRenew'] == true, currentPeriodEnd: end is String ? DateTime.tryParse(end)?.toLocal() : null);
+      autoRenew: value['autoRenew'] == true, currentPeriodEnd: end is String ? DateTime.tryParse(end)?.toLocal() : null,
+      productId: value['productId'] as String?);
   }
 }
 

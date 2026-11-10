@@ -10,6 +10,7 @@ import '../../../core/utils/request_id.dart';
 import '../../../shared/widgets/app_badge.dart';
 import '../../../shared/widgets/premium_crown.dart';
 import '../../billing/data/billing_service.dart';
+import '../../billing/data/play_billing_service.dart';
 import '../../billing/domain/billing_models.dart';
 import '../../billing/presentation/premium_paywall.dart';
 import '../../../shared/widgets/app_button.dart';
@@ -51,6 +52,8 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
   late final PendingReviewsService pendingReviews;
   late final ChildProgressService progressService;
   late final BillingService billing;
+  /// Compras Google Play (só Android).
+  late final PlayBillingService playBilling;
   /// Regresso do Stripe Checkout/portal (?billing=success|cancel|portal&child=…), só na Web.
   final Map<String, String> billingReturn = kIsWeb ? Map.of(Uri.base.queryParameters) : const {};
   bool billingHandled = false;
@@ -91,11 +94,19 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
     progressService = ChildProgressService(widget.auth.client,parentToken:()=>parentAccess.token,onParentLocked:parentAccess.forget);
     worksheets = WorksheetService(widget.auth.client,parentToken:()=>parentAccess.token,onParentLocked:parentAccess.forget);
     billing = BillingService(widget.auth.client, parentToken: () => parentAccess.token, onParentLocked: parentAccess.forget);
+    playBilling = PlayBillingService(billing,
+      onMessage: (message) {
+        if (!mounted) return;
+        // A folha da oferta pode estar aberta: fecha-a para a mensagem ficar visível.
+        Navigator.of(context).popUntil((route) => route is! ModalBottomSheetRoute);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+      },
+      onPremiumChanged: () {if (mounted && parentAccess.unlocked) load();})..start();
     initializeWorkspace();
   }
 
   @override
-  void dispose() {parentAccess.removeListener(parentAccessChanged); parentAccess.dispose(); childSessions.dispose(); super.dispose();}
+  void dispose() {playBilling.dispose(); parentAccess.removeListener(parentAccessChanged); parentAccess.dispose(); childSessions.dispose(); super.dispose();}
 
   void parentAccessChanged() {
     if (!mounted) return;
@@ -217,8 +228,13 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
     } finally {if (mounted) setState(() => loading = false);}
   }
 
-  /// Pagamento Web (Stripe Checkout). Nas apps móveis o pagamento chega com as lojas (Fases 5–6).
-  PremiumSubscribe? subscribeFor(String childId) => !kIsWeb ? null : () async {
+  /// Web: Stripe Checkout. Android: Google Play. iOS: App Store (Fase 6) — ainda indisponível.
+  PremiumSubscribe? subscribeFor(String childId) {
+    if (PlayBillingService.supported) return () => playBilling.buy(childId);
+    return kIsWeb ? stripeCheckout(childId) : null;
+  }
+
+  PremiumSubscribe stripeCheckout(String childId) => () async {
     try {
       final url = await billing.checkoutUrl(childId);
       if (!await launchUrl(url, webOnlyWindowName: '_self')) return 'Não foi possível abrir o pagamento.';
@@ -334,9 +350,18 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
           if (sub != null && sub.isStripe && kIsWeb) const Padding(padding: EdgeInsets.only(top: 8),
             child: Text('Cancelar, trocar o cartão ou ver faturas.', textAlign: TextAlign.center,
               style: TextStyle(fontSize: 13, color: AppColors.muted))),
-          if (sub != null && (sub.channel == 'google_play' || sub.channel == 'app_store'))
-            Text('Esta assinatura é gerida na ${origin!}.', textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.muted)),
+          if (sub != null && sub.channel == 'google_play' && PlayBillingService.supported)
+            AppButton(label: 'Gerir na Google Play', icon: Icons.shop_rounded, variant: AppButtonVariant.secondary,
+              onPressed: () {
+                Navigator.pop(sheetContext);
+                launchUrl(PlayBillingService.manageUrl(sub.productId), mode: LaunchMode.externalApplication);
+              })
+          else if (sub != null && (sub.channel == 'google_play' || sub.channel == 'app_store'))
+            Text('Esta assinatura é gerida na ${origin!}${sub.channel == 'google_play' ? ', na app Android' : ', no iPhone/iPad'}.',
+              textAlign: TextAlign.center, style: const TextStyle(color: AppColors.muted)),
+          if (sub != null && sub.isStripe && !kIsWeb)
+            const Text('Esta assinatura foi feita na versão web e é gerida em app.escolaemdia.me.', textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.muted)),
           if (!child.isPremium)
             AppButton(label: 'Ativar Premium', icon: Icons.workspace_premium_rounded, variant: AppButtonVariant.success,
               onPressed: () {

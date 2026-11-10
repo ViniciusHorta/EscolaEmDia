@@ -127,7 +127,8 @@ Deno.serve(async (req: Request) => {
     const childPlan = async (id: string) => (await childAccess(id))?.plan;
     // Resumo da assinatura para a área da família (sem identificadores externos).
     const subscriptionSummary = (s: any) =>
-      s ? { channel: s.channel, status: s.status, autoRenew: s.autoRenew, currentPeriodEnd: s.currentPeriodEnd } : null;
+      s ? { channel: s.channel, status: s.status, autoRenew: s.autoRenew, currentPeriodEnd: s.currentPeriodEnd,
+        productId: s.productId ?? null } : null;
     // Acrescenta o plano à criança devolvida por create/update; sem plano se falhar.
     const withPlan = async (child: any) =>
       child && typeof child.id === "string"

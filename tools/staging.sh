@@ -18,6 +18,7 @@ Uso: tools/staging.sh <comando>
   app [args]        Corre o app Flutter (web, porta 8080) contra o staging
   device [id]       Corre o app num telemóvel/emulador ligado contra o staging
                     (sem id usa o único dispositivo ligado; ver: flutter devices)
+  bundle            Gera o .aab de release (Google Play, teste interno) apontado ao staging
   db:dry            Mostra as migrations pendentes no staging
   db:push           Aplica as migrations pendentes no staging
   fn:deploy [nome]  Publica as edge functions (todas ou só uma) no staging
@@ -38,6 +39,13 @@ case "$cmd" in
     flutter run ${1:+-d "$1"} \
       --dart-define=SUPABASE_URL="$STAGING_URL" \
       --dart-define=SUPABASE_PUBLISHABLE_KEY="$STAGING_PUBLISHABLE_KEY" "${@:2}"
+    ;;
+  bundle)
+    [ -f android/key.properties ] || { echo "Falta android/key.properties (chave de upload). O Google Play recusa builds de debug."; exit 1; }
+    flutter build appbundle --release \
+      --dart-define=SUPABASE_URL="$STAGING_URL" \
+      --dart-define=SUPABASE_PUBLISHABLE_KEY="$STAGING_PUBLISHABLE_KEY" "$@"
+    echo "→ build/app/outputs/bundle/release/app-release.aab"
     ;;
   db:dry)    supabase db push --remote="$STAGING_REF" --dry-run ;;
   db:push)   supabase db push --remote="$STAGING_REF" ;;
