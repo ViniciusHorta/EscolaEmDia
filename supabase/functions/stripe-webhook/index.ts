@@ -2,7 +2,9 @@
 // Segurança: assinatura Stripe-Signature (STRIPE_WEBHOOK_SECRET); sem JWT (verify_jwt = false).
 // Robustez: para cada evento lê o estado ATUAL da assinatura na API e aplica-o (idempotente e
 // imune à ordem dos eventos). Erros devolvem 500 para o Stripe repetir o envio.
-import { isoFromEpoch, StripeError, stripeClient, verifyStripeSignature } from "../_shared/stripe.ts";
+import {
+  isoFromEpoch, refundLatestInvoice as refundLatestInvoiceShared, StripeError, stripeClient, verifyStripeSignature,
+} from "../_shared/stripe.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const json = (status: number, body: unknown) =>
@@ -78,21 +80,10 @@ Deno.serve(async (req: Request) => {
   };
 
   const refundLatestInvoice = async (invoiceRef: unknown) => {
-    const invoiceId = typeof invoiceRef === "string" ? invoiceRef : (invoiceRef as { id?: string })?.id;
-    if (!invoiceId) return;
     try {
-      const invoice = await stripe(`invoices/${invoiceId}`);
-      let paymentIntent: string | undefined = invoice.payment_intent ?? undefined;
-      if (!paymentIntent) {
-        const payments = await stripe("invoice_payments", { method: "GET", params: { invoice: invoiceId } });
-        const pi = payments?.data?.[0]?.payment?.payment_intent;
-        paymentIntent = typeof pi === "string" ? pi : pi?.id;
-      }
-      if (paymentIntent && invoice.amount_paid > 0) {
-        await stripe("refunds", { params: { payment_intent: paymentIntent, reason: "duplicate" }, idempotencyKey: `refund-${invoiceId}` });
-      }
+      await refundLatestInvoiceShared(stripe, invoiceRef, "duplicate");
     } catch (error) {
-      log({ refundFailed: invoiceId, message: (error as Error).message });
+      log({ refundFailed: true, message: (error as Error).message });
     }
   };
 

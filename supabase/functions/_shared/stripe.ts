@@ -35,6 +35,25 @@ export function stripeClient(secretKey: string) {
   };
 }
 
+type Stripe = ReturnType<typeof stripeClient>;
+
+/** Reembolsa a última fatura paga de uma assinatura. Devolve o id do reembolso, ou null se não havia nada a reembolsar. */
+export async function refundLatestInvoice(stripe: Stripe, invoiceRef: unknown, reason: "duplicate" | "requested_by_customer") {
+  const invoiceId = typeof invoiceRef === "string" ? invoiceRef : (invoiceRef as { id?: string })?.id;
+  if (!invoiceId) return null;
+  const invoice = await stripe(`invoices/${invoiceId}`);
+  let paymentIntent: string | undefined = invoice.payment_intent ?? undefined;
+  if (!paymentIntent) {
+    // Desde a API 2025-03-31 o pagamento está em invoice_payments.
+    const payments = await stripe("invoice_payments", { method: "GET", params: { invoice: invoiceId } });
+    const pi = payments?.data?.[0]?.payment?.payment_intent;
+    paymentIntent = typeof pi === "string" ? pi : pi?.id;
+  }
+  if (!paymentIntent || !(invoice.amount_paid > 0)) return null;
+  const refund = await stripe("refunds", { params: { payment_intent: paymentIntent, reason }, idempotencyKey: `refund-${invoiceId}` });
+  return refund.id as string;
+}
+
 const encoder = new TextEncoder();
 
 /** Verifica o cabeçalho Stripe-Signature (HMAC-SHA256 de `${t}.${payload}`), com tolerância de 5 min. */

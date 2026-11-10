@@ -81,6 +81,9 @@ export function playClient(sa: ServiceAccount, packageName: string) {
     /** Confirma a compra (sem isto a Google reembolsa ao fim de 3 dias). */
     acknowledge: (productId: string, token: string) =>
       call(`purchases/subscriptions/${encodeURIComponent(productId)}/tokens/${encodeURIComponent(token)}:acknowledge`, "POST", {}),
+    /** Cancela a renovação: o acesso mantém-se até ao fim do período pago. */
+    cancel: (productId: string, token: string) =>
+      call(`purchases/subscriptions/${encodeURIComponent(productId)}/tokens/${encodeURIComponent(token)}:cancel`, "POST"),
     /** Cancela já e reembolsa (compra que não pode ser honrada). */
     revoke: (productId: string, token: string) =>
       call(`purchases/subscriptions/${encodeURIComponent(productId)}/tokens/${encodeURIComponent(token)}:revoke`, "POST"),

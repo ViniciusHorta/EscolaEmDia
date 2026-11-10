@@ -81,3 +81,8 @@ verify_jwt = false
 [functions.play-notifications]
 # Called by Google Pub/Sub push; authenticated by a shared secret in the URL and the state is always re-read from Google.
 verify_jwt = false
+
+
+[functions.admin-billing]
+# Called by the local admin tool; authorized by the service_role key, checked by the database (admin_* grants).
+verify_jwt = false

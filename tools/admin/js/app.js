@@ -13,6 +13,8 @@
     $('connect').disabled = true;
     try {
       await Promise.all([A.loadCatalogue(), A.loadWorksheets(), A.reports.load(), A.legal.load()]);
+      // Secções que dependem de migrações mais recentes não impedem a ligação (mostram o erro na própria secção).
+      await A.users.load();
       $('key').value = '';
       box.innerHTML = '';
       $('loginView').hidden = true;
@@ -38,19 +40,20 @@
     A.topics.render();
     A.reports.render();
     A.legal.render();
+    A.users.render();
   }
 
   // Recarrega dados da base sem fechar o editor aberto.
-  app.reload = async ({ catalogue = true, worksheets = true, reports = false, legal = false } = {}) => {
+  app.reload = async ({ catalogue = true, worksheets = true, reports = false, legal = false, users = false } = {}) => {
     try {
       await Promise.all([catalogue && A.loadCatalogue(), worksheets && A.loadWorksheets(), reports && A.reports.load(),
-        legal && A.legal.load()].filter(Boolean));
+        legal && A.legal.load(), users && A.users.load()].filter(Boolean));
       renderAll();
     } catch (e) { A.fail(e); }
   };
 
   app.showTab = (tab) => {
-    document.querySelectorAll('nav.tabs button').forEach((b) => b.classList.toggle('active', b.dataset.tab === tab));
+    document.querySelectorAll('nav.side button').forEach((b) => b.classList.toggle('active', b.dataset.tab === tab));
     document.querySelectorAll('.tab').forEach((el) => { el.hidden = el.id !== 'tab-' + tab; });
     if (tab === 'reports') A.reports.render();
     window.scrollTo({ top: 0 });
@@ -65,10 +68,10 @@
   $('key').addEventListener('keydown', (e) => { if (e.key === 'Enter') connect(); });
   $('logout').addEventListener('click', logout);
   $('refresh').addEventListener('click', async () => {
-    await app.reload({ reports: true, legal: true });
+    await app.reload({ reports: true, legal: true, users: true });
     A.toast('ok', 'Dados atualizados.', 1800);
   });
-  document.querySelectorAll('nav.tabs button').forEach((b) => b.addEventListener('click', () => app.showTab(b.dataset.tab)));
+  document.querySelectorAll('nav.side button').forEach((b) => b.addEventListener('click', () => app.showTab(b.dataset.tab)));
   window.addEventListener('beforeunload', beforeUnload);
 
   A.topics.init();
@@ -76,4 +79,5 @@
   A.editor.init();
   A.reports.init();
   A.legal.init();
+  A.users.init();
 })();
