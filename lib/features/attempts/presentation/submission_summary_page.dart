@@ -1,4 +1,5 @@
 import 'dart:math';
+import '../../../core/theme/area_palette.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../shared/widgets/app_badge.dart';
@@ -23,7 +24,7 @@ class SubmissionSummaryPage extends StatelessWidget {
     final gutter = MediaQuery.sizeOf(context).width < 640 ? 16.0 : 32.0;
     final reviewed = summary.writtenCorrect + summary.writtenPartial + summary.writtenIncorrect;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.area.background,
       body: Column(children: [
         AttemptTopBar(
           title: summary.status == 'completed' ? 'Ficha concluída' : 'Ficha entregue',
@@ -39,8 +40,8 @@ class SubmissionSummaryPage extends StatelessWidget {
               const SizedBox(height: 28),
               AppCard(padding: const EdgeInsets.all(24), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 Row(children: [
-                  const ExcludeSemantics(child: CircleAvatar(radius: 28, backgroundColor: AppColors.lavender,
-                    child: Icon(Icons.task_alt_rounded, color: AppColors.primary, size: 30))),
+                  ExcludeSemantics(child: CircleAvatar(radius: 28, backgroundColor: context.area.tint,
+                    child: Icon(Icons.task_alt_rounded, color: context.area.primary, size: 30))),
                   const SizedBox(width: 16),
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Semantics(header: true, child: const Text('Resumo de Hoje',
@@ -77,10 +78,10 @@ class SubmissionSummaryPage extends StatelessWidget {
                   ])),
                 ),
                 if (summary.unansweredTotal > 0) _NoteRow(
-                  color: AppColors.softBlue,
-                  iconBackground: AppColors.blueBorder,
+                  color: context.area.soft,
+                  iconBackground: context.area.border,
                   icon: Icons.help_outline_rounded,
-                  iconColor: AppColors.primary,
+                  iconColor: context.area.primary,
                   child: Text(summary.unansweredTotal == 1
                       ? '1 pergunta ficou sem resposta. Não faz mal!'
                       : '${summary.unansweredTotal} perguntas ficaram sem resposta. Não faz mal!',
@@ -137,7 +138,7 @@ class _CelebrationHero extends StatelessWidget {
         borderRadius: BorderRadius.circular(40),
         gradient: const LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter,
           colors: [Color(0xFFE5DEFF), Color(0xFFF7F5FF)]),
-        boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.08), blurRadius: 24, offset: const Offset(0, 10))],
+        boxShadow: [BoxShadow(color: context.area.primary.withValues(alpha: 0.08), blurRadius: 24, offset: const Offset(0, 10))],
       ),
       child: Stack(children: [
         Positioned.fill(child: ExcludeSemantics(child: TweenAnimationBuilder<double>(
@@ -161,7 +162,7 @@ class _CelebrationHero extends StatelessWidget {
                     color: const Color(0xFFFFF7E6),
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.white, width: 6),
-                    boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.12), blurRadius: 18)],
+                    boxShadow: [BoxShadow(color: context.area.primary.withValues(alpha: 0.12), blurRadius: 18)],
                   ),
                   alignment: Alignment.center,
                   child: Text(childEmoji ?? '🎉', style: const TextStyle(fontSize: 76)),
@@ -181,14 +182,14 @@ class _CelebrationHero extends StatelessWidget {
             Semantics(header: true, child: Text(
               childName == null ? 'Muito bem! 🎉' : 'Muito bem, $childName! 🎉',
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 34, height: 1.2, fontWeight: FontWeight.w800, color: AppColors.primary),
+              style: TextStyle(fontSize: 34, height: 1.2, fontWeight: FontWeight.w800, color: context.area.primary),
             )),
             const SizedBox(height: 16),
             const Text('A tua ficha foi entregue!', textAlign: TextAlign.center,
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.text)),
             const SizedBox(height: 8),
             Text(summary.title, textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.primary)),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: context.area.primary)),
             const SizedBox(height: 10),
             const Text('Fizeste um excelente esforço hoje. Desafios completados com calma e dedicação!',
               textAlign: TextAlign.center, style: TextStyle(fontSize: 17, height: 1.5, color: AppColors.muted)),
@@ -256,16 +257,16 @@ class _SummaryRow extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     margin: const EdgeInsets.only(bottom: 14),
     padding: const EdgeInsets.all(18),
-    decoration: BoxDecoration(color: AppColors.softBlue, borderRadius: BorderRadius.circular(20)),
+    decoration: BoxDecoration(color: context.area.soft, borderRadius: BorderRadius.circular(20)),
     child: Row(children: [
-      Icon(icon, color: AppColors.primary),
+      Icon(icon, color: context.area.primary),
       const SizedBox(width: 12),
       Expanded(child: Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.text))),
       const SizedBox(width: 12),
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(color: AppColors.lavender, borderRadius: BorderRadius.circular(AppRadii.pill)),
-        child: Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.primary)),
+        decoration: BoxDecoration(color: context.area.tint, borderRadius: BorderRadius.circular(AppRadii.pill)),
+        child: Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: context.area.primary)),
       ),
     ]),
   );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/area_palette.dart';
 import '../../../../core/theme/app_tokens.dart';
 
 enum AccountMode { register, login }
@@ -19,7 +20,7 @@ class AccountModeSelector extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(6),
     decoration: BoxDecoration(
-      color: AppColors.softBlue,
+      color: context.area.soft,
       borderRadius: BorderRadius.circular(AppRadii.pill),
     ),
     child: Row(children: [

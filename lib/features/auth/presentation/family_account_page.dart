@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../../../core/theme/area_palette.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../shared/widgets/app_button.dart';
@@ -261,7 +262,7 @@ class _FamilyAccountPageState extends State<FamilyAccountPage> {
                   if (feedback != null || widget.auth.streamError != null) ...[
                     const SizedBox(height: 20),
                     Semantics(liveRegion: true, child: AppCard(
-                      color: AppColors.softBlue,
+                      color: context.area.soft,
                       padding: const EdgeInsets.all(16),
                       child: Text(feedback ?? widget.auth.streamError!),
                     )),

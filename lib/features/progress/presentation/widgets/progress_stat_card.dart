@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_tokens.dart';
+import '../../../../core/theme/area_palette.dart';
 import '../../../../shared/widgets/app_card.dart';
 
 class ProgressStatCard extends StatelessWidget {
@@ -9,7 +9,7 @@ class ProgressStatCard extends StatelessWidget {
   final IconData icon;
   @override
   Widget build(BuildContext context) => AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-    Icon(icon, color: AppColors.primary), const SizedBox(height: 12),
+    Icon(icon, color: context.area.primary), const SizedBox(height: 12),
     Text('$value', style: Theme.of(context).textTheme.headlineMedium), const SizedBox(height: 6), Text(label),
   ]));
 }

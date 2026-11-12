@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/area_palette.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/request_id.dart';
 import '../../../core/utils/search_text.dart';
@@ -83,10 +84,10 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
         : ('Plano gratuito: 1 ficha por dia e catálogo Free${current.freeMaxQuestions==null?'':' (até ${current.freeMaxQuestions} perguntas)'}.',PaywallReason.general);
     final strong=cta!=PaywallReason.general;
     return Padding(padding:const EdgeInsets.only(top:14),child:AppCard(
-      padding:const EdgeInsets.all(16),color:strong?const Color(0xFFFFF3CC):AppColors.softBlue,
+      padding:const EdgeInsets.all(16),color:strong?const Color(0xFFFFF3CC):context.area.soft,
       child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
         Row(crossAxisAlignment:CrossAxisAlignment.start,children:[
-          Icon(strong?Icons.lock_clock_rounded:Icons.info_outline_rounded,color:strong?AppColors.amber:AppColors.primary),
+          Icon(strong?Icons.lock_clock_rounded:Icons.info_outline_rounded,color:strong?AppColors.amber:context.area.primary),
           const SizedBox(width:12),
           Expanded(child:Text(text,style:const TextStyle(fontSize:14,height:1.4,color:AppColors.text))),
         ]),
@@ -172,11 +173,11 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
       prefixIcon:const Icon(Icons.search_rounded),
       suffixIcon:controller.text.isEmpty?null:IconButton(tooltip:'Limpar pesquisa',icon:const Icon(Icons.close_rounded),
         onPressed:()=>setState(controller.clear)),
-      filled:true,fillColor:AppColors.softBlue,
+      filled:true,fillColor:context.area.soft,
       contentPadding:const EdgeInsets.symmetric(horizontal:16,vertical:14),
       border:OutlineInputBorder(borderRadius:BorderRadius.circular(AppRadii.pill),borderSide:BorderSide.none),
       focusedBorder:OutlineInputBorder(borderRadius:BorderRadius.circular(AppRadii.pill),
-        borderSide:const BorderSide(color:AppColors.primary,width:2)),
+        borderSide: BorderSide(color:context.area.primary,width:2)),
     ),
   );
 
@@ -211,7 +212,7 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
   }
 
   void showHelp()=>showDialog<void>(context:context,builder:(dialog)=>AlertDialog(
-    icon:const Icon(Icons.help_outline_rounded,color:AppColors.primary,size:36),
+    icon: Icon(Icons.help_outline_rounded,color:context.area.primary,size:36),
     title:const Text('Como funciona?'),
     content:const Text('1. Escolhe a criança, a disciplina e os temas.\n'
       '2. Propomos uma ficha publicada que cobre esses temas, já equilibrada entre escolha múltipla e respostas abertas.\n'
@@ -220,11 +221,11 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
   ));
 
   Widget shell({required Widget body,required VoidCallback? onBack,String? title})=>Scaffold(
-    backgroundColor:AppColors.background,
+    backgroundColor:context.area.background,
     body:Column(children:[
       Container(
-        decoration:BoxDecoration(color:AppColors.background,boxShadow:[
-          BoxShadow(color:AppColors.primary.withValues(alpha:0.05),blurRadius:14,offset:const Offset(0,6))]),
+        decoration:BoxDecoration(color:context.area.background,boxShadow:[
+          BoxShadow(color:context.area.primary.withValues(alpha:0.05),blurRadius:14,offset:const Offset(0,6))]),
         child:SafeArea(bottom:false,child:Center(child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:720),
           child:Padding(padding:const EdgeInsets.fromLTRB(8,6,16,8),child:Row(children:[
             IconButton(onPressed:onBack,tooltip:'Voltar',iconSize:28,icon:const Icon(Icons.arrow_back_rounded)),
@@ -232,8 +233,8 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
             Expanded(child:title==null?const SizedBox.shrink():Semantics(header:true,child:Text(title,maxLines:1,overflow:TextOverflow.ellipsis,
               style:const TextStyle(fontSize:21,fontWeight:FontWeight.w700,color:AppColors.text)))),
             IconButton.filledTonal(onPressed:showHelp,tooltip:'Ajuda',
-              style:IconButton.styleFrom(backgroundColor:AppColors.lavender,minimumSize:const Size(48,48)),
-              icon:const Icon(Icons.help_outline_rounded,color:AppColors.primary)),
+              style:IconButton.styleFrom(backgroundColor:context.area.tint,minimumSize:const Size(48,48)),
+              icon: Icon(Icons.help_outline_rounded,color:context.area.primary)),
           ])))))),
       Expanded(child:SingleChildScrollView(key:ValueKey('step-$step-$success'),child:Center(child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:720),
         child:Padding(padding:EdgeInsets.fromLTRB(gutter,16,gutter,32),child:body))))),
@@ -242,12 +243,12 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
   double get gutter=>MediaQuery.sizeOf(context).width<640?16:32;
 
   Widget stepHeader(int current,String label)=>Row(children:[
-    CircleAvatar(radius:15,backgroundColor:AppColors.primary,
+    CircleAvatar(radius:15,backgroundColor:context.area.primary,
       child:Text('$current',style:const TextStyle(color:Colors.white,fontWeight:FontWeight.w800,fontSize:14))),
     const SizedBox(width:10),
-    Expanded(child:Text('Passo $current de 2 • $label',style:const TextStyle(color:AppColors.primary,fontWeight:FontWeight.w700,fontSize:15))),
+    Expanded(child:Text('Passo $current de 2 • $label',style: TextStyle(color:context.area.primary,fontWeight:FontWeight.w700,fontSize:15))),
     for(var i=1;i<=2;i++)Container(width:i==current?30:22,height:8,margin:const EdgeInsets.only(left:5),
-      decoration:BoxDecoration(color:i<=current?AppColors.primary:AppColors.blueBorder,borderRadius:BorderRadius.circular(AppRadii.pill))),
+      decoration:BoxDecoration(color:i<=current?context.area.primary:context.area.border,borderRadius:BorderRadius.circular(AppRadii.pill))),
   ]);
 
   Widget sectionTitle(String text,{Widget? trailing})=>Padding(padding:const EdgeInsets.only(top:28,bottom:12),child:Row(children:[
@@ -296,7 +297,7 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
             final all=visible.every(selectedTopics.contains);
             return TextButton(
               onPressed:busy?null:()=>setState((){if(all){selectedTopics.removeAll(visible);}else{selectedTopics.addAll(visible);}}),
-              style:TextButton.styleFrom(backgroundColor:AppColors.lavender,shape:const StadiumBorder()),
+              style:TextButton.styleFrom(backgroundColor:context.area.tint,shape:const StadiumBorder()),
               child:Text(all?'Nenhum':'Todos'));
           }),
         ])),
@@ -315,7 +316,7 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
           onTap:busy?null:()=>setState((){if(!selectedTopics.remove(item.id))selectedTopics.add(item.id);}))),
         const SizedBox(height:6),
         Container(padding:const EdgeInsets.all(16),
-          decoration:BoxDecoration(color:AppColors.lavender,borderRadius:BorderRadius.circular(20)),
+          decoration:BoxDecoration(color:context.area.tint,borderRadius:BorderRadius.circular(20)),
           child:Text.rich(TextSpan(style:const TextStyle(fontSize:14,height:1.45,color:AppColors.text),children:[
             const TextSpan(text:'Proposta automática: ',style:TextStyle(fontWeight:FontWeight.w700)),
             TextSpan(text:'escolhemos uma ficha publicada que cobre estes temas, com escolha múltipla e respostas abertas'
@@ -324,7 +325,7 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
       ])),
       const SizedBox(height:16),
       Container(padding:const EdgeInsets.symmetric(horizontal:16,vertical:12),
-        decoration:BoxDecoration(color:AppColors.softBlue,borderRadius:BorderRadius.circular(AppRadii.pill)),
+        decoration:BoxDecoration(color:context.area.soft,borderRadius:BorderRadius.circular(AppRadii.pill)),
         child:Row(children:[
           Container(width:10,height:10,decoration:BoxDecoration(shape:BoxShape.circle,
             color:selectedTopics.isEmpty?AppColors.outline:const Color(0xFF10B981))),
@@ -353,7 +354,7 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
       Wrap(spacing:8,runSpacing:8,children:[
         AppBadge(label:'${item.subjectName} • ${item.schoolYear}.º Ano • ${item.topicNames.length} ${item.topicNames.length==1?'Tema':'Temas'}',
           icon:subjectIcon(item.subjectName)),
-        AppBadge(label:'Para ${child!.displayName}',icon:child!.isPremium?Icons.workspace_premium_rounded:Icons.face_rounded,background:AppColors.softBlue,color:AppColors.text),
+        AppBadge(label:'Para ${child!.displayName}',icon:child!.isPremium?Icons.workspace_premium_rounded:Icons.face_rounded,background:context.area.soft,color:AppColors.text),
         if(item.isSample)const AppBadge(label:'Ficha de exemplo',background:AppColors.amberSoft,color:AppColors.amber),
       ]),
       const SizedBox(height:16),
@@ -365,25 +366,25 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
           tierBadge(item),
           AppBadge(label:'Dimensão ${item.sizeLabel.toLowerCase()}',background:AppColors.successSoft,color:AppColors.success),
           if(item.timesCompleted!=null)AppBadge(label:historyLabel(item),icon:Icons.history_rounded,
-            background:item.timesCompleted==0?AppColors.softBlue:AppColors.amberSoft,
+            background:item.timesCompleted==0?context.area.soft:AppColors.amberSoft,
             color:item.timesCompleted==0?AppColors.text:AppColors.amber),
         ]),
         const SizedBox(height:18),
-        Text(item.title,style:const TextStyle(fontSize:20,fontWeight:FontWeight.w700,color:AppColors.primary)),
+        Text(item.title,style: TextStyle(fontSize:20,fontWeight:FontWeight.w700,color:context.area.primary)),
         const SizedBox(height:16),
         Row(children:[
           Container(width:92,padding:const EdgeInsets.symmetric(vertical:14),
-            decoration:BoxDecoration(color:AppColors.lavender,borderRadius:BorderRadius.circular(22)),
+            decoration:BoxDecoration(color:context.area.tint,borderRadius:BorderRadius.circular(22)),
             child:Column(children:[
-              Text('${item.questionCount}',style:const TextStyle(fontSize:32,fontWeight:FontWeight.w800,color:AppColors.primary)),
-              const Text('PERGUNTAS',style:TextStyle(fontSize:11,letterSpacing:1,fontWeight:FontWeight.w700,color:AppColors.primary)),
+              Text('${item.questionCount}',style: TextStyle(fontSize:32,fontWeight:FontWeight.w800,color:context.area.primary)),
+              Text('PERGUNTAS',style:TextStyle(fontSize:11,letterSpacing:1,fontWeight:FontWeight.w700,color:context.area.primary)),
             ])),
           const SizedBox(width:18),
           Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
             const Text('Duração Estimada',style:TextStyle(fontSize:20,fontWeight:FontWeight.w700,color:AppColors.text)),
             const SizedBox(height:4),
             Row(children:[
-              const Icon(Icons.schedule_rounded,color:AppColors.primary,size:20),const SizedBox(width:6),
+              Icon(Icons.schedule_rounded,color:context.area.primary,size:20),const SizedBox(width:6),
               Flexible(child:Text(duration(item),style:const TextStyle(fontSize:16,color:AppColors.muted))),
             ]),
             const SizedBox(height:2),
@@ -400,7 +401,7 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
         for(final candidate in proposals.where((candidate)=>worksheetMatches(candidate,worksheetSearch.text)))Padding(padding:const EdgeInsets.only(bottom:10),child:AppCard(
           padding:const EdgeInsets.all(16),
           selected:candidate.versionId==item.versionId,onTap:busy?null:()=>chooseProposal(candidate),
-          child:Row(children:[Icon(candidate.versionId==item.versionId?Icons.check_circle_rounded:Icons.circle_outlined,color:AppColors.primary),
+          child:Row(children:[Icon(candidate.versionId==item.versionId?Icons.check_circle_rounded:Icons.circle_outlined,color:context.area.primary),
             const SizedBox(width:12),Expanded(child:Text(candidate.title,style:const TextStyle(fontWeight:FontWeight.w600))),
             Padding(padding:const EdgeInsets.only(right:10),child:tierBadge(candidate,compact:true)),
             Text('${candidate.questionCount} perg.${(candidate.timesCompleted??0)>0?' • feita ${candidate.timesCompleted}×':''}',style:const TextStyle(color:AppColors.muted))]))),
@@ -411,9 +412,9 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
           style:TextStyle(fontSize:18,fontWeight:FontWeight.w700,color:AppColors.text)))),
       ])),
       if(item.choiceCount>0)_CompositionCard(
-        icon:Icons.checklist_rounded,iconBackground:AppColors.lavender,iconColor:AppColors.primary,
+        icon:Icons.checklist_rounded,iconBackground:context.area.tint,iconColor:context.area.primary,
         title:'${item.choiceCount} ${item.choiceCount==1?'Pergunta Objetiva':'Perguntas Objetivas'}',
-        badge:'Autonomia',badgeBackground:AppColors.lavender,badgeColor:AppColors.primary,
+        badge:'Autonomia',badgeBackground:context.area.tint,badgeColor:context.area.primary,
         text:'Escolha múltipla com correção automática. A criança vê o resultado sem esperar pela revisão.'),
       if(item.writtenCount>0)_CompositionCard(
         icon:Icons.lightbulb_outline_rounded,iconBackground:AppColors.coralSoft,iconColor:const Color(0xFFE5603E),
@@ -432,7 +433,7 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
           child:AppCard(padding:const EdgeInsets.all(16),selected:writtenAnswerMode==mode,
             onTap:busy?null:()=>setState((){if(writtenAnswerMode!=mode){writtenAnswerMode=mode;requestId=newRequestId();}}),
             child:Row(children:[
-              Icon(writtenAnswerMode==mode?Icons.radio_button_checked_rounded:Icons.radio_button_off_rounded,color:AppColors.primary),
+              Icon(writtenAnswerMode==mode?Icons.radio_button_checked_rounded:Icons.radio_button_off_rounded,color:context.area.primary),
               const SizedBox(width:12),
               Icon(icon,color:AppColors.text),const SizedBox(width:10),
               Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
@@ -447,7 +448,7 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
       ]),
       if(questions.isNotEmpty)_Expandable(icon:Icons.visibility_outlined,title:'Pré-visualizar perguntas',children:[
         for(var i=0;i<questions.length;i++)Padding(padding:const EdgeInsets.only(bottom:12),child:Row(crossAxisAlignment:CrossAxisAlignment.start,children:[
-          CircleAvatar(radius:14,backgroundColor:AppColors.softBlue,child:Text('${i+1}',style:const TextStyle(fontSize:13,fontWeight:FontWeight.w700))),
+          CircleAvatar(radius:14,backgroundColor:context.area.soft,child:Text('${i+1}',style:const TextStyle(fontSize:13,fontWeight:FontWeight.w700))),
           const SizedBox(width:12),
           Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
             Text('${questions[i]['prompt']}',style:const TextStyle(fontSize:15,height:1.4)),
@@ -477,8 +478,8 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
         padding:const EdgeInsets.fromLTRB(24,24,24,28),
         decoration:BoxDecoration(
           borderRadius:BorderRadius.circular(36),
-          gradient:const LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[Color(0xFFEFF4FF),Color(0xFFEDE9FE)]),
-          boxShadow:[BoxShadow(color:AppColors.primary.withValues(alpha:0.08),blurRadius:20,offset:const Offset(0,8))],
+          gradient:LinearGradient(begin:Alignment.topCenter,end:Alignment.bottomCenter,colors:[context.area.soft,context.area.tint]),
+          boxShadow:[BoxShadow(color:context.area.primary.withValues(alpha:0.08),blurRadius:20,offset:const Offset(0,8))],
         ),
         child:Column(children:[
           const AppBadge(label:'Disponibilizada com Sucesso!',icon:Icons.check_circle_outline_rounded,background:Color(0xFF10B981),color:Colors.white),
@@ -486,7 +487,7 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
           ExcludeSemantics(child:SizedBox(width:150,height:140,child:Stack(children:[
             Positioned(left:0,top:0,child:Container(width:130,height:130,alignment:Alignment.center,
               decoration:BoxDecoration(color:Colors.white,shape:BoxShape.circle,
-                boxShadow:[BoxShadow(color:AppColors.primary.withValues(alpha:0.12),blurRadius:18)]),
+                boxShadow:[BoxShadow(color:context.area.primary.withValues(alpha:0.12),blurRadius:18)]),
               child:Text(ChildAvatars.emoji(child!.avatarId),style:const TextStyle(fontSize:68)))),
             Positioned(right:0,bottom:0,child:Container(width:52,height:52,
               decoration:const BoxDecoration(color:Color(0xFFFBBF24),shape:BoxShape.circle,
@@ -499,7 +500,7 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
           const SizedBox(height:10),
           Text.rich(TextSpan(style:const TextStyle(fontSize:16,height:1.5,color:AppColors.muted),children:[
             TextSpan(text:'A ficha de ${item.subjectName} já está visível no tablet ou telemóvel, no '),
-            const TextSpan(text:'Espaço do Aluno',style:TextStyle(color:AppColors.primary,fontWeight:FontWeight.w700)),
+            TextSpan(text:'Espaço do Aluno',style:TextStyle(color:context.area.primary,fontWeight:FontWeight.w700)),
             const TextSpan(text:'.'),
           ]),textAlign:TextAlign.center),
           const SizedBox(height:16),
@@ -515,8 +516,8 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
       AppCard(padding:const EdgeInsets.all(20),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
         Row(children:[
           ExcludeSemantics(child:Container(width:56,height:56,
-            decoration:BoxDecoration(color:AppColors.lavender,borderRadius:BorderRadius.circular(18)),
-            child:Icon(subjectIcon(item.subjectName),color:AppColors.primary))),
+            decoration:BoxDecoration(color:context.area.tint,borderRadius:BorderRadius.circular(18)),
+            child:Icon(subjectIcon(item.subjectName),color:context.area.primary))),
           const SizedBox(width:14),
           Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
             const Text('DISCIPLINA',style:TextStyle(fontSize:12,letterSpacing:1.2,fontWeight:FontWeight.w700,color:AppColors.muted)),
@@ -525,7 +526,7 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
           AppBadge(label:'${item.questionCount} Perguntas',background:AppColors.coralSoft,color:const Color(0xFFE5603E)),
         ]),
         const SizedBox(height:16),
-        Text(item.title,style:const TextStyle(fontSize:16,fontWeight:FontWeight.w600,color:AppColors.primary)),
+        Text(item.title,style: TextStyle(fontSize:16,fontWeight:FontWeight.w600,color:context.area.primary)),
         const SizedBox(height:14),
         Row(crossAxisAlignment:CrossAxisAlignment.start,children:[
           Expanded(child:_InfoTile(icon:Icons.schedule_rounded,label:'Duração estimada',value:duration(item).replaceAll('minutos','min'))),
@@ -559,21 +560,21 @@ class _ChildOption extends StatelessWidget {
   @override Widget build(BuildContext context)=>Semantics(button:true,selected:selected,excludeSemantics:true,
     label:'${child.displayName}, ${child.schoolYear}.º Ano',
     child:Material(
-      color:selected?AppColors.surface:AppColors.softBlue,
-      elevation:selected?3:0,shadowColor:AppColors.primary.withValues(alpha:0.2),
+      color:selected?AppColors.surface:context.area.soft,
+      elevation:selected?3:0,shadowColor:context.area.primary.withValues(alpha:0.2),
       shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(22),
-        side:BorderSide(color:selected?AppColors.lavender:Colors.transparent,width:1.5)),
+        side:BorderSide(color:selected?context.area.tint:Colors.transparent,width:1.5)),
       child:InkWell(borderRadius:BorderRadius.circular(22),onTap:onTap,child:Padding(
         padding:const EdgeInsets.fromLTRB(12,12,18,12),
         child:Row(mainAxisSize:MainAxisSize.min,children:[
-          CircleAvatar(radius:24,backgroundColor:AppColors.lavender,
+          CircleAvatar(radius:24,backgroundColor:context.area.tint,
             child:Text(ChildAvatars.emoji(child.avatarId),style:const TextStyle(fontSize:26))),
           const SizedBox(width:12),
           Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
             Row(children:[
               Text(child.displayName,style:const TextStyle(fontSize:17,fontWeight:FontWeight.w700,color:AppColors.text)),
               PremiumCrown(isPremium:child.isPremium),
-              if(selected)...[const SizedBox(width:6),const Icon(Icons.verified_rounded,color:AppColors.primary,size:20)],
+              if(selected)...[const SizedBox(width:6), Icon(Icons.verified_rounded,color:context.area.primary,size:20)],
             ]),
             Text('${child.schoolYear}.º Ano${selected?' • Selecionado':''}',style:const TextStyle(fontSize:14,color:AppColors.muted)),
           ]),
@@ -595,18 +596,18 @@ class _SubjectOption extends StatelessWidget {
     return Semantics(button:true,selected:selected,excludeSemantics:true,label:subject.name,child:AnimatedContainer(
       duration:MediaQuery.disableAnimationsOf(context)?Duration.zero:const Duration(milliseconds:150),
       decoration:BoxDecoration(borderRadius:BorderRadius.circular(28),
-        boxShadow:selected?[BoxShadow(color:AppColors.primary.withValues(alpha:0.14),blurRadius:18,offset:const Offset(0,8))]:null),
+        boxShadow:selected?[BoxShadow(color:context.area.primary.withValues(alpha:0.14),blurRadius:18,offset:const Offset(0,8))]:null),
       child:Material(
-        color:selected?AppColors.surface:AppColors.softBlue,
+        color:selected?AppColors.surface:context.area.soft,
         shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(28),
-          side:BorderSide(color:selected?AppColors.lavender:AppColors.blueBorder,width:selected?2:1)),
+          side:BorderSide(color:selected?context.area.tint:context.area.border,width:selected?2:1)),
         child:InkWell(borderRadius:BorderRadius.circular(28),onTap:onTap,child:Padding(padding:const EdgeInsets.all(18),
           child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
             Row(crossAxisAlignment:CrossAxisAlignment.start,children:[
               Container(width:52,height:52,decoration:BoxDecoration(color:tint,borderRadius:BorderRadius.circular(16)),
                 child:Icon(subjectIcon(subject.name),color:ink,size:28)),
               const Spacer(),
-              if(selected)const CircleAvatar(radius:14,backgroundColor:AppColors.primary,child:Icon(Icons.check_rounded,size:18,color:Colors.white)),
+              if(selected) CircleAvatar(radius:14,backgroundColor:context.area.primary,child:Icon(Icons.check_rounded,size:18,color:Colors.white)),
             ]),
             const SizedBox(height:16),
             Text(subject.name,maxLines:2,overflow:TextOverflow.ellipsis,
@@ -630,24 +631,24 @@ class _TopicOption extends StatelessWidget {
   @override Widget build(BuildContext context)=>Semantics(checked:selected,button:true,excludeSemantics:true,
     label:worksheets.isEmpty?topic.name:'${topic.name}. Ficha: ${worksheets.join(', ')}',
     child:Material(
-      color:selected?AppColors.surface:AppColors.softBlue,
+      color:selected?AppColors.surface:context.area.soft,
       shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(22),
-        side:BorderSide(color:selected?AppColors.lavender:Colors.transparent,width:1.5)),
-      elevation:selected?2:0,shadowColor:AppColors.primary.withValues(alpha:0.15),
+        side:BorderSide(color:selected?context.area.tint:Colors.transparent,width:1.5)),
+      elevation:selected?2:0,shadowColor:context.area.primary.withValues(alpha:0.15),
       child:InkWell(borderRadius:BorderRadius.circular(22),onTap:onTap,child:Padding(
         padding:const EdgeInsets.symmetric(horizontal:16,vertical:18),
         child:Row(children:[
           AnimatedContainer(duration:const Duration(milliseconds:120),width:32,height:32,
-            decoration:BoxDecoration(shape:BoxShape.circle,color:selected?const Color(0xFF58CC02):AppColors.blueBorder,
+            decoration:BoxDecoration(shape:BoxShape.circle,color:selected?const Color(0xFF58CC02):context.area.border,
               boxShadow:selected?const [BoxShadow(color:Color(0xFF46A302),offset:Offset(0,2))]:null),
             child:selected?const Icon(Icons.check_rounded,color:Colors.white,size:22):null),
           const SizedBox(width:14),
           Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
             Text(topic.name,style:TextStyle(fontSize:16,fontWeight:selected?FontWeight.w700:FontWeight.w600,color:AppColors.text)),
             if(worksheets.isNotEmpty)Padding(padding:const EdgeInsets.only(top:4),child:Row(children:[
-              const Icon(Icons.description_outlined,size:16,color:AppColors.primary),const SizedBox(width:6),
+              Icon(Icons.description_outlined,size:16,color:context.area.primary),const SizedBox(width:6),
               Expanded(child:Text('Ficha: «${worksheets.first}»${worksheets.length>1?' e mais ${worksheets.length-1}':''}',
-                maxLines:2,overflow:TextOverflow.ellipsis,style:const TextStyle(fontSize:13,color:AppColors.primary,fontWeight:FontWeight.w600))),
+                maxLines:2,overflow:TextOverflow.ellipsis,style: TextStyle(fontSize:13,color:context.area.primary,fontWeight:FontWeight.w600))),
             ])),
           ])),
         ]))),
@@ -658,7 +659,7 @@ class _HintBox extends StatelessWidget {
   const _HintBox(this.text);
   final String text;
   @override Widget build(BuildContext context)=>Container(padding:const EdgeInsets.all(18),margin:const EdgeInsets.only(bottom:10),
-    decoration:BoxDecoration(color:AppColors.softBlue,borderRadius:BorderRadius.circular(20)),
+    decoration:BoxDecoration(color:context.area.soft,borderRadius:BorderRadius.circular(20)),
     child:Text(text,style:const TextStyle(color:AppColors.muted)));
 }
 
@@ -697,7 +698,7 @@ class _Expandable extends StatelessWidget {
     child:Theme(data:Theme.of(context).copyWith(dividerColor:Colors.transparent),child:ExpansionTile(
       tilePadding:const EdgeInsets.symmetric(horizontal:20,vertical:4),
       childrenPadding:const EdgeInsets.fromLTRB(20,0,20,12),
-      leading:Icon(icon,color:AppColors.primary),
+      leading:Icon(icon,color:context.area.primary),
       title:Text(title,style:const TextStyle(fontSize:16,fontWeight:FontWeight.w700,color:AppColors.text)),
       expandedCrossAxisAlignment:CrossAxisAlignment.stretch,
       children:children,
@@ -711,7 +712,7 @@ class _InfoTile extends StatelessWidget {
   final String label,value;
   final bool small;
   @override Widget build(BuildContext context)=>Container(padding:const EdgeInsets.all(14),
-    decoration:BoxDecoration(color:AppColors.softBlue,borderRadius:BorderRadius.circular(20)),
+    decoration:BoxDecoration(color:context.area.soft,borderRadius:BorderRadius.circular(20)),
     child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
       Row(children:[Icon(icon,size:18,color:AppColors.muted),const SizedBox(width:6),
         Flexible(child:Text(label,style:const TextStyle(fontSize:13,color:AppColors.muted)))]),
@@ -726,8 +727,8 @@ class _NextStep extends StatelessWidget {
   final int number;
   final String text;
   @override Widget build(BuildContext context)=>Padding(padding:const EdgeInsets.only(bottom:12),child:Row(crossAxisAlignment:CrossAxisAlignment.start,children:[
-    CircleAvatar(radius:13,backgroundColor:AppColors.lavender,
-      child:Text('$number',style:const TextStyle(fontSize:13,fontWeight:FontWeight.w800,color:AppColors.primary))),
+    CircleAvatar(radius:13,backgroundColor:context.area.tint,
+      child:Text('$number',style: TextStyle(fontSize:13,fontWeight:FontWeight.w800,color:context.area.primary))),
     const SizedBox(width:12),
     Expanded(child:Text(text,style:const TextStyle(fontSize:15,height:1.45))),
   ]));

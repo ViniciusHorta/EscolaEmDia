@@ -1,4 +1,5 @@
 import '../../account/data/account_service.dart';
+import '../../../core/theme/area_palette.dart';
 import '../../account/presentation/delete_account_page.dart';
 import '../../legal/data/legal_service.dart';
 import '../../legal/presentation/legal_documents_page.dart';
@@ -10,7 +11,7 @@ import '../../../core/utils/request_id.dart';
 import '../../../shared/widgets/app_badge.dart';
 import '../../../shared/widgets/premium_crown.dart';
 import '../../billing/data/billing_service.dart';
-import '../../billing/data/play_billing_service.dart';
+import '../../billing/data/store_billing_service.dart';
 import '../../billing/domain/billing_models.dart';
 import '../../billing/presentation/premium_paywall.dart';
 import '../../../shared/widgets/app_button.dart';
@@ -52,8 +53,8 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
   late final PendingReviewsService pendingReviews;
   late final ChildProgressService progressService;
   late final BillingService billing;
-  /// Compras Google Play (só Android).
-  late final PlayBillingService playBilling;
+  /// Compras nas lojas: Google Play (Android) e App Store (iOS).
+  late final StoreBillingService storeBilling;
   /// Regresso do Stripe Checkout/portal (?billing=success|cancel|portal&child=…), só na Web.
   final Map<String, String> billingReturn = kIsWeb ? Map.of(Uri.base.queryParameters) : const {};
   bool billingHandled = false;
@@ -94,7 +95,7 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
     progressService = ChildProgressService(widget.auth.client,parentToken:()=>parentAccess.token,onParentLocked:parentAccess.forget);
     worksheets = WorksheetService(widget.auth.client,parentToken:()=>parentAccess.token,onParentLocked:parentAccess.forget);
     billing = BillingService(widget.auth.client, parentToken: () => parentAccess.token, onParentLocked: parentAccess.forget);
-    playBilling = PlayBillingService(billing,
+    storeBilling = StoreBillingService(billing,
       onMessage: (message) {
         if (!mounted) return;
         // A folha da oferta pode estar aberta: fecha-a para a mensagem ficar visível.
@@ -106,7 +107,7 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
   }
 
   @override
-  void dispose() {playBilling.dispose(); parentAccess.removeListener(parentAccessChanged); parentAccess.dispose(); childSessions.dispose(); super.dispose();}
+  void dispose() {storeBilling.dispose(); parentAccess.removeListener(parentAccessChanged); parentAccess.dispose(); childSessions.dispose(); super.dispose();}
 
   void parentAccessChanged() {
     if (!mounted) return;
@@ -228,9 +229,9 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
     } finally {if (mounted) setState(() => loading = false);}
   }
 
-  /// Web: Stripe Checkout. Android: Google Play. iOS: App Store (Fase 6) — ainda indisponível.
+  /// Web: Stripe Checkout. Android: Google Play. iOS: App Store.
   PremiumSubscribe? subscribeFor(String childId) {
-    if (PlayBillingService.supported) return () => playBilling.buy(childId);
+    if (StoreBillingService.supported) return () => storeBilling.buy(childId);
     return kIsWeb ? stripeCheckout(childId) : null;
   }
 
@@ -350,11 +351,12 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
           if (sub != null && sub.isStripe && kIsWeb) const Padding(padding: EdgeInsets.only(top: 8),
             child: Text('Cancelar, trocar o cartão ou ver faturas.', textAlign: TextAlign.center,
               style: TextStyle(fontSize: 13, color: AppColors.muted))),
-          if (sub != null && sub.channel == 'google_play' && PlayBillingService.supported)
-            AppButton(label: 'Gerir na Google Play', icon: Icons.shop_rounded, variant: AppButtonVariant.secondary,
+          if (sub != null && sub.channel == StoreBillingService.channel)
+            AppButton(label: 'Gerir na ${StoreBillingService.storeName}', icon: Icons.shop_rounded,
+              variant: AppButtonVariant.secondary,
               onPressed: () {
                 Navigator.pop(sheetContext);
-                launchUrl(PlayBillingService.manageUrl(sub.productId), mode: LaunchMode.externalApplication);
+                launchUrl(StoreBillingService.manageUrl(sub.productId), mode: LaunchMode.externalApplication);
               })
           else if (sub != null && (sub.channel == 'google_play' || sub.channel == 'app_store'))
             Text('Esta assinatura é gerida na ${origin!}${sub.channel == 'google_play' ? ', na app Android' : ', no iPhone/iPad'}.',
@@ -370,6 +372,11 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
                   reason: child.plan == 'locked' ? PaywallReason.locked : PaywallReason.general,
                   onSubscribe: subscribeFor(child.id));
               }),
+          // Exigido pela App Store: recuperar compras feitas com esta conta Apple.
+          if (StoreBillingService.isIOS)
+            Padding(padding: const EdgeInsets.only(top: 6), child: TextButton(
+              onPressed: () {Navigator.pop(sheetContext); storeBilling.restore();},
+              child: const Text('Restaurar compras'))),
         ]),
       )),
     );
@@ -415,19 +422,22 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
 
   Widget buildWorkspace(BuildContext context) {
     if (loading) return const AppSplash(message: 'A carregar a família');
+    // Este ecrã já está na paleta do responsável (ver AuthGate); o seletor de perfis e o
+    // espaço do aluno usam a da marca.
     if (childModeFamilyId != null) return Stack(children: [
-      Offstage(offstage: requestingParent, child: ChildEntryPage(
+      Offstage(offstage: requestingParent, child: AreaTheme(palette: AreaPalette.child, child: ChildEntryPage(
         key: ValueKey(childModeFamilyId), familyId: childModeFamilyId!, initialChildId: preferredChildId,
         families: service, sessions: childSessions, onExitDevice: exitChildDevice,
         onChildSignedIn: childSignedIn,
         onOpenParents: () {FocusScope.of(context).unfocus(); setState(() {requestingParent = true; parentRequestFromChild = true;});},
-      )),
+      ))),
       if (requestingParent) Positioned.fill(child: ParentUnlockPage(
         access: parentAccess, onUnlocked: openParents, onExit: exitChildDevice,
         onCancel: cancelParentUnlock,
         cancelLabel: parentRequestFromChild ? 'Voltar ao espaço infantil' : 'Alterar perfil',
       )),
     ]);
+
     if (modeLoaded && (!parentAccess.unlocked || !parentViewReady)) return ParentUnlockPage(
       access: parentAccess, onUnlocked: openParents, onExit: signOut,
     );
@@ -508,8 +518,8 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
 
   Widget worksheetsTab() => tabList([
     AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      const CircleAvatar(radius: 32, backgroundColor: AppColors.lavender,
-        child: Icon(Icons.auto_stories_rounded, color: AppColors.primary, size: 32)),
+      CircleAvatar(radius: 32, backgroundColor: context.area.tint,
+        child: Icon(Icons.auto_stories_rounded, color: context.area.primary, size: 32)),
       const SizedBox(height: 16),
       Text('Preparar uma nova ficha', textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleLarge),
       const SizedBox(height: 8),
@@ -620,10 +630,10 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
     title: 'Tudo a postos para começar!',
     subtitle: 'O perfil de ${child.displayName} já está guardado na tua família.',
     children: [
-      const Wrap(children: [AppBadge(label: 'Passo 4 de 4 • Finalização', icon: Icons.check_circle_outline_rounded)]),
+      Wrap(children: [AppBadge(label: 'Passo 4 de 4 • Finalização', icon: Icons.check_circle_outline_rounded)]),
       const SizedBox(height: 24),
       AppCard(child: Column(children: [
-        const Icon(Icons.celebration_rounded, color: AppColors.primary, size: 64),
+        Icon(Icons.celebration_rounded, color: context.area.primary, size: 64),
         const SizedBox(height: 20),
         ExcludeSemantics(child: Text(ChildAvatars.emoji(child.avatarId), style: const TextStyle(fontSize: 64))),
         const SizedBox(height: 12),

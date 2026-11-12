@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'app_tokens.dart';
+import 'area_palette.dart';
 
 abstract final class AppTheme {
   static ThemeData get light {
@@ -50,6 +51,7 @@ abstract final class AppTheme {
             borderSide: const BorderSide(color: AppColors.primary, width: 2)),
       ),
       dividerTheme: const DividerThemeData(color: AppColors.lavender),
+      extensions: const [AreaPalette.child],
     );
   }
 }

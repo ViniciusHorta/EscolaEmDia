@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/area_palette.dart';
 import '../../core/theme/app_tokens.dart';
 
 class AppBadge extends StatelessWidget {
@@ -6,18 +7,22 @@ class AppBadge extends StatelessWidget {
       {super.key,
       required this.label,
       this.icon,
-      this.color = AppColors.primary,
-      this.background = AppColors.lavender});
+      this.color,
+      this.background});
   final String label;
   final IconData? icon;
-  final Color color;
-  final Color background;
+  /// Por omissão, a cor principal da área atual.
+  final Color? color;
+  /// Por omissão, o tom suave da área atual.
+  final Color? background;
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) {
+    final color = this.color ?? context.area.primary;
+    return Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-            color: background,
+            color: background ?? context.area.tint,
             borderRadius: BorderRadius.circular(AppRadii.pill)),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           if (icon != null) ...[
@@ -32,4 +37,5 @@ class AppBadge extends StatelessWidget {
                       color: color))),
         ]),
       );
+  }
 }

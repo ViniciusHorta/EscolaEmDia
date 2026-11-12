@@ -15,7 +15,7 @@ class DeleteAccountPage extends StatefulWidget {
 
   static Future<bool> open(BuildContext context, AccountService service) async =>
       await Navigator.of(context).push<bool>(
-        MaterialPageRoute(builder: (_) => DeleteAccountPage(service: service)),
+        MaterialPageRoute(builder: (_) => InheritedTheme.captureAll(context, DeleteAccountPage(service: service))),
       ) ==
       true;
 

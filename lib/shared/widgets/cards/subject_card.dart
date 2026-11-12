@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/area_palette.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../app_card.dart';
 
@@ -38,7 +39,7 @@ class SubjectCard extends StatelessWidget {
               ])),
           const SizedBox(width: 8),
           Icon(selected ? Icons.check_circle : Icons.chevron_right_rounded,
-              color: AppColors.primary),
+              color: context.area.primary),
         ]),
       );
 }

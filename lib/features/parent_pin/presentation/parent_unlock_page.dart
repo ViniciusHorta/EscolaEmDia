@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../../core/theme/area_palette.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../shared/widgets/app_button.dart';
@@ -64,7 +65,7 @@ class _ParentUnlockPageState extends State<ParentUnlockPage> {
     if (busy) return;
     FocusScope.of(context).unfocus();
     final unlocked = await Navigator.of(context).push<bool>(MaterialPageRoute(
-      builder: (_) => ParentPinResetPage(service: ParentPinService(widget.access.client), access: widget.access),
+      builder: (_) => InheritedTheme.captureAll(context, ParentPinResetPage(service: ParentPinService(widget.access.client), access: widget.access)),
     ));
     if (!mounted) return;
     if (unlocked == true && widget.access.unlocked) {
@@ -89,8 +90,8 @@ class _ParentUnlockPageState extends State<ParentUnlockPage> {
       padding: const EdgeInsets.all(24),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         const SizedBox(height: 32),
-        const CircleAvatar(radius: 36, backgroundColor: AppColors.lavender,
-          child: Icon(Icons.lock_outline_rounded, color: AppColors.primary, size: 36)),
+        CircleAvatar(radius: 36, backgroundColor: context.area.tint,
+          child: Icon(Icons.lock_outline_rounded, color: context.area.primary, size: 36)),
         const SizedBox(height: 24),
         Text('Área do responsável', textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineMedium),
         const SizedBox(height: 12),

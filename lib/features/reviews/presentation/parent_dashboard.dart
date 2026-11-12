@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/area_palette.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/subject_icons.dart';
 import '../../../shared/widgets/app_badge.dart';
@@ -155,8 +156,8 @@ class _ParentDashboardState extends State<ParentDashboard> {
     return Row(children: [
       const Expanded(child: Text('FILHOS A CARGO', style: TextStyle(
         color: AppColors.muted, fontSize: 13, fontWeight: FontWeight.w700, letterSpacing: 1.2))),
-      Text('Ano Letivo $start/${(start + 1) % 100}', style: const TextStyle(
-        color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.w700)),
+      Text('Ano Letivo $start/${(start + 1) % 100}', style: TextStyle(
+        color: context.area.primary, fontSize: 13, fontWeight: FontWeight.w700)),
     ]);
   }
 
@@ -193,21 +194,21 @@ class _ParentDashboardState extends State<ParentDashboard> {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: count == 0 ? AppColors.successSoft : AppColors.lavender,
+          color: count == 0 ? AppColors.successSoft : context.area.tint,
           borderRadius: BorderRadius.circular(AppRadii.card),
-          boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.08), blurRadius: 16, offset: const Offset(0, 6))],
+          boxShadow: [BoxShadow(color: context.area.primary.withValues(alpha: 0.08), blurRadius: 16, offset: const Offset(0, 6))],
         ),
         child: Row(children: [
           ExcludeSemantics(child: CircleAvatar(
             radius: 28,
             backgroundColor: Colors.white.withValues(alpha: 0.7),
             child: Icon(count == 0 ? Icons.task_alt_rounded : Icons.notifications_active_rounded,
-              color: count == 0 ? AppColors.success : AppColors.primary, size: 28),
+              color: count == 0 ? AppColors.success : context.area.primary, size: 28),
           )),
           const SizedBox(width: 16),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(title, style: TextStyle(
-              color: count == 0 ? AppColors.success : AppColors.primary, fontSize: 19, fontWeight: FontWeight.w700)),
+              color: count == 0 ? AppColors.success : context.area.primary, fontSize: 19, fontWeight: FontWeight.w700)),
             const SizedBox(height: 4),
             Text(subtitle, style: const TextStyle(color: AppColors.text, fontSize: 15)),
           ])),
@@ -271,9 +272,9 @@ class _ChildTab extends StatelessWidget {
       child: AnimatedContainer(
         duration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : const Duration(milliseconds: 150),
         decoration: BoxDecoration(
-          color: selected ? AppColors.primary : AppColors.softBlue,
+          color: selected ? context.area.primary : context.area.soft,
           borderRadius: BorderRadius.circular(AppRadii.pill),
-          boxShadow: selected ? const [BoxShadow(color: AppColors.primaryPressed, offset: Offset(0, 4))] : null,
+          boxShadow: selected ? [BoxShadow(color: context.area.primaryPressed, offset: Offset(0, 4))] : null,
         ),
         child: Material(
           type: MaterialType.transparency,
@@ -283,7 +284,7 @@ class _ChildTab extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(10, 10, 16, 10),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
-                CircleAvatar(radius: 24, backgroundColor: selected ? Colors.white : AppColors.lavender,
+                CircleAvatar(radius: 24, backgroundColor: selected ? Colors.white : context.area.tint,
                   child: Text(ChildAvatars.emoji(child.avatarId), style: const TextStyle(fontSize: 26))),
                 const SizedBox(width: 12),
                 Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
@@ -301,7 +302,7 @@ class _ChildTab extends StatelessWidget {
                   alignment: Alignment.center,
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   decoration: BoxDecoration(
-                    color: pending > 0 ? AppColors.coral : AppColors.blueBorder,
+                    color: pending > 0 ? AppColors.coral : context.area.border,
                     borderRadius: BorderRadius.circular(AppRadii.pill),
                   ),
                   child: Text('$pending', style: TextStyle(
@@ -332,8 +333,8 @@ class _PendingWorksheetCard extends StatelessWidget {
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           ExcludeSemantics(child: Container(
             width: 64, height: 64,
-            decoration: BoxDecoration(color: AppColors.lavender, borderRadius: BorderRadius.circular(20)),
-            child: Icon(subjectIcon(s.subjectName), color: AppColors.primary, size: 32),
+            decoration: BoxDecoration(color: context.area.tint, borderRadius: BorderRadius.circular(20)),
+            child: Icon(subjectIcon(s.subjectName), color: context.area.primary, size: 32),
           )),
           const Spacer(),
           const AppBadge(label: 'Por rever', icon: Icons.pending_actions_rounded,
@@ -351,11 +352,11 @@ class _PendingWorksheetCard extends StatelessWidget {
         const SizedBox(height: 20),
         Container(
           padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(color: AppColors.softBlue, borderRadius: BorderRadius.circular(20)),
+          decoration: BoxDecoration(color: context.area.soft, borderRadius: BorderRadius.circular(20)),
           child: Wrap(spacing: 16, runSpacing: 16, children: [
             _Stat(
               icon: Icons.help_center_outlined,
-              color: AppColors.primary,
+              color: context.area.primary,
               value: s.pendingReview == 1 ? '1 resposta' : '${s.pendingReview} respostas',
               label: 'Abertas / Por validar',
             ),
@@ -407,7 +408,7 @@ class _CompletedWorksheetTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       child: Row(children: [
         ExcludeSemantics(child: CircleAvatar(
-          radius: 28, backgroundColor: AppColors.softBlue,
+          radius: 28, backgroundColor: context.area.soft,
           child: Icon(subjectIcon(s.subjectName), color: AppColors.muted),
         )),
         const SizedBox(width: 16),
@@ -428,18 +429,18 @@ class _CompletedWorksheetTile extends StatelessWidget {
         ])),
         const SizedBox(width: 8),
         DecoratedBox(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             borderRadius: BorderRadius.all(Radius.circular(AppRadii.pill)),
-            boxShadow: [BoxShadow(color: AppColors.blueBorder, offset: Offset(0, 3))],
+            boxShadow: [BoxShadow(color: context.area.border, offset: Offset(0, 3))],
           ),
           child: TextButton(
             onPressed: onOpen,
             style: TextButton.styleFrom(
-              backgroundColor: AppColors.softBlue,
-              foregroundColor: AppColors.primary,
+              backgroundColor: context.area.soft,
+              foregroundColor: context.area.primary,
               minimumSize: const Size(48, 44),
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              shape: const StadiumBorder(side: BorderSide(color: AppColors.blueBorder)),
+              shape: StadiumBorder(side: BorderSide(color: context.area.border)),
               textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(fontSize: 14),
             ),
             child: const Text('Ver resultado'),
@@ -493,10 +494,10 @@ class _SupportNote extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(22),
-    decoration: BoxDecoration(color: AppColors.softBlue, borderRadius: BorderRadius.circular(AppRadii.card)),
-    child: const Row(children: [
-      ExcludeSemantics(child: CircleAvatar(radius: 22, backgroundColor: AppColors.lavender,
-        child: Icon(Icons.stars_rounded, color: AppColors.primary))),
+    decoration: BoxDecoration(color: context.area.soft, borderRadius: BorderRadius.circular(AppRadii.card)),
+    child: Row(children: [
+      ExcludeSemantics(child: CircleAvatar(radius: 22, backgroundColor: context.area.tint,
+        child: Icon(Icons.stars_rounded, color: context.area.primary))),
       SizedBox(width: 16),
       Expanded(child: Text(
         'A rever em família: validar o raciocínio estimula a confiança escolar sem sobrecarregar o teu tempo.',

@@ -93,6 +93,46 @@ paths:
           description: '{plan, childId}'
         default:
           $ref: '#/components/responses/Error'
+  /v1/children/{childId}/apple/offer:
+    post:
+      summary: iOS — escolher o produto-vaga App Store para a criança
+      description: >-
+        Igual à oferta Google Play: escolhe a primeira vaga livre (premium_crianca_1..5) entre as
+        assinaturas App Store da família e regista a intenção. A app compra com appAccountToken = id da
+        família (UUID). Não requer Origin (app nativa).
+      parameters:
+        - name: childId
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: '{productId, appAccountToken}'
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/apple/transactions:
+    post:
+      summary: iOS — verificar uma transação App Store e ativar o Premium
+      description: >-
+        Lê a transação e o estado da assinatura na App Store Server API, confirma que é desta app e que
+        pertence a uma família do adulto (appAccountToken) e aplica o estado. A Apple não permite
+        cancelar nem reembolsar pelo servidor: compras que não podem ser associadas devolvem
+        PURCHASE_NOT_LINKED e ficam no histórico (o reembolso é pedido à Apple). As notificações
+        (app-store-notifications) aplicam o mesmo estado de forma independente.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [transactionId]
+              properties:
+                transactionId: {type: string, pattern: '^[0-9]{1,32}$'}
+      responses:
+        '200':
+          description: '{plan, childId}'
+        default:
+          $ref: '#/components/responses/Error'
 components:
   securitySchemes:
     adultSession: {type: http, scheme: bearer}
@@ -104,6 +144,7 @@ components:
         401 AUTH_REQUIRED; 403 PARENT_LOCKED | EMAIL_NOT_CONFIRMED | ORIGIN_NOT_ALLOWED;
         404 CHILD_NOT_FOUND | FAMILY_NOT_FOUND | NO_STRIPE_CUSTOMER;
         409 CHILD_ALREADY_PREMIUM | MAX_PREMIUM_CHILDREN_REACHED;
-        409 CHILD_ALREADY_PREMIUM; 422 PURCHASE_REFUSED (revogada e reembolsada) | NO_PURCHASE_INTENT;
-        502 PAYMENTS_UNAVAILABLE (erro do Stripe) | PURCHASE_NOT_VERIFIED (erro da Google Play);
+        409 CHILD_ALREADY_PREMIUM | PURCHASE_NOT_LINKED (App Store); 422 PURCHASE_REFUSED (Google Play: revogada
+        e reembolsada) | PURCHASE_NOT_LINKED (App Store: reembolso pedido à Apple);
+        502 PAYMENTS_UNAVAILABLE (erro do Stripe) | PURCHASE_NOT_VERIFIED (erro da Google Play ou da App Store);
         503 serviço indisponível.

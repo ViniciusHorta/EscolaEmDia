@@ -3,13 +3,18 @@
 //   POST /v1/families/{familyId}/portal                        → {url}
 //   POST /v1/children/{childId}/play/offer                     → {productId, obfuscatedAccountId}  (Android)
 //   POST /v1/play/purchases   {productId, purchaseToken}      → {plan, childId}                    (Android)
+//   POST /v1/children/{childId}/apple/offer                    → {productId, appAccountToken}       (iOS)
+//   POST /v1/apple/transactions   {transactionId}               → {plan, childId}                    (iOS)
 // Stripe: o Premium só é ativado pelo webhook (stripe-webhook).
 // Google Play: a compra é verificada na API da Google aqui (logo após a compra) e também
 // pelas notificações em tempo real (play-notifications); ambas aplicam o mesmo estado.
+// App Store: igual, com a App Store Server API e as notificações app-store-notifications.
 import { createCors } from "../_shared/cors.ts";
 import { StripeError, stripeClient } from "../_shared/stripe.ts";
 import { PlayError, playClient, readServiceAccount } from "../_shared/google_play.ts";
 import { syncPlayPurchase } from "../_shared/play_sync.ts";
+import { AppleError, appStoreClient, readAppleConfig } from "../_shared/app_store.ts";
+import { syncAppleSubscription } from "../_shared/app_store_sync.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const uuid = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
@@ -29,7 +34,8 @@ const messages: Record<string, string> = {
   CHILD_ALREADY_PREMIUM: "Esta criança já tem o Premium ativo.",
   MAX_PREMIUM_CHILDREN_REACHED: "A família já atingiu o número máximo de crianças Premium.",
   NO_STRIPE_CUSTOMER: "Ainda não existe nenhuma subscrição paga nesta família.",
-  PURCHASE_NOT_VERIFIED: "Não foi possível confirmar a compra com a Google Play. Tenta novamente.",
+  PURCHASE_NOT_VERIFIED: "Não foi possível confirmar a compra com a loja. Tenta novamente.",
+  PURCHASE_NOT_LINKED: "Esta compra não pôde ser associada a uma criança. Pede o reembolso à Apple em reportaproblem.apple.com.",
   PURCHASE_REFUSED: "Esta compra não pôde ser associada a uma criança e foi reembolsada.",
   CHECKOUT_WEB_ONLY: "O pagamento com cartão está disponível na versão web.",
   PAYMENTS_UNAVAILABLE: "Os pagamentos estão temporariamente indisponíveis. Tenta novamente.",
@@ -58,8 +64,11 @@ Deno.serve(async (req: Request) => {
   const portalRoute = /^\/v1\/families\/([^/]+)\/portal$/.exec(path);
   const playOfferRoute = /^\/v1\/children\/([^/]+)\/play\/offer$/.exec(path);
   const playPurchaseRoute = path === "/v1/play/purchases";
+  const appleOfferRoute = /^\/v1\/children\/([^/]+)\/apple\/offer$/.exec(path);
+  const appleTransactionRoute = path === "/v1/apple/transactions";
   const operation = checkoutRoute ? "checkout" : portalRoute ? "portal" : playOfferRoute ? "play-offer"
-    : playPurchaseRoute ? "play-purchase" : "unknown";
+    : playPurchaseRoute ? "play-purchase" : appleOfferRoute ? "apple-offer"
+    : appleTransactionRoute ? "apple-transaction" : "unknown";
   const corsPolicy = createCors(req, { methods: "POST, OPTIONS", parentUnlock: true, retryAfter: false });
   const reply = (status: number, body: unknown, code?: string) => {
     console.info(JSON.stringify({ requestId, domain: "billing", operation, status, ...(code ? { code } : {}) }));
@@ -76,12 +85,13 @@ Deno.serve(async (req: Request) => {
   if (corsPolicy.preflightResponse) return corsPolicy.preflightResponse;
   if (operation === "unknown") return fail(404, "ROUTE_NOT_FOUND");
   if (req.method !== "POST") return fail(405, "METHOD_NOT_ALLOWED");
-  const targetId = (checkoutRoute ?? portalRoute ?? playOfferRoute)?.[1] ?? null;
+  const targetId = (checkoutRoute ?? portalRoute ?? playOfferRoute ?? appleOfferRoute)?.[1] ?? null;
   if (targetId !== null && !uuid.test(targetId)) return fail(400, "INVALID_REQUEST");
   const isPlay = Boolean(playOfferRoute || playPurchaseRoute);
+  const isApple = Boolean(appleOfferRoute || appleTransactionRoute);
   // Stripe: os URLs de regresso apontam para a origem web que fez o pedido (validada pelo CORS).
   const origin = req.headers.get("origin");
-  if (!isPlay && !origin) return fail(400, "CHECKOUT_WEB_ONLY");
+  if (!isPlay && !isApple && !origin) return fail(400, "CHECKOUT_WEB_ONLY");
 
   try {
     const projectUrl = Deno.env.get("SUPABASE_URL"),
@@ -89,7 +99,7 @@ Deno.serve(async (req: Request) => {
       stripeKey = Deno.env.get("STRIPE_SECRET_KEY"),
       priceId = Deno.env.get("STRIPE_PRICE_ID");
     if (!projectUrl || !serverKey) return fail(503, "STORAGE_UNAVAILABLE");
-    if (!isPlay && (!stripeKey || !priceId)) return fail(503, "PAYMENTS_UNAVAILABLE");
+    if (!isPlay && !isApple && (!stripeKey || !priceId)) return fail(503, "PAYMENTS_UNAVAILABLE");
     const token = /^Bearer (\S+)$/i.exec(req.headers.get("authorization") ?? "")?.[1];
     if (!token || token.startsWith("chd_")) return fail(401, "AUTH_REQUIRED");
     const admin = createClient(projectUrl, serverKey, {
@@ -150,6 +160,42 @@ Deno.serve(async (req: Request) => {
         return fail(404, "FAMILY_NOT_FOUND");
       const result = await syncPlayPurchase(play, rpc, body.purchaseToken, { type: "app.purchase" });
       if (result?.error) return fail(result.error === "CHILD_ALREADY_PREMIUM" ? 409 : 422, result.revoked ? "PURCHASE_REFUSED" : result.error);
+      return reply(200, { plan: result?.plan ?? null, childId: result?.childId ?? null });
+    }
+
+    if (isApple) {
+      const cfg = readAppleConfig();
+      if (!cfg) return fail(503, "PAYMENTS_UNAVAILABLE");
+      if (appleOfferRoute) {
+        const { data: offer, error } = await admin.rpc("billing_apple_offer", { p_actor_id: user.id, p_child_id: targetId });
+        if (error || !offer) return fail(503, "STORAGE_UNAVAILABLE");
+        if (offer.error) return fail(statusFor[offer.error] ?? 400, offer.error);
+        // appAccountToken = família (UUID): liga a compra à família nas notificações da Apple.
+        return reply(200, { productId: offer.productId, appAccountToken: offer.familyId });
+      }
+      let body: { transactionId?: unknown };
+      try {
+        const text = await req.text();
+        if (text.length > 1024) return fail(400, "INVALID_REQUEST");
+        body = JSON.parse(text);
+      } catch {
+        return fail(400, "INVALID_REQUEST");
+      }
+      if (typeof body?.transactionId !== "string" || !/^[0-9]{1,32}$/.test(body.transactionId)) return fail(400, "INVALID_REQUEST");
+      const apple = appStoreClient(cfg);
+      const rpc = async (fn: string, args: Record<string, unknown>) => {
+        const { data, error } = await admin.rpc(fn, args);
+        if (error) throw new Error(`${fn}: ${error.message}`);
+        return data;
+      };
+      // A compra tem de ser desta app e pertencer a uma família deste adulto (appAccountToken).
+      const tx = await apple.transaction(body.transactionId);
+      const familyId = typeof tx?.appAccountToken === "string" ? tx.appAccountToken.toLowerCase() : null;
+      if (!tx || tx.bundleId !== cfg.bundleId || !familyId || !uuid.test(familyId) ||
+          !(await rpc("billing_actor_in_family", { p_actor_id: user.id, p_family_id: familyId })))
+        return fail(404, "FAMILY_NOT_FOUND");
+      const result = await syncAppleSubscription(apple, cfg, rpc, String(tx.originalTransactionId), { type: "app.purchase" });
+      if (result?.error) return fail(result.error === "CHILD_ALREADY_PREMIUM" ? 409 : 422, "PURCHASE_NOT_LINKED");
       return reply(200, { plan: result?.plan ?? null, childId: result?.childId ?? null });
     }
 
@@ -231,6 +277,10 @@ Deno.serve(async (req: Request) => {
     if (recordError) return fail(503, "STORAGE_UNAVAILABLE");
     return reply(201, { url: session.url, sessionId: session.id });
   } catch (error) {
+    if (error instanceof AppleError) {
+      console.error(JSON.stringify({ requestId, domain: "billing", appleStatus: error.status, appleCode: error.code, message: error.message }));
+      return fail(error.status === 404 ? 404 : 502, error.status === 404 ? "INVALID_REQUEST" : "PURCHASE_NOT_VERIFIED");
+    }
     if (error instanceof PlayError) {
       console.error(JSON.stringify({ requestId, domain: "billing", playStatus: error.status, message: error.message }));
       return fail(502, "PURCHASE_NOT_VERIFIED");

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/area_palette.dart';
 import '../../../core/theme/app_tokens.dart';
 
 class OnboardingHeader extends StatelessWidget {
@@ -17,12 +18,12 @@ class OnboardingHeader extends StatelessWidget {
       const SizedBox(width: 12),
       Expanded(child: Column(children: [
         Text('PASSO $step DE $total • ${section.toUpperCase()}', textAlign: TextAlign.center,
-          style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w700)),
+          style: TextStyle(color: context.area.primary, fontSize: 12, fontWeight: FontWeight.w700)),
         const SizedBox(height: 6),
         Text(title, textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleLarge),
       ])),
       const SizedBox(width: 12),
-      CircleAvatar(backgroundColor: AppColors.lavender, child: Icon(icon, color: AppColors.primary)),
+      CircleAvatar(backgroundColor: context.area.tint, child: Icon(icon, color: context.area.primary)),
     ]),
     const SizedBox(height: 20),
     Semantics(label: 'Passo $step de $total', child: ExcludeSemantics(child: Row(
@@ -31,7 +32,7 @@ class OnboardingHeader extends StatelessWidget {
         width: i == step ? 32 : 22, height: 8,
         margin: const EdgeInsets.symmetric(horizontal: 4),
         decoration: BoxDecoration(
-          color: i == step ? AppColors.primary : i < step ? const Color(0xFFBDB4ED) : AppColors.outline,
+          color: i == step ? context.area.primary : i < step ? const Color(0xFFBDB4ED) : AppColors.outline,
           borderRadius: BorderRadius.circular(20),
         ),
       )],

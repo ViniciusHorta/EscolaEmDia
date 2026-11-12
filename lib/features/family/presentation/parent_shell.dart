@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../../../core/theme/area_palette.dart';
 import '../../../core/theme/app_tokens.dart';
 
 enum ParentTab { dashboard, worksheets, family }
@@ -41,7 +43,7 @@ class ParentShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: AppColors.background,
+    backgroundColor: context.area.background,
     body: Column(children: [
       _Header(title: titles[tab]!, onLock: busy ? null : onLock, onAccount: busy ? null : () => _accountSheet(context)),
       Expanded(child: Center(child: ConstrainedBox(
@@ -52,22 +54,22 @@ class ParentShell extends StatelessWidget {
     bottomNavigationBar: NavigationBarTheme(
       data: NavigationBarThemeData(
         backgroundColor: Colors.white,
-        indicatorColor: AppColors.lavender,
+        indicatorColor: context.area.tint,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(
           fontSize: 14,
           fontWeight: states.contains(WidgetState.selected) ? FontWeight.w700 : FontWeight.w600,
-          color: states.contains(WidgetState.selected) ? AppColors.primary : AppColors.muted,
+          color: states.contains(WidgetState.selected) ? context.area.primary : AppColors.muted,
         )),
         iconTheme: WidgetStateProperty.resolveWith((states) => IconThemeData(
           size: 28,
-          color: states.contains(WidgetState.selected) ? AppColors.primary : AppColors.muted,
+          color: states.contains(WidgetState.selected) ? context.area.primary : AppColors.muted,
         )),
       ),
       child: DecoratedBox(
         decoration: BoxDecoration(boxShadow: [
-          BoxShadow(color: AppColors.primary.withValues(alpha: 0.06), blurRadius: 20, offset: const Offset(0, -6)),
+          BoxShadow(color: context.area.primary.withValues(alpha: 0.06), blurRadius: 20, offset: const Offset(0, -6)),
         ]),
         child: NavigationBar(
           selectedIndex: tab.index,
@@ -105,13 +107,13 @@ class ParentShell extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         ListTile(
-          leading: const Icon(Icons.lock_outline_rounded, color: AppColors.primary),
+          leading: Icon(Icons.lock_outline_rounded, color: context.area.primary),
           title: const Text('Bloquear área do responsável'),
           subtitle: const Text('Volta a pedir o PIN do responsável.'),
           onTap: () { Navigator.pop(sheet); onLock(); },
         ),
         if (onOpenLegal != null) ListTile(
-          leading: const Icon(Icons.gavel_rounded, color: AppColors.primary),
+          leading: Icon(Icons.gavel_rounded, color: context.area.primary),
           title: const Text('Documentos legais'),
           subtitle: const Text('Termos de Utilização e Política de Privacidade.'),
           onTap: () { Navigator.pop(sheet); onOpenLegal!(); },
@@ -139,9 +141,13 @@ class _Header extends StatelessWidget {
   final VoidCallback? onAccount;
 
   @override
-  Widget build(BuildContext context) => Container(
-    decoration: BoxDecoration(color: Colors.white, boxShadow: [
-      BoxShadow(color: AppColors.primary.withValues(alpha: 0.06), blurRadius: 16, offset: const Offset(0, 6)),
+  Widget build(BuildContext context) => AnnotatedRegion<SystemUiOverlayStyle>(
+    // Ícones da barra de estado claros sobre a faixa escura.
+    value: SystemUiOverlayStyle.light,
+    child: Container(
+    // Faixa sólida na cor da área do responsável: distingue-a logo do espaço infantil.
+    decoration: BoxDecoration(color: context.area.primary, boxShadow: [
+      BoxShadow(color: context.area.primary.withValues(alpha: 0.18), blurRadius: 16, offset: const Offset(0, 6)),
     ]),
     child: SafeArea(bottom: false, child: Center(child: ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 760),
@@ -149,18 +155,18 @@ class _Header extends StatelessWidget {
         padding: EdgeInsets.fromLTRB(MediaQuery.sizeOf(context).width < 640 ? 16 : 32, 12, 16, 14),
         child: Row(children: [
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('ÁREA DO RESPONSÁVEL', style: TextStyle(
-              color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.w700, letterSpacing: 1.2)),
+            Text('ÁREA DO RESPONSÁVEL', style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.82), fontSize: 13, fontWeight: FontWeight.w700, letterSpacing: 1.2)),
             const SizedBox(height: 2),
             Semantics(header: true, child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft,
               child: Text(title, maxLines: 1,
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: AppColors.text)))),
+                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.white)))),
           ])),
           const SizedBox(width: 8),
           Tooltip(
             message: 'PIN ativo. Tocar para bloquear a área do responsável.',
             child: Material(
-              color: AppColors.softBlue,
+              color: Colors.white.withValues(alpha: 0.16),
               shape: const StadiumBorder(),
               child: InkWell(
                 onTap: onLock,
@@ -168,10 +174,10 @@ class _Header extends StatelessWidget {
                 child: const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(Icons.lock_outline_rounded, color: AppColors.success, size: 20),
+                    Icon(Icons.lock_outline_rounded, color: Colors.white, size: 20),
                     SizedBox(width: 6),
                     Text('PIN\nATIVO', style: TextStyle(
-                      fontSize: 11, height: 1.15, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: AppColors.muted)),
+                      fontSize: 11, height: 1.15, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: Colors.white)),
                   ]),
                 ),
               ),
@@ -182,11 +188,11 @@ class _Header extends StatelessWidget {
             onPressed: onAccount,
             tooltip: 'Conta e definições',
             iconSize: 24,
-            style: IconButton.styleFrom(backgroundColor: AppColors.primary, minimumSize: const Size(48, 48)),
+            style: IconButton.styleFrom(backgroundColor: Colors.white, foregroundColor: context.area.primary, minimumSize: const Size(48, 48)),
             icon: const Icon(Icons.person_outline_rounded),
           ),
         ]),
       ),
     ))),
-  );
+  ));
 }

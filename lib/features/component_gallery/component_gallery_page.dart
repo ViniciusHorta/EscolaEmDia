@@ -100,7 +100,7 @@ class _ComponentGalleryPageState extends State<ComponentGalleryPage> {
                           loading: loading,
                           onPressed: loadExample),
                       const SizedBox(height: 24),
-                      const Wrap(spacing: 8, runSpacing: 8, children: [
+                      Wrap(spacing: 8, runSpacing: 8, children: [
                         AppBadge(
                             label: 'Por começar',
                             icon: Icons.play_circle_outline),

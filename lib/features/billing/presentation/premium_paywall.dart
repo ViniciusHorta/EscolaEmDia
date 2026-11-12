@@ -1,4 +1,7 @@
+import 'package:flutter/foundation.dart';
+import '../../../core/theme/area_palette.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/premium_crown.dart';
@@ -11,19 +14,44 @@ const premiumPriceLabel = '3,99 €/mês';
 /// Abre o pagamento; devolve uma mensagem de erro ou null quando o browser já foi redirecionado.
 typedef PremiumSubscribe = Future<String?> Function();
 
+/// Onde é feito o pagamento (muda o texto legal no fundo da oferta).
+enum PremiumStore { stripe, googlePlay, appStore }
+
+/// Web → Stripe; Android → Google Play; iOS → App Store.
+PremiumStore get currentPremiumStore => kIsWeb ? PremiumStore.stripe
+  : defaultTargetPlatform == TargetPlatform.android ? PremiumStore.googlePlay
+  : defaultTargetPlatform == TargetPlatform.iOS ? PremiumStore.appStore
+  : PremiumStore.stripe;
+
+final termsUrl = Uri.parse('https://escolaemdia.me/termos-e-condicoes');
+final privacyUrl = Uri.parse('https://escolaemdia.me/politica-de-privacidade');
+
+String premiumPaymentNote(PremiumStore store) => switch (store) {
+  PremiumStore.stripe => 'Pagamento seguro com Stripe. Vais sair da app para concluir. '
+      'A assinatura renova-se todos os meses até a cancelares.',
+  PremiumStore.googlePlay => 'Pagamento pela Google Play. A assinatura renova-se automaticamente todos os meses '
+      'até a cancelares na Play Store.',
+  // Texto exigido pela Apple para assinaturas com renovação automática.
+  PremiumStore.appStore => 'Assinatura mensal com renovação automática. O pagamento é cobrado na tua conta Apple '
+      'quando confirmas a compra e renova-se todos os meses, salvo se cancelares pelo menos 24 horas antes do fim '
+      'do período atual. Podes gerir ou cancelar nas definições da tua conta Apple.',
+};
+
 /// Oferta Premium. SÓ para a área do responsável — nunca mostrar à criança.
 /// Sem [onSubscribe] (ex.: app móvel antes das lojas) o botão explica que o pagamento chega em breve.
 Future<void> showPremiumPaywall(BuildContext context, {required String childName, required PaywallReason reason,
-    int? freeMaxQuestions, PremiumSubscribe? onSubscribe}) =>
+    int? freeMaxQuestions, PremiumSubscribe? onSubscribe, PremiumStore? store}) =>
   showModalBottomSheet<void>(
     context: context, isScrollControlled: true, showDragHandle: true, backgroundColor: AppColors.surface,
     shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.card))),
     builder: (context) => _PremiumPaywall(childName: childName, reason: reason, freeMaxQuestions: freeMaxQuestions,
-      onSubscribe: onSubscribe),
+      onSubscribe: onSubscribe, store: store ?? currentPremiumStore),
   );
 
 class _PremiumPaywall extends StatefulWidget {
-  const _PremiumPaywall({required this.childName, required this.reason, this.freeMaxQuestions, this.onSubscribe});
+  const _PremiumPaywall({required this.childName, required this.reason, this.freeMaxQuestions, this.onSubscribe,
+    this.store = PremiumStore.stripe});
+  final PremiumStore store;
   final String childName;
   final PaywallReason reason;
   final int? freeMaxQuestions;
@@ -99,9 +127,17 @@ class _PremiumPaywallState extends State<_PremiumPaywall> {
         loading: busy, onPressed: busy ? null : subscribe),
       const SizedBox(height: 10),
       AppButton(label: 'Agora não', variant: AppButtonVariant.neutral, onPressed: busy ? null : () => Navigator.pop(context)),
-      if (widget.onSubscribe != null) const Padding(padding: EdgeInsets.only(top: 10),
-        child: Text('Pagamento seguro com Stripe. Vais sair da app para concluir.', textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 13, color: AppColors.muted))),
+      if (widget.onSubscribe != null) ...[
+        Padding(padding: const EdgeInsets.only(top: 10),
+          child: Text(premiumPaymentNote(widget.store), textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 13, height: 1.4, color: AppColors.muted))),
+        Wrap(alignment: WrapAlignment.center, children: [
+          TextButton(onPressed: () => launchUrl(termsUrl, mode: LaunchMode.externalApplication),
+            child: const Text('Termos de Utilização')),
+          TextButton(onPressed: () => launchUrl(privacyUrl, mode: LaunchMode.externalApplication),
+            child: const Text('Política de Privacidade')),
+        ]),
+      ],
     ]),
   ));
 }
@@ -112,7 +148,7 @@ class _Benefit extends StatelessWidget {
   final String text;
   @override
   Widget build(BuildContext context) => Padding(padding: const EdgeInsets.only(bottom: 10), child: Row(children: [
-    CircleAvatar(radius: 18, backgroundColor: AppColors.lavender, child: Icon(icon, size: 20, color: AppColors.primary)),
+    CircleAvatar(radius: 18, backgroundColor: context.area.tint, child: Icon(icon, size: 20, color: context.area.primary)),
     const SizedBox(width: 12),
     Expanded(child: Text(text, style: const TextStyle(fontSize: 16, color: AppColors.text))),
   ]));

@@ -86,3 +86,7 @@ verify_jwt = false
 [functions.admin-billing]
 # Called by the local admin tool; authorized by the service_role key, checked by the database (admin_* grants).
 verify_jwt = false
+
+[functions.app-store-notifications]
+# Called by Apple (App Store Server Notifications V2); the payload is never trusted, state is re-read from the App Store Server API.
+verify_jwt = false

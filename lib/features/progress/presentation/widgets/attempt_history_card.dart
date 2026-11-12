@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/area_palette.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../../../shared/widgets/app_badge.dart';
 import '../../../../shared/widgets/app_button.dart';
@@ -18,8 +19,8 @@ class AttemptHistoryCard extends StatelessWidget {
       Wrap(spacing: 8, runSpacing: 8, children: [
         AppBadge(label: 'Tentativa ${attempt.attemptNumber}', icon: Icons.history_rounded),
         AppBadge(label: historyStatusLabel(attempt.status),
-          background: attempt.status == 'completed' ? AppColors.successSoft : AppColors.lavender,
-          color: attempt.status == 'completed' ? AppColors.success : AppColors.primary),
+          background: attempt.status == 'completed' ? AppColors.successSoft : context.area.tint,
+          color: attempt.status == 'completed' ? AppColors.success : context.area.primary),
         if (!attempt.assignmentActive) const AppBadge(label: 'Atribuição retirada', icon: Icons.history_rounded),
       ]),
       const SizedBox(height: 14), Text('Iniciada em ${date(attempt.startedAt.toLocal())}'),

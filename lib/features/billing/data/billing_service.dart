@@ -34,6 +34,18 @@ class BillingService {
   Future<String?> verifyPlayPurchase(String productId, String purchaseToken) async =>
       (await _post('/v1/play/purchases', {'productId': productId, 'purchaseToken': purchaseToken}))['plan'] as String?;
 
+  /// iOS: produto-vaga a comprar e identificador da família (appAccountToken, UUID).
+  Future<({String productId, String accountId})> appleOffer(String childId) async {
+    final data = await _post('/v1/children/$childId/apple/offer', const {});
+    final productId = data['productId'], accountId = data['appAccountToken'];
+    if (productId is! String || accountId is! String) throw const BillingException('Não foi possível preparar a compra.');
+    return (productId: productId, accountId: accountId);
+  }
+
+  /// iOS: verifica a transação no servidor (App Store Server API) e ativa o Premium. Devolve o plano.
+  Future<String?> verifyAppleTransaction(String transactionId) async =>
+      (await _post('/v1/apple/transactions', {'transactionId': transactionId}))['plan'] as String?;
+
   Uri _url(Map data) {
     final url = Uri.tryParse('${data['url']}');
     if (url == null || url.scheme != 'https' || !url.host.endsWith('stripe.com')) {

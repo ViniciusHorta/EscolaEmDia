@@ -19,6 +19,8 @@ Uso: tools/staging.sh <comando>
   device [id]       Corre o app num telemóvel/emulador ligado contra o staging
                     (sem id usa o único dispositivo ligado; ver: flutter devices)
   bundle            Gera o .aab de release (Google Play, teste interno) apontado ao staging
+  ipa               Gera o .ipa de release (App Store, TestFlight) apontado ao staging
+                    (requer Xcode com a conta Apple Developer e assinatura automática)
   db:dry            Mostra as migrations pendentes no staging
   db:push           Aplica as migrations pendentes no staging
   fn:deploy [nome]  Publica as edge functions (todas ou só uma) no staging
@@ -46,6 +48,12 @@ case "$cmd" in
       --dart-define=SUPABASE_URL="$STAGING_URL" \
       --dart-define=SUPABASE_PUBLISHABLE_KEY="$STAGING_PUBLISHABLE_KEY" "$@"
     echo "→ build/app/outputs/bundle/release/app-release.aab"
+    ;;
+  ipa)
+    flutter build ipa --release \
+      --dart-define=SUPABASE_URL="$STAGING_URL" \
+      --dart-define=SUPABASE_PUBLISHABLE_KEY="$STAGING_PUBLISHABLE_KEY" "$@"
+    echo "→ build/ios/ipa/ (enviar para o TestFlight com a app Transporter ou: xcrun altool / Xcode → Organizer)"
     ;;
   db:dry)    supabase db push --remote="$STAGING_REF" --dry-run ;;
   db:push)   supabase db push --remote="$STAGING_REF" ;;

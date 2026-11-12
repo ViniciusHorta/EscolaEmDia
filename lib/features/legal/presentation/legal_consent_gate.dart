@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/area_palette.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_card.dart';
@@ -138,7 +139,7 @@ class _LegalConsentPageState extends State<LegalConsentPage> {
             semanticLabel: 'Ler ${document.kind.label}, versão ${document.version}',
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                const Icon(Icons.description_outlined, color: AppColors.primary),
+                Icon(Icons.description_outlined, color: context.area.primary),
                 const SizedBox(width: 12),
                 Expanded(child: Text(document.kind.label, style: Theme.of(context).textTheme.titleMedium)),
                 const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
@@ -172,7 +173,7 @@ class _LegalConsentPageState extends State<LegalConsentPage> {
           child: const Text('Aceita os documentos para continuar.', style: TextStyle(color: AppColors.error))),
         if (feedback != null) ...[
           const SizedBox(height: 16),
-          Semantics(liveRegion: true, child: AppCard(color: AppColors.softBlue, padding: const EdgeInsets.all(16),
+          Semantics(liveRegion: true, child: AppCard(color: context.area.soft, padding: const EdgeInsets.all(16),
             child: Text(feedback!))),
           if (outdated) TextButton(onPressed: widget.onReload, child: const Text('Ver a versão mais recente')),
         ],

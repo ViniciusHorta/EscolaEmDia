@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/area_palette.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/utils/request_id.dart';
 import '../../../../shared/widgets/app_button.dart';
@@ -81,7 +82,7 @@ class _ReportQuestionSheetState extends State<_ReportQuestionSheet> {
         const SizedBox(height: 14),
         Container(
           padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(color: AppColors.softBlue, borderRadius: BorderRadius.circular(18)),
+          decoration: BoxDecoration(color: context.area.soft, borderRadius: BorderRadius.circular(18)),
           child: Text(widget.question.prompt, maxLines: 4, overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontSize: 15, height: 1.45, color: AppColors.text)),
         ),
@@ -92,7 +93,7 @@ class _ReportQuestionSheetState extends State<_ReportQuestionSheet> {
           for (final item in QuestionReportReason.values) ChoiceChip(
             label: Text(item.label),
             selected: reason == item,
-            selectedColor: AppColors.lavender,
+            selectedColor: context.area.tint,
             onSelected: sending ? null : (_) => setState(() { reason = item; error = null; }),
           ),
         ]),
@@ -110,10 +111,10 @@ class _ReportQuestionSheetState extends State<_ReportQuestionSheet> {
           decoration: InputDecoration(
             hintText: 'Ex.: a resposta indicada como correta é a 2/4, mas devia ser 1/4.',
             filled: true,
-            fillColor: AppColors.softBlue,
+            fillColor: context.area.soft,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
             focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18),
-              borderSide: const BorderSide(color: AppColors.primary, width: 2)),
+              borderSide: BorderSide(color: context.area.primary, width: 2)),
             helperText: 'Mínimo de $minLength caracteres. Não incluas dados pessoais da criança.',
             helperMaxLines: 2,
           ),

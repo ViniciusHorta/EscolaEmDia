@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/area_palette.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_card.dart';
@@ -12,7 +13,7 @@ class LegalDocumentsPage extends StatefulWidget {
   final LegalService service;
 
   static Future<void> open(BuildContext context, LegalService service) => Navigator.of(context)
-      .push(MaterialPageRoute(builder: (_) => LegalDocumentsPage(service: service)));
+      .push(MaterialPageRoute(builder: (_) => InheritedTheme.captureAll(context, LegalDocumentsPage(service: service))));
 
   @override
   State<LegalDocumentsPage> createState() => _LegalDocumentsPageState();
@@ -34,8 +35,8 @@ class _LegalDocumentsPageState extends State<LegalDocumentsPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: AppColors.background,
-    appBar: AppBar(title: const Text('Documentos legais'), backgroundColor: AppColors.background),
+    backgroundColor: context.area.background,
+    appBar: AppBar(title: const Text('Documentos legais'), backgroundColor: context.area.background),
     body: SafeArea(child: FutureBuilder<LegalStatus>(
       future: status,
       builder: (context, snapshot) {

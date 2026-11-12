@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/area_palette.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/request_id.dart';
 import '../../../core/utils/subject_icons.dart';
@@ -157,7 +158,7 @@ class _ParentReviewPageState extends State<ParentReviewPage> {
       canPop: false,
       onPopInvokedWithResult: (didPop, _) { if (!didPop && canLeave) back(); },
       child: Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: context.area.background,
         body: Column(children: [
           _ReviewTopBar(overline: overline, title: title,
             onBack: canLeave ? back : null, onSaveAndExit: canLeave ? widget.onClose : null),
@@ -214,9 +215,9 @@ class _ParentReviewPageState extends State<ParentReviewPage> {
 
   Widget? bottomBar(ParentAttemptReview data, _Stage current) {
     Widget bar(List<Widget> children) => Container(
-      decoration: BoxDecoration(color: AppColors.background,
-        border: const Border(top: BorderSide(color: AppColors.lavender)),
-        boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.05), blurRadius: 14, offset: const Offset(0, -6))]),
+      decoration: BoxDecoration(color: context.area.background,
+        border: Border(top: BorderSide(color: context.area.tint)),
+        boxShadow: [BoxShadow(color: context.area.primary.withValues(alpha: 0.05), blurRadius: 14, offset: const Offset(0, -6))]),
       child: SafeArea(top: false, child: Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 720),
         child: Padding(padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: children))))),
@@ -287,8 +288,8 @@ class _ParentReviewPageState extends State<ParentReviewPage> {
         Text('Total: ${data.questions.length} desafios', style: const TextStyle(color: AppColors.muted, fontWeight: FontWeight.w600)),
       ])),
       if (choices.isNotEmpty) _RowCard(
-        leading: const CircleAvatar(radius: 26, backgroundColor: AppColors.softBlue,
-          child: Icon(Icons.format_list_bulleted_rounded, color: AppColors.primary)),
+        leading: CircleAvatar(radius: 26, backgroundColor: context.area.soft,
+          child: Icon(Icons.format_list_bulleted_rounded, color: context.area.primary)),
         title: choices.length == 1 ? 'Pergunta ${numberOf(choices.first)}'
           : 'Perguntas ${numberOf(choices.first)} a ${numberOf(choices.last)}',
         subtitle: '${choices.every((q) => q.type == 'true_false') ? 'Verdadeiro ou falso' : choices.any((q) => q.type == 'true_false') ? 'Escolha múltipla e V/F' : 'Escolha múltipla'} • correção automática',
@@ -302,7 +303,7 @@ class _ParentReviewPageState extends State<ParentReviewPage> {
       ),
       for (final q in written) _RowCard(
         onTap: q.reviewable && !blocked ? () => openReview(q) : null,
-        leading: CircleAvatar(radius: 26, backgroundColor: q.review == null && q.reviewable ? AppColors.amberSoft : AppColors.softBlue,
+        leading: CircleAvatar(radius: 26, backgroundColor: q.review == null && q.reviewable ? AppColors.amberSoft : context.area.soft,
           child: Text('${numberOf(q)}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.text))),
         title: q.prompt,
         subtitleIcon: q.answerType == 'paper' ? Icons.menu_book_outlined : q.reviewable ? Icons.edit_note_rounded : Icons.remove_rounded,
@@ -337,16 +338,16 @@ class _ParentReviewPageState extends State<ParentReviewPage> {
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Container(
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(color: AppColors.softBlue, borderRadius: BorderRadius.circular(28)),
+        decoration: BoxDecoration(color: context.area.soft, borderRadius: BorderRadius.circular(28)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Row(children: [
-            CircleAvatar(radius: 15, backgroundColor: AppColors.lavender,
-              child: Text('$position', style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.primary))),
+            CircleAvatar(radius: 15, backgroundColor: context.area.tint,
+              child: Text('$position', style: TextStyle(fontWeight: FontWeight.w800, color: context.area.primary))),
             const SizedBox(width: 10),
             Expanded(child: Text('Resposta aberta $position de ${open.length}',
               style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.text))),
             AppBadge(label: 'Pergunta ${numberOf(question)} de ${data.questions.length}',
-              background: AppColors.lavender, color: AppColors.text),
+              background: context.area.tint, color: AppColors.text),
           ]),
           const SizedBox(height: 12),
           Row(children: [
@@ -356,14 +357,14 @@ class _ParentReviewPageState extends State<ParentReviewPage> {
           const SizedBox(height: 10),
           ClipRRect(borderRadius: BorderRadius.circular(AppRadii.pill), child: LinearProgressIndicator(
             value: open.isEmpty ? 1 : reviewed / open.length, minHeight: 12,
-            backgroundColor: AppColors.blueBorder, color: AppColors.primary)),
+            backgroundColor: context.area.border, color: context.area.primary)),
         ]),
       ),
       const SizedBox(height: 18),
       AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        const Row(children: [
-          Icon(Icons.help_center_outlined, color: AppColors.primary, size: 20), SizedBox(width: 8),
-          Text('ENUNCIADO DA PERGUNTA', style: TextStyle(fontSize: 13, letterSpacing: 1.2, fontWeight: FontWeight.w700, color: AppColors.primary)),
+        Row(children: [
+          Icon(Icons.help_center_outlined, color: context.area.primary, size: 20), SizedBox(width: 8),
+          Text('ENUNCIADO DA PERGUNTA', style: TextStyle(fontSize: 13, letterSpacing: 1.2, fontWeight: FontWeight.w700, color: context.area.primary)),
         ]),
         const SizedBox(height: 10),
         SelectableText('“${question.prompt}”', style: const TextStyle(fontSize: 22, height: 1.35, fontWeight: FontWeight.w700, color: AppColors.text)),
@@ -374,16 +375,16 @@ class _ParentReviewPageState extends State<ParentReviewPage> {
           Expanded(child: Text('RESPOSTA DE ${name.toUpperCase()}',
             style: const TextStyle(fontSize: 13, letterSpacing: 1.2, fontWeight: FontWeight.w700, color: AppColors.muted))),
           AppBadge(label: question.answerType == 'paper' ? 'Respondido no caderno 📝' : 'Resposta digital',
-            background: AppColors.lavender, color: AppColors.primary),
+            background: context.area.tint, color: context.area.primary),
         ]),
         const SizedBox(height: 14),
         Container(
           padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(color: AppColors.softBlue, borderRadius: BorderRadius.circular(18)),
+          decoration: BoxDecoration(color: context.area.soft, borderRadius: BorderRadius.circular(18)),
           child: question.answerType == 'paper'
             ? Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const CircleAvatar(radius: 24, backgroundColor: AppColors.lavender,
-                  child: Icon(Icons.menu_book_rounded, color: AppColors.primary)),
+                CircleAvatar(radius: 24, backgroundColor: context.area.tint,
+                  child: Icon(Icons.menu_book_rounded, color: context.area.primary)),
                 const SizedBox(width: 14),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   const Text('Consulta o caderno de rascunho', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
@@ -428,7 +429,7 @@ class _ParentReviewPageState extends State<ParentReviewPage> {
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Container(
         padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(color: AppColors.softBlue, borderRadius: BorderRadius.circular(32)),
+        decoration: BoxDecoration(color: context.area.soft, borderRadius: BorderRadius.circular(32)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Row(children: [
             CircleAvatar(radius: 32, backgroundColor: pending == 0 ? AppColors.success : AppColors.amber,
@@ -450,7 +451,7 @@ class _ParentReviewPageState extends State<ParentReviewPage> {
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: AppColors.lavender.withValues(alpha: 0.7), borderRadius: BorderRadius.circular(18)),
+            decoration: BoxDecoration(color: context.area.tint.withValues(alpha: 0.7), borderRadius: BorderRadius.circular(18)),
             child: Row(children: [
               Icon(Icons.verified_outlined, color: pending == 0 ? AppColors.success : AppColors.amber),
               const SizedBox(width: 10),
@@ -464,14 +465,14 @@ class _ParentReviewPageState extends State<ParentReviewPage> {
       Padding(padding: const EdgeInsets.fromLTRB(4, 26, 4, 12), child: Row(children: [
         const Expanded(child: Text('RESPOSTAS ABERTAS REVISTAS',
           style: TextStyle(fontSize: 14, letterSpacing: 1.2, fontWeight: FontWeight.w700, color: AppColors.muted))),
-        Text('$reviewed de ${open.length} avaliadas', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
+        Text('$reviewed de ${open.length} avaliadas', style: TextStyle(color: context.area.primary, fontWeight: FontWeight.w700)),
       ])),
       for (final q in open) Padding(padding: const EdgeInsets.only(bottom: 14), child: AppCard(
         padding: const EdgeInsets.all(20),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            CircleAvatar(radius: 20, backgroundColor: AppColors.softBlue,
-              child: Text('${numberOf(q)}', style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.primary))),
+            CircleAvatar(radius: 20, backgroundColor: context.area.soft,
+              child: Text('${numberOf(q)}', style: TextStyle(fontWeight: FontWeight.w800, color: context.area.primary))),
             const SizedBox(width: 14),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(q.prompt, maxLines: 3, overflow: TextOverflow.ellipsis,
@@ -486,7 +487,7 @@ class _ParentReviewPageState extends State<ParentReviewPage> {
           const SizedBox(height: 14),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(color: AppColors.softBlue, borderRadius: BorderRadius.circular(AppRadii.pill)),
+            decoration: BoxDecoration(color: context.area.soft, borderRadius: BorderRadius.circular(AppRadii.pill)),
             child: q.review == null
               ? const Row(children: [Icon(Icons.hourglass_bottom_rounded, color: AppColors.amber), SizedBox(width: 10),
                   Text('Por classificar', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.amber))])
@@ -504,7 +505,7 @@ class _ParentReviewPageState extends State<ParentReviewPage> {
       AppCard(padding: const EdgeInsets.all(20), child: Row(children: [
         SizedBox(width: 92, height: 92, child: Stack(alignment: Alignment.center, children: [
           SizedBox.expand(child: CircularProgressIndicator(value: total == 0 ? 1 : done / total, strokeWidth: 10,
-            backgroundColor: AppColors.blueBorder, color: pending == 0 ? AppColors.success : AppColors.amber)),
+            backgroundColor: context.area.border, color: pending == 0 ? AppColors.success : AppColors.amber)),
           Text('$done/$total', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.text)),
         ])),
         const SizedBox(width: 18),
@@ -547,7 +548,7 @@ class _ParentReviewPageState extends State<ParentReviewPage> {
       Container(
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
         decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(32),
-          boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.07), blurRadius: 20, offset: const Offset(0, 8))]),
+          boxShadow: [BoxShadow(color: context.area.primary.withValues(alpha: 0.07), blurRadius: 20, offset: const Offset(0, 8))]),
         child: Column(children: [
           AppBadge(label: '$name • ${data.child.schoolYear}.º Ano', icon: Icons.face_rounded),
           const SizedBox(height: 14),
@@ -560,7 +561,7 @@ class _ParentReviewPageState extends State<ParentReviewPage> {
           const SizedBox(height: 18),
           ExcludeSemantics(child: SizedBox(width: 128, height: 120, child: Stack(children: [
             Positioned(left: 0, top: 0, child: Container(width: 110, height: 110, alignment: Alignment.center,
-              decoration: const BoxDecoration(color: AppColors.softBlue, shape: BoxShape.circle),
+              decoration: BoxDecoration(color: context.area.soft, shape: BoxShape.circle),
               child: Text(ChildAvatars.emoji(data.child.avatarId), style: const TextStyle(fontSize: 58)))),
             Positioned(right: 0, bottom: 0, child: Container(width: 44, height: 44,
               decoration: const BoxDecoration(color: Color(0xFFFBBF24), shape: BoxShape.circle),
@@ -569,10 +570,10 @@ class _ParentReviewPageState extends State<ParentReviewPage> {
           const SizedBox(height: 18),
           Container(
             padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(color: AppColors.softBlue, borderRadius: BorderRadius.circular(20)),
+            decoration: BoxDecoration(color: context.area.soft, borderRadius: BorderRadius.circular(20)),
             child: Column(children: [
               Text.rich(TextSpan(children: [
-                TextSpan(text: '$achieved', style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w800, color: AppColors.primary)),
+                TextSpan(text: '$achieved', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w800, color: context.area.primary)),
                 TextSpan(text: ' de $total ', style: const TextStyle(fontSize: 20, color: AppColors.muted)),
                 const TextSpan(text: 'conseguidas', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.text)),
               ]), semanticsLabel: '$achieved de $total conseguidas'),
@@ -592,11 +593,11 @@ class _ParentReviewPageState extends State<ParentReviewPage> {
           ),
         ]),
       ),
-      Padding(padding: const EdgeInsets.fromLTRB(4, 28, 4, 12), child: Row(children: const [
+      Padding(padding: const EdgeInsets.fromLTRB(4, 28, 4, 12), child: Row(children: [
         Expanded(child: Text('APRECIAÇÃO PEDAGÓGICA',
           style: TextStyle(fontSize: 15, letterSpacing: 1.2, fontWeight: FontWeight.w800, color: AppColors.text))),
-        Icon(Icons.visibility_outlined, color: AppColors.primary, size: 18), SizedBox(width: 6),
-        Text('Para encarregados', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)),
+        Icon(Icons.visibility_outlined, color: context.area.primary, size: 18), SizedBox(width: 6),
+        Text('Para encarregados', style: TextStyle(color: context.area.primary, fontWeight: FontWeight.w600)),
       ])),
       _InsightCard(icon: Icons.check_circle_outline_rounded, iconBackground: const Color(0xFF87FE45), iconColor: AppColors.success,
         title: 'Ponto Forte', titleColor: AppColors.success,
@@ -648,29 +649,29 @@ class _ReviewTopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    decoration: BoxDecoration(color: AppColors.background, boxShadow: [
-      BoxShadow(color: AppColors.primary.withValues(alpha: 0.05), blurRadius: 14, offset: const Offset(0, 6))]),
+    decoration: BoxDecoration(color: context.area.background, boxShadow: [
+      BoxShadow(color: context.area.primary.withValues(alpha: 0.05), blurRadius: 14, offset: const Offset(0, 6))]),
     child: SafeArea(bottom: false, child: Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 760),
       child: Padding(padding: const EdgeInsets.fromLTRB(8, 8, 16, 10), child: Row(children: [
         IconButton(onPressed: onBack, tooltip: 'Voltar', iconSize: 28, icon: const Icon(Icons.arrow_back_rounded)),
         const SizedBox(width: 4),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(overline.toUpperCase(), maxLines: 1, overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 12, letterSpacing: 1.3, fontWeight: FontWeight.w700, color: AppColors.primary)),
+            style: TextStyle(fontSize: 12, letterSpacing: 1.3, fontWeight: FontWeight.w700, color: context.area.primary)),
           Semantics(header: true, child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w700, color: AppColors.text))),
         ])),
         const SizedBox(width: 8),
         DecoratedBox(
-          decoration: const BoxDecoration(borderRadius: BorderRadius.all(Radius.circular(AppRadii.pill)),
-            boxShadow: [BoxShadow(color: AppColors.blueBorder, offset: Offset(0, 3))]),
+          decoration: BoxDecoration(borderRadius: BorderRadius.all(Radius.circular(AppRadii.pill)),
+            boxShadow: [BoxShadow(color: context.area.border, offset: Offset(0, 3))]),
           child: TextButton.icon(
             onPressed: onSaveAndExit,
             icon: const Icon(Icons.bookmark_border_rounded, size: 20),
             label: const Text('Guardar e sair'),
-            style: TextButton.styleFrom(backgroundColor: AppColors.softBlue, foregroundColor: AppColors.text,
+            style: TextButton.styleFrom(backgroundColor: context.area.soft, foregroundColor: AppColors.text,
               minimumSize: const Size(48, 46), padding: const EdgeInsets.symmetric(horizontal: 14),
-              shape: const StadiumBorder(side: BorderSide(color: AppColors.blueBorder)),
+              shape: StadiumBorder(side: BorderSide(color: context.area.border)),
               textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(fontSize: 14)),
           ),
         ),
@@ -684,12 +685,12 @@ class _WorksheetHeader extends StatelessWidget {
   final bool isPremium;
   @override
   Widget build(BuildContext context) => AppCard(padding: const EdgeInsets.all(20), child: Row(children: [
-    ExcludeSemantics(child: CircleAvatar(radius: 34, backgroundColor: AppColors.lavender,
-      child: Icon(subjectIcon(data.summary.subjectName), color: AppColors.primary, size: 32))),
+    ExcludeSemantics(child: CircleAvatar(radius: 34, backgroundColor: context.area.tint,
+      child: Icon(subjectIcon(data.summary.subjectName), color: context.area.primary, size: 32))),
     const SizedBox(width: 16),
     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text('FICHA DE ${data.summary.subjectName.toUpperCase()}', maxLines: 1, overflow: TextOverflow.ellipsis,
-        style: const TextStyle(fontSize: 13, letterSpacing: 1.2, fontWeight: FontWeight.w700, color: AppColors.primary)),
+        style: TextStyle(fontSize: 13, letterSpacing: 1.2, fontWeight: FontWeight.w700, color: context.area.primary)),
       const SizedBox(height: 2),
       Row(children: [
         Flexible(child: Text('${data.child.displayName} (${data.child.schoolYear}.º Ano)${data.summary.attemptNumber > 1 ? ' • Tentativa ${data.summary.attemptNumber}' : ''}',
@@ -796,7 +797,7 @@ class _ChoiceDetail extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: AppColors.softBlue, borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(color: context.area.soft, borderRadius: BorderRadius.circular(16)),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Icon(!answered ? Icons.remove_circle_outline_rounded : right ? Icons.check_circle_rounded : Icons.cancel_rounded,
           color: !answered ? AppColors.muted : right ? AppColors.success : AppColors.error),
@@ -841,12 +842,12 @@ class _PillButton extends StatelessWidget {
   final VoidCallback onPressed;
   @override
   Widget build(BuildContext context) => DecoratedBox(
-    decoration: const BoxDecoration(borderRadius: BorderRadius.all(Radius.circular(AppRadii.pill)),
-      boxShadow: [BoxShadow(color: AppColors.blueBorder, offset: Offset(0, 3))]),
+    decoration: BoxDecoration(borderRadius: BorderRadius.all(Radius.circular(AppRadii.pill)),
+      boxShadow: [BoxShadow(color: context.area.border, offset: Offset(0, 3))]),
     child: TextButton.icon(onPressed: onPressed, iconAlignment: IconAlignment.end, icon: Icon(icon, size: 20), label: Text(label),
-      style: TextButton.styleFrom(backgroundColor: AppColors.softBlue, foregroundColor: AppColors.primary,
+      style: TextButton.styleFrom(backgroundColor: context.area.soft, foregroundColor: context.area.primary,
         minimumSize: const Size(48, 44), padding: const EdgeInsets.symmetric(horizontal: 14),
-        shape: const StadiumBorder(side: BorderSide(color: AppColors.blueBorder)),
+        shape: StadiumBorder(side: BorderSide(color: context.area.border)),
         textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(fontSize: 14))),
   );
 }
@@ -858,9 +859,9 @@ class _Tip extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(18),
-    decoration: BoxDecoration(color: AppColors.softBlue, borderRadius: BorderRadius.circular(24)),
+    decoration: BoxDecoration(color: context.area.soft, borderRadius: BorderRadius.circular(24)),
     child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Icon(icon, color: AppColors.primary), const SizedBox(width: 12),
+      Icon(icon, color: context.area.primary), const SizedBox(width: 12),
       Expanded(child: Text(text, style: const TextStyle(fontSize: 15, height: 1.45, color: AppColors.muted))),
     ]),
   );
