@@ -83,7 +83,8 @@ class _AuthGateState extends State<AuthGate> {
                         child: ParentPinGate(
                           key: ValueKey(auth.user!.id),
                           auth: auth,
-                          child: FamilyWorkspacePage(key: ValueKey(auth.user!.id), auth: auth),
+                          builder: (unlocked) => FamilyWorkspacePage(
+                            key: ValueKey(auth.user!.id), auth: auth, parentAccess: unlocked),
                         ),
                       )
                     : AccountSessionPage(auth: auth),

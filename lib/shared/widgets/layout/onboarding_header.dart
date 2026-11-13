@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_tokens.dart';
 
 class OnboardingHeader extends StatelessWidget {
-  const OnboardingHeader({super.key, required this.title, required this.step, required this.onBack, this.total = 4, this.section = 'Segurança', this.icon = Icons.lock_outline_rounded});
+  const OnboardingHeader({super.key, required this.title, required this.step, required this.onBack, this.total = 5, this.section = 'Segurança', this.icon = Icons.lock_outline_rounded});
   final String title;
   final int step;
   final int total;
