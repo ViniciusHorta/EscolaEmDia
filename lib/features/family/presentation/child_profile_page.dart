@@ -40,6 +40,8 @@ class _ChildProfilePageState extends State<ChildProfilePage> {
   String firstPin = '';
   String requestId = '';
   bool confirming = false;
+  /// Criação em dois passos: primeiro a identificação, depois o PIN infantil.
+  bool pinStep = false;
   bool busy = false;
   int inputVersion = 0;
   String? error;
@@ -47,6 +49,10 @@ class _ChildProfilePageState extends State<ChildProfilePage> {
 
   bool get isEdit => widget.initial != null;
   bool get needsPin => !isEdit || changePin;
+  /// Mostra o formulário de identificação (sempre na edição; na criação só no 1.º passo).
+  bool get showDetails => !confirming && (isEdit || !pinStep);
+  /// Mostra o bloco do PIN (na criação só a partir do 2.º passo).
+  bool get showPin => isEdit || pinStep;
 
   @override
   void initState() {
@@ -62,14 +68,26 @@ class _ChildProfilePageState extends State<ChildProfilePage> {
     if (busy) return;
     if (confirming) {
       setState(() { confirming = false; firstPin = ''; pin = ''; error = null; inputVersion++; });
+    } else if (!isEdit && pinStep) {
+      setState(() { pinStep = false; pin = ''; error = null; inputVersion++; });
     } else { widget.onBack?.call(); }
+  }
+
+  /// «Editar» no resumo: volta à identificação (na edição, sai da confirmação do PIN).
+  void editDetails() {
+    if (busy) return;
+    setState(() { confirming = false; pinStep = false; firstPin = ''; pin = ''; error = null; inputVersion++; });
   }
 
   Future<void> submit() async {
     if (busy) return;
     FocusScope.of(context).unfocus();
     if (!confirming) {
-      if (!(form.currentState?.validate() ?? false)) return;
+      if (showDetails && !(form.currentState?.validate() ?? false)) return;
+      if (!isEdit && !pinStep) {
+        setState(() { pinStep = true; pin = ''; error = null; inputVersion++; });
+        return;
+      }
       if (!needsPin) {await persist(null); return;}
       if (pin.length != 4) {setState(() => error = 'Escolhe um PIN de 4 dígitos.'); return;}
       setState(() {firstPin = pin; pin = ''; confirming = true; inputVersion++; error = null; requestId = newRequestId();});
@@ -141,7 +159,7 @@ class _ChildProfilePageState extends State<ChildProfilePage> {
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: AppColors.background,
     body: SafeArea(child: SingleChildScrollView(
-      key: ValueKey('profile-$confirming'),
+      key: ValueKey('profile-$confirming-$pinStep'),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       child: Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 680), child: Padding(
         padding: EdgeInsets.all(MediaQuery.sizeOf(context).width < 640 ? 16 : 32),
@@ -152,19 +170,23 @@ class _ChildProfilePageState extends State<ChildProfilePage> {
             Expanded(child: Text('Editar perfil', textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleLarge)),
             const SizedBox(width: 12),
             const CircleAvatar(backgroundColor: AppColors.lavender, child: Icon(Icons.manage_accounts_rounded, color: AppColors.primary)),
-          ]) else OnboardingHeader(title: 'Perfil do Educando', step: 3, section: 'Perfil', icon: Icons.face_rounded,
-            onBack: busy || (!confirming && widget.onBack == null) ? null : back),
+          ]) else OnboardingHeader(title: 'Perfil do Educando',
+            step: pinStep ? 4 : 3, section: pinStep ? 'PIN Infantil' : 'Perfil',
+            icon: pinStep ? Icons.lock_outline_rounded : Icons.face_rounded,
+            onBack: busy || (!pinStep && widget.onBack == null) ? null : back),
           const SizedBox(height: 24),
           Text(confirming ? (isEdit ? 'Confirma o novo PIN Infantil' : 'Confirma o PIN Infantil')
-            : isEdit ? 'Alterar perfil de ${widget.initial!.displayName}' : 'Identificação & PIN Infantil',
+            : isEdit ? 'Alterar perfil de ${widget.initial!.displayName}'
+            : pinStep ? 'PIN Infantil de ${name.text.trim()}' : 'Identificação da criança',
             style: const TextStyle(fontSize: 28, height: 1.2, fontWeight: FontWeight.w800, color: AppColors.text)),
           const SizedBox(height: 8),
           Text(confirming ? 'Repete os mesmos 4 dígitos antes de guardar o perfil.'
             : isEdit ? 'Atualiza a alcunha, o avatar, o ano escolar ou o PIN de entrada da criança.'
+            : pinStep ? 'Escolhe o código que a criança vai usar para entrar no seu espaço.'
             : 'Configura o espaço personalizado da criança, com diversão e autonomia segura.',
             style: const TextStyle(fontSize: 16, height: 1.45, color: AppColors.muted)),
           const SizedBox(height: 20),
-          if (!confirming) ...[
+          if (showDetails) ...[
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(24),
@@ -221,8 +243,9 @@ class _ChildProfilePageState extends State<ChildProfilePage> {
               Text(name.text.trim(), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
               Text('$year.º Ano • ${ChildAvatars.label(avatar)}', style: const TextStyle(color: AppColors.muted)),
             ])),
-            TextButton.icon(onPressed: busy ? null : back, icon: const Icon(Icons.edit_rounded, size: 18), label: const Text('Editar')),
+            TextButton.icon(onPressed: busy ? null : editDetails, icon: const Icon(Icons.edit_rounded, size: 18), label: const Text('Editar')),
           ])),
+          if (showPin) ...[
           const SizedBox(height: 20),
           if (!needsPin) keepPinCard() else Container(
             padding: const EdgeInsets.all(20),
@@ -275,12 +298,14 @@ class _ChildProfilePageState extends State<ChildProfilePage> {
               ]),
             ]),
           ),
+          ],
           const SizedBox(height: 28),
           AppButton(label: confirming ? (isEdit ? 'Guardar alterações' : 'Guardar Perfil & Avançar')
+              : !showPin ? 'Continuar para o PIN Infantil'
               : needsPin ? 'Continuar e confirmar PIN' : 'Guardar alterações',
             icon: needsPin && !confirming ? Icons.arrow_forward_rounded : Icons.check_rounded,
             variant: confirming || !needsPin ? AppButtonVariant.success : AppButtonVariant.primary,
-            loading: busy, onPressed: busy || (needsPin && pin.length != 4) ? null : submit),
+            loading: busy, onPressed: busy || (showPin && needsPin && pin.length != 4) ? null : submit),
           const SizedBox(height: 10),
           Row(mainAxisAlignment: MainAxisAlignment.center, children: [
             const Icon(Icons.check_circle_outline_rounded, size: 16, color: AppColors.success), const SizedBox(width: 6),

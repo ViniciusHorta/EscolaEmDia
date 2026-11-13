@@ -28,10 +28,14 @@ import '../data/last_profile_store.dart';
 import '../domain/family_models.dart';
 import 'child_profile_page.dart';
 import 'parent_shell.dart';
+import 'widgets/ready_children_grid.dart';
 
 class FamilyWorkspacePage extends StatefulWidget {
-  const FamilyWorkspacePage({super.key, required this.auth});
+  const FamilyWorkspacePage({super.key, required this.auth, this.parentAccess});
   final AuthService auth;
+
+  /// Acesso já desbloqueado (logo após definir o PIN). A página fica dona dele.
+  final ParentAccessService? parentAccess;
 
   @override
   State<FamilyWorkspacePage> createState() => _FamilyWorkspacePageState();
@@ -50,6 +54,8 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
   String? reviewingAttemptId;
   String? progressChildId;
   String? preferredChildId;
+  /// Criança pré-selecionada ao abrir «Preparar ficha» a partir do ecrã «Tudo a postos».
+  String? prepareChildId;
   String? returnFamilyId;
   bool requestingParent = false;
   /// O pedido de PIN do responsável veio do espaço infantil («Área do Responsável»), e não
@@ -73,7 +79,7 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
   @override
   void initState() {
     super.initState();
-    parentAccess = ParentAccessService(widget.auth.client);
+    parentAccess = widget.parentAccess ?? ParentAccessService(widget.auth.client);
     parentAccess.addListener(parentAccessChanged);
     service = FamilyService(widget.auth.client, parentToken: () => parentAccess.token, onParentLocked: parentAccess.forget);
     childSessions = ChildSessionService(widget.auth.client);
@@ -143,6 +149,8 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
         parentRequestFromChild = false;
         modeLoaded = true; loading = false;
       });
+      // Acabou de definir o PIN: entra direto na área do responsável.
+      if (familyId == null && parentAccess.unlocked) await openParents();
     } catch (_) {
       if (mounted) setState(() {loading = false; error = 'Não foi possível recuperar o modo de acesso deste dispositivo.';});
     }
@@ -271,8 +279,9 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
       onReview: (attemptId) => setState(() { reviewingAttemptId = attemptId; }),
     );
     if (preparing) return PrepareWorksheetPage(children: List<ChildProfile>.unmodifiable(children),service:worksheets,
-      onClose:()=>setState(()=>preparing=false),onViewChild:(childId) async {
-        setState((){preferredChildId=childId;preparing=false;});
+      initialChildId: prepareChildId,
+      onClose:()=>setState((){preparing=false;prepareChildId=null;}),onViewChild:(childId) async {
+        setState((){preferredChildId=childId;preparing=false;prepareChildId=null;});
         await enterChildMode();
       });
     if (editingChild != null) return ChildProfilePage.edit(
@@ -396,32 +405,23 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
 
   Widget readyPage(ChildProfile child) => AppPage(
     title: 'Tudo a postos para começar!',
-    subtitle: 'O perfil de ${child.displayName} já está guardado na tua família.',
+    subtitle: children.length > 1
+        ? 'O perfil de ${child.displayName} já está guardado. Estas são as crianças da tua família.'
+        : 'O perfil de ${child.displayName} já está guardado na tua família.',
     children: [
-      const Wrap(children: [AppBadge(label: 'Passo 4 de 4 • Finalização', icon: Icons.check_circle_outline_rounded)]),
+      const Wrap(children: [AppBadge(label: 'Passo 5 de 5 • Finalização', icon: Icons.check_circle_outline_rounded)]),
       const SizedBox(height: 24),
-      AppCard(child: Column(children: [
-        const Icon(Icons.celebration_rounded, color: AppColors.primary, size: 64),
-        const SizedBox(height: 20),
-        ExcludeSemantics(child: Text(ChildAvatars.emoji(child.avatarId), style: const TextStyle(fontSize: 64))),
-        const SizedBox(height: 12),
-        Text(child.displayName, style: Theme.of(context).textTheme.headlineMedium),
-        const SizedBox(height: 8), Text('${child.schoolYear}.º Ano • PIN infantil definido'),
-      ])),
-      const SizedBox(height: 24),
-      AppButton(label: 'Preparar a primeira ficha',icon:Icons.auto_stories_rounded,
-        onPressed:exiting?null:()=>setState((){savedChild=null;preparing=true;})),
-      const SizedBox(height:16),
-      AppButton(label: 'Entrar no espaço infantil', icon: Icons.rocket_launch_rounded,
-        loading: exiting, onPressed: exiting ? null : enterChildMode),
-      const SizedBox(height: 16),
-      AppButton(label: 'Ver perfis da família', icon: Icons.family_restroom_rounded,
-        onPressed: () => setState(() => savedChild = null)),
-      const SizedBox(height: 16),
-      AppButton(label: 'Adicionar outra criança', variant: AppButtonVariant.secondary,
-        icon: Icons.person_add_alt_1_rounded,
-        onPressed: () => setState(() {savedChild = null; editing = true;})),
-      const SizedBox(height: 16), exitButton(),
+      ReadyChildrenGrid(
+        children: List<ChildProfile>.unmodifiable(children),
+        highlightedChildId: child.id,
+        busy: exiting,
+        onEnterChild: (childId) {setState(() => savedChild = null); enterAsChild(childId);},
+        onPrepareWorksheet: (childId) => setState(() {savedChild = null; prepareChildId = childId; preparing = true;}),
+        onAddChild: () => setState(() {savedChild = null; editing = true;}),
+      ),
+      const SizedBox(height: 32),
+      AppButton(label: 'Concluir', icon: Icons.check_rounded,
+        onPressed: exiting ? null : () => setState(() => savedChild = null)),
     ],
   );
 

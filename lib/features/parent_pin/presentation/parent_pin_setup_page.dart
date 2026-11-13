@@ -9,7 +9,9 @@ import '../data/parent_pin_service.dart';
 class ParentPinSetupPage extends StatefulWidget {
   const ParentPinSetupPage({super.key, required this.service, required this.onSaved, required this.onExit});
   final ParentPinService service;
-  final VoidCallback onSaved;
+  /// Recebe o PIN acabado de definir (ou null se já estava configurado noutro
+  /// dispositivo), para desbloquear logo a área do responsável.
+  final Future<void> Function(String? pin) onSaved;
   final Future<void> Function() onExit;
 
   @override
@@ -66,13 +68,14 @@ class _ParentPinSetupPageState extends State<ParentPinSetupPage> {
     try {
       await widget.service.setup(pin);
       if (!mounted) return;
+      final saved = pin;
       firstPin = ''; pin = '';
-      widget.onSaved();
+      await widget.onSaved(saved);
     } on ParentPinException catch (failure) {
       if (!mounted) return;
       if (failure.alreadyConfigured) {
         firstPin = ''; pin = '';
-        widget.onSaved();
+        await widget.onSaved(null);
       } else {
         setState(() => error = failure.message);
       }
@@ -90,7 +93,7 @@ class _ParentPinSetupPageState extends State<ParentPinSetupPage> {
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           OnboardingHeader(title: 'Configurar PIN do Responsável', step: 2, onBack: busy ? null : back),
           const SizedBox(height: 32),
-          const Center(child: AppBadge(label: 'Passo 2 de 4 • Segurança', icon: Icons.verified_user_outlined)),
+          const Center(child: AppBadge(label: 'Passo 2 de 5 • Segurança', icon: Icons.verified_user_outlined)),
           const SizedBox(height: 20),
           Text(confirming ? 'Confirma o PIN do responsável' : 'Define o PIN do responsável',
             textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineMedium),
