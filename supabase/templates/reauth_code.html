@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<!--
+  Supabase Auth → Email Templates → «Magic Link»
+  Assunto: {{ .Token }} é o teu código da Escola em Dia  (staging: prefixo «stg - »)
+  As alterações ao template podem demorar alguns minutos a aplicar-se: os primeiros
+  e-mails depois de gravar ainda podem sair com o assunto/corpo anteriores.
+  Usado pela reautenticação por código (redefinir o PIN do responsável, eliminar a conta).
+  Variáveis: {{ .Token }} (código) e {{ .Email }}. Sem links de login de propósito.
+  Design: Stitch (escola_em_dia_design_system); adaptado para clientes de e-mail
+  (sem SVG nem gradientes, padding só em <td>, logótipo alojado no site).
+  Logótipo: ui/website/public/email/logo.png (publicado em https://escolaemdia.me/email/logo.png
+  pelo ui/website/deploy.sh), gerado a partir de assets/branding/logo-full.png.
+-->
+<html xmlns="http://www.w3.org/1999/xhtml" lang="pt">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="x-apple-disable-message-reformatting">
+  <title>Confirma que és tu — Escola em Dia</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@700&amp;display=swap" rel="stylesheet">
+  <style type="text/css">
+    body, table, td, p, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; }
+    body { margin: 0 !important; padding: 0 !important; width: 100% !important; }
+    .token-text { user-select: all !important; -webkit-user-select: all !important; }
+    @media only screen and (max-width: 620px) {
+      .card-content { padding: 32px 20px !important; }
+      .token-box { padding: 18px 12px !important; }
+      .token-text { font-size: 32px !important; letter-spacing: 4px !important; }
+    }
+  </style>
+</head>
+<body style="margin:0; padding:0; background-color:#f8faff; font-family:'Lexend', Arial, Helvetica, sans-serif; color:#1e293b;">
+
+  <!-- Preheader: aparece na pré-visualização da caixa de entrada -->
+  <div style="display:none; font-size:1px; color:#f8faff; line-height:1px; max-height:0px; max-width:0px; opacity:0; overflow:hidden; mso-hide:all;">
+    O teu código é {{ .Token }}. Expira em 10 minutos.
+    &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847;
+  </div>
+
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#f8faff;">
+    <tr>
+      <td align="center" style="padding:40px 16px 48px 16px;">
+
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:540px; margin:0 auto;">
+
+          <!-- Logótipo -->
+          <tr>
+            <td align="center" style="padding-bottom:24px;">
+              <img src="https://escolaemdia.me/email/logo.png" alt="Escola em Dia" width="130" height="44" style="display:block; width:130px; height:44px; border:0; margin:0 auto; font-family:'Lexend', Arial, Helvetica, sans-serif; font-size:14px; font-weight:700; line-height:44px; text-align:center; white-space:nowrap; color:#5845CA;">
+            </td>
+          </tr>
+
+          <!-- Cartão -->
+          <tr>
+            <td class="card-content" style="background-color:#ffffff; border-radius:28px; border:1px solid #eef2ff; padding:42px 36px 36px 36px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+
+                <!-- Ícone -->
+                <tr>
+                  <td align="center" style="padding-bottom:24px;">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td align="center" valign="middle" width="72" height="72" style="width:72px; height:72px; background-color:#EDE9FE; border-radius:36px; font-size:32px; line-height:72px; text-align:center;">&#128272;</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td align="center" style="padding-bottom:12px; font-family:'Lexend', Arial, Helvetica, sans-serif; font-size:26px; font-weight:700; line-height:1.25; color:#0d172a;">
+                    Confirma que és tu
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding-bottom:28px; font-family:'Lexend', Arial, Helvetica, sans-serif; font-size:15px; line-height:1.55; color:#475569;">
+                    Usa este código na app Escola em Dia para continuar.
+                  </td>
+                </tr>
+
+                <!-- Código -->
+                <tr>
+                  <td align="center" style="padding-bottom:10px;">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                      <tr>
+                        <td align="center" class="token-box" style="background-color:#EDE9FE; border-radius:16px; border:2px dashed #C4B5FD; padding:22px 18px;">
+                          <span class="token-text" style="font-family:'JetBrains Mono', 'Courier New', Courier, monospace; font-size:38px; font-weight:700; line-height:1; letter-spacing:6px; color:#0D1C2E; user-select:all; -webkit-user-select:all;">{{ .Token }}</span>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding-bottom:24px; font-family:'Lexend', Arial, Helvetica, sans-serif; font-size:13px; font-weight:500; color:#5845CA;">
+                    Toca no código para o selecionar e copiar.
+                  </td>
+                </tr>
+
+                <!-- Validade -->
+                <tr>
+                  <td style="padding-bottom:16px;">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                      <tr>
+                        <td align="center" style="background-color:#F0F4FF; border:1px solid #D8E4FE; border-radius:14px; padding:14px 18px; font-family:'Lexend', Arial, Helvetica, sans-serif;">
+                          <p style="margin:0 0 4px 0; font-size:13px; font-weight:600; color:#3730A3;">O código expira em 10 minutos.</p>
+                          <p style="margin:0; font-size:12px; font-weight:500; color:#5845CA;">Pedido para <strong style="color:#4338CA;">{{ .Email }}</strong></p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- Aviso de segurança -->
+                <tr>
+                  <td>
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                      <tr>
+                        <td style="background-color:#FFF7ED; border:1px solid #FED7AA; border-radius:14px; padding:14px 16px; font-family:'Lexend', Arial, Helvetica, sans-serif; font-size:12px; line-height:1.5; color:#9A3412;">
+                          &#9888;&#65039;&nbsp; <strong>Aviso de segurança:</strong> Se não pediste este código, ignora este e-mail. Ninguém da Escola em Dia te vai pedir este código.
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+              </table>
+            </td>
+          </tr>
+
+          <!-- Rodapé -->
+          <tr>
+            <td align="center" style="padding-top:24px; padding-bottom:12px; font-family:'Lexend', Arial, Helvetica, sans-serif;">
+              <p style="margin:0 0 6px 0; font-size:12px; font-weight:600; color:#64748B;">Escola em Dia · escolaemdia.me</p>
+              <p style="margin:0; font-size:11px; line-height:1.4; color:#94A3B8;">Mensagem automática de segurança da tua conta.</p>
+            </td>
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

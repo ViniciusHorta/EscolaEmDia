@@ -1081,6 +1081,7 @@ ${body}
         <a href="/termos-e-condicoes">Termos e Condi\xE7\xF5es</a>
         <a href="/politica-de-privacidade">Pol\xEDtica de Privacidade</a>
         <a href="/cookies">Pol\xEDtica de cookies</a>
+        <a href="/eliminar-conta">Eliminar conta</a>
         <button type="button" class="footer__cookies" data-cookie-settings>Prefer\xEAncias de cookies</button>
         <a href="https://www.livroreclamacoes.pt/" rel="noopener">Livro de Reclama\xE7\xF5es</a>
       </nav>
@@ -1247,7 +1248,7 @@ async function onRequest3({ request, next }) {
 }
 __name(onRequest3, "onRequest");
 
-// ../.wrangler/tmp/pages-Ou0wp6/functionsRoutes-0.7203478583425296.mjs
+// ../.wrangler/tmp/pages-w6uNeI/functionsRoutes-0.9056064285105735.mjs
 var routes = [
   {
     routePath: "/politica-de-privacidade",

@@ -4,10 +4,12 @@ import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/layout/onboarding_header.dart';
+import '../../auth/presentation/widgets/email_code_field.dart';
 import '../data/account_service.dart';
 
 /// Eliminar a conta do responsável: explica o que é apagado e o que fica, pede a
-/// palavra-passe e a palavra ELIMINAR. Devolve `true` quando a conta foi eliminada
+/// palavra-passe (ou um código por e-mail, obrigatório para contas criadas com o Google)
+/// e a palavra ELIMINAR. Devolve `true` quando a conta foi eliminada
 /// (a sessão local já terminou).
 class DeleteAccountPage extends StatefulWidget {
   const DeleteAccountPage({super.key, required this.service});
@@ -26,6 +28,10 @@ class DeleteAccountPage extends StatefulWidget {
 class _DeleteAccountPageState extends State<DeleteAccountPage> {
   final password = TextEditingController();
   final confirmation = TextEditingController();
+  final code = TextEditingController();
+  /// Confirmar com código por e-mail em vez da palavra-passe.
+  late bool useCode = !widget.service.hasPassword;
+  int codeVersion = 0;
   bool confirming = false;
   bool showPassword = false;
   bool busy = false;
@@ -39,6 +45,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
   void dispose() {
     password.dispose();
     confirmation.dispose();
+    code.dispose();
     super.dispose();
   }
 
@@ -53,8 +60,8 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
 
   Future<void> delete() async {
     if (busy) return;
-    if (password.text.isEmpty) {
-      setState(() => passwordError = 'Indica a palavra-passe da conta.');
+    if (useCode ? code.text.trim().isEmpty : password.text.isEmpty) {
+      setState(() => passwordError = useCode ? 'Indica o código que recebeste por e-mail.' : 'Indica a palavra-passe da conta.');
       return;
     }
     if (!confirmed) {
@@ -64,12 +71,17 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
     FocusScope.of(context).unfocus();
     setState(() { busy = true; error = null; passwordError = null; });
     try {
-      await widget.service.reauthenticate(password.text);
+      if (useCode) {
+        await widget.service.reauthenticateWithCode(code.text);
+      } else {
+        await widget.service.reauthenticate(password.text);
+      }
     } on AccountException catch (failure) {
       if (mounted) setState(() { busy = false; passwordError = failure.message; });
       return;
     }
     password.clear();
+    code.clear();
     try {
       await widget.service.deleteAccount();
     } on AccountException catch (failure) {
@@ -155,32 +167,61 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
       onPressed: () => Navigator.of(context).pop(false)),
   ]);
 
+  void switchMethod(bool toCode) {
+    if (busy) return;
+    password.clear();
+    code.clear();
+    setState(() { useCode = toCode; passwordError = null; codeVersion++; });
+  }
+
+  Widget passwordField() => AppTextField(
+    label: 'Palavra-passe da conta',
+    hint: 'A tua palavra-passe',
+    controller: password,
+    enabled: !busy,
+    obscureText: !showPassword,
+    keyboardType: TextInputType.visiblePassword,
+    textInputAction: TextInputAction.next,
+    autofillHints: const [AutofillHints.password],
+    prefixIcon: Icons.key_rounded,
+    errorText: passwordError,
+    onChanged: (_) { if (passwordError != null) setState(() => passwordError = null); },
+    suffixIcon: IconButton(
+      tooltip: showPassword ? 'Ocultar palavra-passe' : 'Mostrar palavra-passe',
+      onPressed: busy ? null : () => setState(() => showPassword = !showPassword),
+      icon: Icon(showPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+    ),
+  );
+
+  Widget codeField() => EmailCodeField(
+    key: ValueKey(codeVersion),
+    controller: code,
+    email: email,
+    enabled: !busy,
+    errorText: passwordError,
+    textInputAction: TextInputAction.next,
+    onSend: () async {
+      try {
+        await widget.service.sendReauthCode();
+        return null;
+      } on AccountException catch (failure) {
+        return failure.message;
+      }
+    },
+    onChanged: (_) { if (passwordError != null) setState(() => passwordError = null); },
+  );
+
   Widget confirmStep() => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
     Text('Confirma que és tu', textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineMedium),
     const SizedBox(height: 12),
-    Text('Introduz a palavra-passe da conta${email == null ? '' : ' $email'} e escreve ${AccountService.confirmationWord}.',
+    Text(useCode
+        ? 'Confirma o código enviado para o e-mail da conta e escreve ${AccountService.confirmationWord}.'
+        : 'Introduz a palavra-passe da conta${email == null ? '' : ' $email'} e escreve ${AccountService.confirmationWord}.',
       textAlign: TextAlign.center,
       style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.muted)),
     const SizedBox(height: 28),
     AppCard(child: AutofillGroup(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      AppTextField(
-        label: 'Palavra-passe da conta',
-        hint: 'A tua palavra-passe',
-        controller: password,
-        enabled: !busy,
-        obscureText: !showPassword,
-        keyboardType: TextInputType.visiblePassword,
-        textInputAction: TextInputAction.next,
-        autofillHints: const [AutofillHints.password],
-        prefixIcon: Icons.key_rounded,
-        errorText: passwordError,
-        onChanged: (_) { if (passwordError != null) setState(() => passwordError = null); },
-        suffixIcon: IconButton(
-          tooltip: showPassword ? 'Ocultar palavra-passe' : 'Mostrar palavra-passe',
-          onPressed: busy ? null : () => setState(() => showPassword = !showPassword),
-          icon: Icon(showPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined),
-        ),
-      ),
+      if (useCode) codeField() else passwordField(),
       const SizedBox(height: 20),
       AppTextField(
         label: 'Escreve ${AccountService.confirmationWord}',
@@ -206,7 +247,10 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
         onPressed: busy || !confirmed ? null : delete),
     ]))),
     const SizedBox(height: 20),
-    const Text('Esqueceste-te da palavra-passe? Sai da conta e usa «Esqueceu-se do acesso?» no ecrã de entrada.',
-      textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted, fontSize: 13)),
+    if (widget.service.hasPassword) Center(child: TextButton(
+      onPressed: busy ? null : () => switchMethod(!useCode),
+      child: Text(useCode ? 'Usar a palavra-passe' : 'Esqueci-me da palavra-passe: receber um código por e-mail',
+        textAlign: TextAlign.center),
+    )),
   ]);
 }

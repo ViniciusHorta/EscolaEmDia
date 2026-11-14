@@ -1,0 +1,241 @@
+<!--
+  Supabase Auth → Email Templates → «Confirm signup»
+  Enviado quando uma conta é criada com e-mail e palavra-passe (AuthService.register)
+  e ao reenviar a confirmação (AuthService.resendConfirmation). O link volta à app por
+  emailRedirectTo (web: URL atual; Android: escolaemdia://login-callback/).
+  Fluxo PKCE: o link confirma o e-mail em qualquer dispositivo, mas a sessão só abre
+  sozinha onde a conta foi criada; noutro dispositivo a pessoa entra com a palavra-passe.
+
+  Assunto atual: (cola aqui o Subject configurado no Supabase)
+
+  Logótipo: https://escolaemdia.me/email/logo.png (ui/website/public/email/logo.png).
+-->
+<!--
+  Supabase Auth → Email Templates → «Confirm signup»
+  Enviado quando uma conta é criada com e-mail e palavra-passe (AuthService.register)
+  e ao reenviar a confirmação (AuthService.resendConfirmation). O link volta à app por
+  emailRedirectTo (web: URL atual; Android: escolaemdia://login-callback/).
+
+  Assunto atual: (cola aqui o Subject configurado no Supabase)
+
+  Cola abaixo deste comentário o Body (separador «Source») configurado no Supabase.
+-->
+
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Confirma o teu e-mail — Escola em Dia</title>
+</head>
+
+<body style="margin:0;padding:0;background-color:#f8f9ff;font-family:Arial,Helvetica,sans-serif;color:#0d1c2e;">
+
+  <!-- Preheader -->
+  <div style="display:none;font-size:1px;color:#f8f9ff;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">
+    Confirma o teu e-mail para ativar a tua conta na Escola em Dia.
+    &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847;
+  </div>
+
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f8f9ff;">
+    <tr>
+      <td align="center" style="padding:32px 16px;">
+
+        <!-- Container -->
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="width:100%;max-width:600px;background-color:#fbf9ff;border-radius:28px;">
+          <tr>
+            <td style="padding:32px 24px;">
+
+              <!-- Main Card -->
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#ffffff;border-radius:26px;">
+                <tr>
+                  <td align="center" style="padding:40px 24px 36px;">
+
+                    <!-- Logo -->
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td align="center" style="padding-bottom:40px;">
+                          <img src="https://escolaemdia.me/email/logo.png" alt="Escola em Dia" width="130" height="44" style="display:block; width:130px; height:44px; border:0; margin:0 auto; font-family:Arial, Helvetica, sans-serif; font-size:14px; font-weight:700; line-height:44px; text-align:center; white-space:nowrap; color:#5845CA;">
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Email Illustration -->
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td align="center" style="padding-bottom:24px;">
+
+                          <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                              <td align="center" valign="middle" width="104" height="104" style="width:104px;height:104px;background-color:#ede9fe;border-radius:52px;">
+
+                                <!-- Envelope -->
+                                <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                                  <tr>
+                                    <td align="center" style="font-size:76px;line-height:46px;color:#5845ca;padding-bottom:10px">
+                                      &#9993;
+                                    </td>
+                                  </tr>
+                                </table>
+
+                              </td>
+                            </tr>
+                          </table>
+
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Title -->
+                    <h1 style="margin:0 0 16px;font-size:29px;line-height:1.35;font-weight:800;letter-spacing:-0.5px;color:#0d1c2e;text-align:center;">
+                      Bem-vindo(a) à família
+                      <span style="color:#5845ca;">Escola em Dia!</span>
+                      &#127775;
+                    </h1>
+
+                    <!-- Description -->
+                    <p style="margin:0 auto 28px;max-width:480px;font-size:16px;line-height:1.8;color:#474554;text-align:center;">
+                      Estamos muito felizes por ter a tua família connosco!
+                      Para garantir a máxima segurança dos alunos e ativar
+                      já a tua conta parental, confirma o teu endereço de e-mail.
+                    </p>
+
+                    <!-- CTA -->
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:380px;">
+                      <tr>
+                        <td align="center" bgcolor="#5845ca" style="background-color:#5845ca;border-radius:50px;border-bottom:4px solid #432bb4;">
+
+                          <a
+                            href="{{ .ConfirmationURL }}"
+                            target="_blank"
+                            style="display:block;padding:19px 20px;font-size:16px;line-height:22px;font-weight:700;color:#ffffff;text-decoration:none;text-align:center;border-radius:50px;"
+                          >
+                            Verificar o meu e-mail &nbsp;&#8594;
+                          </a>
+
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Spacing -->
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                      <tr>
+                        <td height="26" style="height:26px;font-size:1px;line-height:1px;">&nbsp;</td>
+                      </tr>
+                    </table>
+
+                    <!-- Fallback URL -->
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#e6eeff;border-radius:18px;">
+                      <tr>
+                        <td align="left" style="padding:18px;">
+
+                          <p style="margin:0 0 10px;font-size:13px;line-height:20px;font-weight:700;color:#0d1c2e;">
+                            <span style="color:#5845ca;">&#128279;</span>
+                            O botão não funciona no teu dispositivo?
+                          </p>
+
+                          <p style="margin:0 0 10px;font-size:13px;line-height:20px;color:#474554;">
+                            Copia e cola a ligação direta seguinte no teu navegador de internet:
+                          </p>
+
+                          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#ffffff;border-radius:12px;">
+                            <tr>
+                              <td style="padding:12px;">
+
+                                <a
+                                  href="{{ .ConfirmationURL }}"
+                                  target="_blank"
+                                  style="font-size:12px;line-height:19px;color:#5845ca;text-decoration:none;overflow-wrap:anywhere;word-break:break-all;"
+                                >{{ .ConfirmationURL }}</a>
+
+                              </td>
+                            </tr>
+                          </table>
+
+                          <p style="margin:10px 0 0;font-size:12px;line-height:19px;color:#474554;">
+                            Depois de confirmares, se a app não abrir sozinha, entra com o teu e-mail e palavra-passe.
+                          </p>
+
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Spacing -->
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                      <tr>
+                        <td height="16" style="height:16px;font-size:1px;line-height:1px;">&nbsp;</td>
+                      </tr>
+                    </table>
+
+                    <!-- Information Cards -->
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                      <tr>
+
+                        <!-- Security -->
+                        <td valign="top" width="49%" style="background-color:#fff1ed;border-radius:16px;padding:16px;">
+
+                          <p style="margin:0 0 6px;font-size:13px;line-height:19px;font-weight:700;color:#0d1c2e;">
+                            <span style="color:#ff7a59;">&#9671;</span>
+                            Não fizeste este pedido?
+                          </p>
+
+                          <p style="margin:0;font-size:12px;line-height:19px;color:#474554;">
+                            Podes ignorar esta mensagem com total segurança.
+                          </p>
+
+                        </td>
+
+                        <td width="10" style="width:10px;font-size:1px;">&nbsp;</td>
+
+                        <!-- Support -->
+                        <td valign="top" width="49%" style="background-color:#f2efff;border-radius:16px;padding:16px;">
+
+                          <p style="margin:0 0 6px;font-size:13px;line-height:19px;font-weight:700;color:#0d1c2e;">
+                            <span style="color:#5845ca;">&#10022;</span>
+                            Apoio às Famílias
+                          </p>
+
+                          <p style="margin:0;font-size:12px;line-height:19px;color:#474554;">
+                            Envia mensagem para
+                            <a
+                              href="mailto:suporte@escolaemdia.me"
+                              style="color:#5845ca;font-weight:700;text-decoration:none;overflow-wrap:anywhere;"
+                            >suporte@escolaemdia.me</a>
+                          </p>
+
+                        </td>
+                      </tr>
+                    </table>
+
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Footer -->
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                <tr>
+                  <td align="center" style="padding:26px 12px 4px;">
+
+                    <p style="margin:0 0 8px;font-size:12px;line-height:20px;color:#787585;">
+                      Escola em Dia — Aprender, crescer e conquistar.
+                    </p>
+
+                    <p style="margin:0;font-size:11px;line-height:18px;color:#787585;">
+                      Esta é uma mensagem automática de verificação de conta.
+                    </p>
+
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>
