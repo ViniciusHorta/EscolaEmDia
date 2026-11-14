@@ -1,10 +1,11 @@
 import { createCors } from "../_shared/cors.ts";
+import { REAUTH_METHODS } from "../_shared/reauth.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 // Eliminação da conta do responsável e de todos os dados associados.
-// Exige uma reautenticação com palavra-passe nos últimos cinco minutos (amr do JWT),
-// tal como a redefinição do PIN: uma criança com o dispositivo desbloqueado não consegue
-// apagar a conta sem saber a palavra-passe do adulto.
+// Exige uma reautenticação nos últimos cinco minutos (amr do JWT; ver _shared/reauth.ts),
+// tal como a redefinição do PIN: palavra-passe ou código enviado para o e-mail da conta.
+// Uma criança com o dispositivo desbloqueado não consegue apagar a conta.
 
 const messages: Record<string, string> = {
   CORS_NOT_CONFIGURED:
@@ -16,7 +17,7 @@ const messages: Record<string, string> = {
     "A eliminação de contas está temporariamente indisponível.",
   AUTH_REQUIRED: "A tua sessão terminou. Entra novamente na conta.",
   REAUTH_REQUIRED:
-    "Confirma novamente a palavra-passe da conta para a eliminar.",
+    "Confirma novamente a tua identidade para eliminar a conta.",
   JSON_REQUIRED: "O pedido deve usar application/json.",
   INVALID_REQUEST: "O pedido é inválido.",
   CONFIRMATION_REQUIRED: "Escreve ELIMINAR para confirmar.",
@@ -105,7 +106,7 @@ Deno.serve(async (req: Request) => {
       if (claims.sub === user.id && Array.isArray(claims.amr)) {
         for (const entry of claims.amr) {
           if (
-            entry?.method === "password" &&
+            REAUTH_METHODS.has(entry?.method) &&
             typeof entry.timestamp === "number" &&
             (passwordAuthAt === undefined || entry.timestamp > passwordAuthAt)
           )

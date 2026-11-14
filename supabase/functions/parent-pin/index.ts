@@ -1,4 +1,5 @@
 import { createCors } from "../_shared/cors.ts";
+import { REAUTH_METHODS } from "../_shared/reauth.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const iterations = 600_000;
@@ -86,7 +87,7 @@ Deno.serve(async (req: Request) => {
     PIN_NOT_CONFIGURED: "Configura primeiro o PIN do responsável.",
     PARENT_LOCKED: "A área do responsável está bloqueada. Introduz o PIN do responsável.",
     REAUTH_REQUIRED:
-      "Confirma novamente a palavra-passe da conta para redefinir o PIN.",
+      "Confirma novamente a tua identidade para redefinir o PIN.",
     INTERNAL_ERROR: "Não foi possível concluir o pedido. Tenta novamente.",
   };
   const fail = (status: number, code: string, retryAfter?: number) => {
@@ -163,7 +164,7 @@ Deno.serve(async (req: Request) => {
 
     // Decode session_id only AFTER Auth has validated this exact JWT.
     let authSessionId: string | undefined;
-    // Unix seconds of the most recent password sign-in recorded in this JWT (amr).
+    // Unix seconds of the most recent reauthentication (password or e-mail code) in this JWT (amr).
     let passwordAuthAt: number | undefined;
     try {
       const encoded = match[1]
@@ -182,7 +183,7 @@ Deno.serve(async (req: Request) => {
       if (claims.sub === user.id && Array.isArray(claims.amr)) {
         for (const entry of claims.amr) {
           if (
-            entry?.method === "password" &&
+            REAUTH_METHODS.has(entry?.method) &&
             typeof entry.timestamp === "number" &&
             (passwordAuthAt === undefined || entry.timestamp > passwordAuthAt)
           )
@@ -223,8 +224,8 @@ Deno.serve(async (req: Request) => {
       return fail(409, "PIN_ALREADY_CONFIGURED");
     if (operation === "reset") {
       if (!existing) return fail(409, "PIN_NOT_CONFIGURED");
-      // Recent reauthentication: a password sign-in from the last five minutes.
-      // A session that is merely old, refreshed or recovered by e-mail link is refused.
+      // Recent reauthentication (see _shared/reauth.ts): a password sign-in or an
+      // e-mail code from the last five minutes. A merely old or refreshed session is refused.
       const age = Date.now() / 1000 - (passwordAuthAt ?? 0);
       if (passwordAuthAt === undefined || age < -60 || age > 300)
         return fail(401, "REAUTH_REQUIRED");

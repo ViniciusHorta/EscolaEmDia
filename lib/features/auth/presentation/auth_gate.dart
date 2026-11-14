@@ -85,8 +85,9 @@ class _AuthGateState extends State<AuthGate> {
                           auth: auth,
                           // Área do responsável por omissão; o seletor de perfis e o espaço
                           // do aluno aplicam as cores da marca por cima.
-                          child: AreaTheme(palette: AreaPalette.parent,
-                            child: FamilyWorkspacePage(key: ValueKey(auth.user!.id), auth: auth)),
+                          builder: (unlocked) => AreaTheme(palette: AreaPalette.parent,
+                            child: FamilyWorkspacePage(
+                              key: ValueKey(auth.user!.id), auth: auth, parentAccess: unlocked)),
                         ),
                       )
                     : AccountSessionPage(auth: auth),

@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../auth/data/reauthentication.dart';
 import '../../child_session/data/child_session_service.dart';
 import '../../family/data/last_profile_store.dart';
 
@@ -15,30 +16,31 @@ class AccountService {
 
   static const confirmationWord = 'ELIMINAR';
 
-  /// Novo início de sessão com a palavra-passe. O JWT resultante tem amr=password recente,
-  /// exigido por [deleteAccount] durante cinco minutos.
-  Future<void> reauthenticate(String password) async {
-    final email = client.auth.currentUser?.email;
-    if (email == null) {
-      throw const AccountException('A tua sessão terminou. Entra novamente na conta.');
-    }
+  Reauthentication get _reauth => Reauthentication(client);
+
+  /// Falso para contas criadas só com o Google: confirmam com um código por e-mail.
+  bool get hasPassword => _reauth.hasPassword;
+
+  /// Reautenticação com a palavra-passe da conta (amr=password recente).
+  Future<void> reauthenticate(String password) => _guard(() => _reauth.withPassword(password));
+
+  /// Envia um código de verificação para o e-mail da conta.
+  Future<void> sendReauthCode() => _guard(_reauth.sendEmailCode);
+
+  /// Reautenticação com o código recebido por e-mail (amr=otp recente).
+  Future<void> reauthenticateWithCode(String code) => _guard(() => _reauth.withEmailCode(code));
+
+  static Future<void> _guard(Future<void> Function() action) async {
     try {
-      await client.auth.signInWithPassword(email: email, password: password);
-    } on AuthException catch (error) {
-      throw AccountException(
-        error.statusCode == '429'
-            ? 'Demasiadas tentativas. Aguarda um pouco antes de tentar novamente.'
-            : error.code == 'invalid_credentials'
-                ? 'A palavra-passe não está correta.'
-                : 'Não foi possível confirmar a palavra-passe. Tenta novamente.',
-      );
-    } catch (_) {
-      throw const AccountException('Não foi possível ligar ao serviço. Verifica a ligação à Internet.');
+      await action();
+    } on ReauthException catch (error) {
+      throw AccountException(error.message);
     }
   }
 
   /// Apaga a conta e os dados no servidor e, a seguir, a sessão e as preferências locais.
-  /// Irreversível. Só é aceite até cinco minutos após [reauthenticate].
+  /// Irreversível. Só é aceite até cinco minutos após uma reautenticação
+  /// ([reauthenticate] ou [reauthenticateWithCode]).
   Future<void> deleteAccount() async {
     final adultId = client.auth.currentUser?.id;
     try {

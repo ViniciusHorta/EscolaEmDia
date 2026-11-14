@@ -5,11 +5,12 @@ import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/layout/onboarding_header.dart';
 import '../../../shared/widgets/pin/app_pin_input.dart';
+import '../../auth/presentation/widgets/email_code_field.dart';
 import '../data/parent_access_service.dart';
 import '../data/parent_pin_service.dart';
 
-/// Recuperação do PIN do responsável: confirmar a palavra-passe da conta e definir um
-/// PIN novo. Devolve `true` se a área do responsável ficou desbloqueada com o novo PIN.
+/// Recuperação do PIN do responsável: confirmar a identidade (palavra-passe ou código
+/// enviado por e-mail, obrigatório para contas criadas com o Google) e definir um PIN novo. Devolve `true` se a área do responsável ficou desbloqueada com o novo PIN.
 class ParentPinResetPage extends StatefulWidget {
   const ParentPinResetPage({super.key, required this.service, required this.access});
   final ParentPinService service;
@@ -19,11 +20,16 @@ class ParentPinResetPage extends StatefulWidget {
   State<ParentPinResetPage> createState() => _ParentPinResetPageState();
 }
 
-enum _Step { password, newPin, confirmPin }
+enum _Step { identity, newPin, confirmPin }
 
 class _ParentPinResetPageState extends State<ParentPinResetPage> {
   final password = TextEditingController();
-  _Step step = _Step.password;
+  final code = TextEditingController();
+  _Step step = _Step.identity;
+  /// Confirmar com código por e-mail em vez da palavra-passe.
+  late bool useCode = !widget.service.hasPassword;
+  /// Muda a chave do [EmailCodeField] para recomeçar o envio ao voltar a este passo.
+  int codeVersion = 0;
   bool showPassword = false;
   bool busy = false;
   String firstPin = '';
@@ -36,6 +42,7 @@ class _ParentPinResetPageState extends State<ParentPinResetPage> {
   @override
   void dispose() {
     password.dispose();
+    code.dispose();
     firstPin = '';
     pin = '';
     super.dispose();
@@ -44,10 +51,10 @@ class _ParentPinResetPageState extends State<ParentPinResetPage> {
   void back() {
     if (busy) return;
     switch (step) {
-      case _Step.password:
+      case _Step.identity:
         Navigator.of(context).pop(false);
       case _Step.newPin:
-        setState(() { step = _Step.password; pin = ''; error = null; });
+        setState(() { step = _Step.identity; pin = ''; error = null; });
       case _Step.confirmPin:
         setState(() { step = _Step.newPin; firstPin = ''; pin = ''; error = null; inputVersion++; });
     }
@@ -73,6 +80,33 @@ class _ParentPinResetPageState extends State<ParentPinResetPage> {
     }
   }
 
+  Future<void> confirmCode() async {
+    if (busy) return;
+    if (code.text.trim().isEmpty) {
+      setState(() => error = 'Indica o código que recebeste por e-mail.');
+      return;
+    }
+    FocusScope.of(context).unfocus();
+    setState(() { busy = true; error = null; });
+    try {
+      await widget.service.reauthenticateWithCode(code.text);
+      if (!mounted) return;
+      code.clear();
+      setState(() { step = _Step.newPin; pin = ''; inputVersion++; });
+    } on ParentPinException catch (failure) {
+      if (mounted) setState(() => error = failure.message);
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  void switchMethod(bool toCode) {
+    if (busy) return;
+    password.clear();
+    code.clear();
+    setState(() { useCode = toCode; error = null; codeVersion++; });
+  }
+
   Future<void> continuePin() async {
     if (busy || pin.length != 4) return;
     if (step == _Step.newPin) {
@@ -92,8 +126,8 @@ class _ParentPinResetPageState extends State<ParentPinResetPage> {
         busy = false;
         error = failure.message;
         if (failure.reauthRequired) {
-          // Passaram mais de cinco minutos desde a confirmação da palavra-passe.
-          step = _Step.password; firstPin = ''; pin = '';
+          // Passaram mais de cinco minutos desde a confirmação da identidade.
+          step = _Step.identity; firstPin = ''; pin = ''; codeVersion++;
         } else {
           pin = ''; inputVersion++;
         }
@@ -113,7 +147,7 @@ class _ParentPinResetPageState extends State<ParentPinResetPage> {
 
   @override
   Widget build(BuildContext context) => PopScope(
-    canPop: !busy && step == _Step.password,
+    canPop: !busy && step == _Step.identity,
     onPopInvokedWithResult: (didPop, _) { if (!didPop) back(); },
     child: Scaffold(body: SafeArea(child: SingleChildScrollView(
       key: ValueKey(step),
@@ -125,54 +159,88 @@ class _ParentPinResetPageState extends State<ParentPinResetPage> {
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             OnboardingHeader(
               title: 'Recuperar PIN do responsável',
-              step: step == _Step.password ? 1 : 2,
+              step: step == _Step.identity ? 1 : 2,
               total: 2,
-              section: step == _Step.password ? 'Confirmar identidade' : 'Novo PIN',
+              section: step == _Step.identity ? 'Confirmar identidade' : 'Novo PIN',
               icon: Icons.lock_reset_rounded,
               onBack: busy ? null : back,
             ),
             const SizedBox(height: 32),
-            if (step == _Step.password) passwordStep() else pinStep(),
+            if (step == _Step.identity) identityStep() else pinStep(),
           ]),
         ),
       )),
     ))),
   );
 
-  Widget passwordStep() => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+  Widget identityStep() => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
     Text('Confirma que és tu', textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineMedium),
     const SizedBox(height: 12),
-    Text('Para proteger a área do responsável, introduz a palavra-passe da conta${email == null ? '' : ' $email'}.',
+    Text(useCode
+        ? 'Para proteger a área do responsável, confirma o código enviado para o e-mail da conta.'
+        : 'Para proteger a área do responsável, introduz a palavra-passe da conta${email == null ? '' : ' $email'}.',
       textAlign: TextAlign.center,
       style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.muted)),
     const SizedBox(height: 28),
-    AppCard(child: AutofillGroup(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      AppTextField(
-        label: 'Palavra-passe da conta',
-        hint: 'A tua palavra-passe',
-        controller: password,
-        enabled: !busy,
-        obscureText: !showPassword,
-        keyboardType: TextInputType.visiblePassword,
-        textInputAction: TextInputAction.done,
-        autofillHints: const [AutofillHints.password],
-        prefixIcon: Icons.key_rounded,
-        errorText: error,
-        onChanged: (_) { if (error != null) setState(() => error = null); },
-        onSubmitted: (_) => confirmPassword(),
-        suffixIcon: IconButton(
-          tooltip: showPassword ? 'Ocultar palavra-passe' : 'Mostrar palavra-passe',
-          onPressed: busy ? null : () => setState(() => showPassword = !showPassword),
-          icon: Icon(showPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined),
-        ),
+    AppCard(child: useCode ? codeForm() : passwordForm()),
+    if (widget.service.hasPassword) ...[
+      const SizedBox(height: 12),
+      Center(child: TextButton(
+        onPressed: busy ? null : () => switchMethod(!useCode),
+        child: Text(useCode ? 'Usar a palavra-passe' : 'Esqueci-me da palavra-passe: receber um código por e-mail',
+          textAlign: TextAlign.center),
+      )),
+    ],
+  ]);
+
+  Widget passwordForm() => AutofillGroup(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+    AppTextField(
+      label: 'Palavra-passe da conta',
+      hint: 'A tua palavra-passe',
+      controller: password,
+      enabled: !busy,
+      obscureText: !showPassword,
+      keyboardType: TextInputType.visiblePassword,
+      textInputAction: TextInputAction.done,
+      autofillHints: const [AutofillHints.password],
+      prefixIcon: Icons.key_rounded,
+      errorText: error,
+      onChanged: (_) { if (error != null) setState(() => error = null); },
+      onSubmitted: (_) => confirmPassword(),
+      suffixIcon: IconButton(
+        tooltip: showPassword ? 'Ocultar palavra-passe' : 'Mostrar palavra-passe',
+        onPressed: busy ? null : () => setState(() => showPassword = !showPassword),
+        icon: Icon(showPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined),
       ),
-      const SizedBox(height: 24),
-      AppButton(label: 'Confirmar palavra-passe', icon: Icons.arrow_forward_rounded,
-        loading: busy, onPressed: busy ? null : confirmPassword),
-    ]))),
-    const SizedBox(height: 20),
-    const Text('Esqueceste-te também da palavra-passe? Sai da conta e usa «Esqueceu-se do acesso?» no ecrã de entrada.',
-      textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted, fontSize: 13)),
+    ),
+    const SizedBox(height: 24),
+    AppButton(label: 'Confirmar palavra-passe', icon: Icons.arrow_forward_rounded,
+      loading: busy, onPressed: busy ? null : confirmPassword),
+  ]));
+
+  Widget codeForm() => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+    EmailCodeField(
+      key: ValueKey(codeVersion),
+      controller: code,
+      email: email,
+      enabled: !busy,
+      errorText: error,
+      onSend: () async {
+        try {
+          await widget.service.sendReauthCode();
+          return null;
+        } on ParentPinException catch (failure) {
+          return failure.message;
+        }
+      },
+      onChanged: (_) => setState(() => error = null),
+      onSubmitted: (_) => confirmCode(),
+    ),
+    if (code.text.isNotEmpty || error != null) ...[
+      const SizedBox(height: 16),
+      AppButton(label: 'Confirmar código', icon: Icons.arrow_forward_rounded,
+        loading: busy, onPressed: busy || code.text.trim().isEmpty ? null : confirmCode),
+    ],
   ]);
 
   Widget pinStep() {

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Ambiente de staging da feature de assinaturas (projeto escolaemdia_staging).
+# Ambiente de staging (projeto Supabase Cloud escolaemdia_staging).
 # Todos os comandos usam a ref do staging de forma explícita — nunca a produção.
+# Para testar no staging antes de publicar em produção (hhgxxvvreyhigxynrgmv).
 set -euo pipefail
 
 STAGING_REF="ivtnjputmlsvbuakrzdw"

@@ -15,13 +15,15 @@ import '../data/worksheet_service.dart';
 import '../domain/worksheet_models.dart';
 
 class PrepareWorksheetPage extends StatefulWidget {
-  const PrepareWorksheetPage({super.key,required this.children,required this.service,required this.onClose,required this.onViewChild,this.subscribeFor});
+  const PrepareWorksheetPage({super.key,required this.children,required this.service,required this.onClose,required this.onViewChild,this.subscribeFor,this.initialChildId});
   final List<ChildProfile> children;
   final WorksheetService service;
   final VoidCallback onClose;
   final Future<void> Function(String) onViewChild;
   /// Abre o pagamento para a criança (null = pagamento ainda indisponível nesta plataforma).
   final PremiumSubscribe? Function(String childId)? subscribeFor;
+  /// Criança pré-selecionada (ex.: «Preparar uma ficha» no cartão da criança).
+  final String? initialChildId;
   @override State<PrepareWorksheetPage> createState()=>_PrepareWorksheetPageState();
 }
 class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
@@ -47,7 +49,7 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
   ChildDailyAccess? access;
   int generation=0;
 
-  @override void initState(){super.initState();child=widget.children.isEmpty?null:widget.children.first;loadSubjects();loadAccess();}
+  @override void initState(){super.initState();child=widget.children.where((c)=>c.id==widget.initialChildId).firstOrNull??(widget.children.isEmpty?null:widget.children.first);loadSubjects();loadAccess();}
   @override void dispose(){topicSearch.dispose();worksheetSearch.dispose();super.dispose();}
   Future<void> loadSubjects() async {
     setState((){loading=true;error=null;});

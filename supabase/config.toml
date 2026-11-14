@@ -32,7 +32,6 @@ inspector_port = 55328
 site_url = "http://localhost:8080"
 additional_redirect_urls = ["http://localhost:8080", "http://127.0.0.1:8080"]
 
-
 [functions.parent-pin]
 # Validation is performed explicitly with auth.getUser(token) in the handler.
 # This supports the project's current signing keys without relying on the legacy gateway check.

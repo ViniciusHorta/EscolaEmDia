@@ -68,12 +68,16 @@ case "$cmd" in
   db:push)  supabase db push --remote="$DB_URL" ;;
   db:reset) supabase db reset --remote="$DB_URL" ;;
   fn:deploy)
+    # Sem --delete no _shared e na publicação completa: o vaio é partilhado por várias
+    # branches, e apagar ficheiros que não existem nesta (ex.: módulos de outra feature)
+    # partiria as funções publicadas a partir dessas branches.
     if [ $# -gt 0 ]; then
-      for fn in "$@" _shared; do
+      for fn in "$@"; do
         rsync -az --delete "supabase/functions/$fn/" "$HOST:$REMOTE_DIR/supabase/functions/$fn/"
       done
+      rsync -az supabase/functions/_shared/ "$HOST:$REMOTE_DIR/supabase/functions/_shared/"
     else
-      rsync -az --delete --exclude '.env*' supabase/functions/ "$HOST:$REMOTE_DIR/supabase/functions/"
+      rsync -az --exclude '.env*' supabase/functions/ "$HOST:$REMOTE_DIR/supabase/functions/"
     fi
     echo "Functions publicadas no vaio (o Edge Runtime recarrega no próximo pedido)."
     ;;
