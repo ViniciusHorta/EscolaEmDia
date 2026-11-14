@@ -1,6 +1,6 @@
 # Termos e Condições de Utilização — Escola em Dia
 
-**Última atualização:** 7 de novembro de 2026
+**Última atualização:** 14 de novembro de 2026
 
 ## 1. Introdução
 
@@ -134,6 +134,7 @@ Na configuração inicial prevista, o plano gratuito inclui:
 - Um perfil infantil por família;
 - Acesso às fichas identificadas como gratuitas;
 - Preparação de uma ficha por dia, por criança;
+- Realização de uma ficha por dia, por criança (nova ou repetida);
 - Até seis perguntas por ficha no plano gratuito;
 - Acesso às funcionalidades essenciais de realização e revisão das atividades.
 
@@ -322,7 +323,7 @@ Os pedidos enviados por email são tratados no prazo máximo de 30 dias.
 
 A eliminação dos dados pessoais, incluindo os dados conservados por obrigação legal, é realizada nos termos da Política de Privacidade.
 
-A eliminação da conta não cancela subscrições contratadas através de lojas de aplicações (Google Play ou App Store), que devem ser canceladas pelo utilizador na respetiva loja antes da eliminação.
+Ao eliminar a conta, as subscrições Premium contratadas através do website (Stripe) ou da Google Play associadas às famílias eliminadas são canceladas automaticamente, deixando de ser cobradas. As subscrições contratadas através da App Store não podem ser canceladas pelo Escola em Dia e devem ser canceladas pelo utilizador nas definições da sua conta Apple.
 
 O encerramento da conta não prejudica direitos ou obrigações legalmente existentes.
 
