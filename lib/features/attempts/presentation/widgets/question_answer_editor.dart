@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/area_palette.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../domain/attempt_models.dart';
@@ -52,8 +53,8 @@ class _QuestionAnswerEditorState extends State<QuestionAnswerEditor> {
     ]);
     return Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
       AppCard(child:paper?Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
-        const Row(children:[
-          Icon(Icons.menu_book_rounded,color:AppColors.primary),SizedBox(width:10),
+        Row(children:[
+          Icon(Icons.menu_book_rounded,color:context.area.primary),SizedBox(width:10),
           Expanded(child:Text('No teu caderno',style:TextStyle(fontSize:17,fontWeight:FontWeight.w700,color:AppColors.text))),
         ]),
         const SizedBox(height:10),
@@ -63,7 +64,7 @@ class _QuestionAnswerEditorState extends State<QuestionAnswerEditor> {
           value:widget.value['mode']=='paper',onChanged:widget.enabled?(checked)=>widget.onChanged({'mode':checked==true?'paper':'unanswered'}):null),
       ]):Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
         Row(children:[
-          const Icon(Icons.draw_rounded,color:AppColors.primary,size:24),const SizedBox(width:10),
+          Icon(Icons.draw_rounded,color:context.area.primary,size:24),const SizedBox(width:10),
           const Expanded(child:Text('A tua explicação:',style:TextStyle(fontSize:17,fontWeight:FontWeight.w700,color:AppColors.text))),
           ListenableBuilder(listenable:text,builder:(context,_)=>Text('${text.text.characters.length} caracteres',
             style:const TextStyle(color:AppColors.muted,fontSize:14,fontWeight:FontWeight.w600))),
@@ -74,12 +75,12 @@ class _QuestionAnswerEditorState extends State<QuestionAnswerEditor> {
             onChanged:write,style:const TextStyle(fontSize:17,height:1.45,color:AppColors.text),
             decoration:InputDecoration(
               hintText:'Escreve aqui a tua estratégia e passos…',
-              counterText:'',filled:true,fillColor:AppColors.softBlue,
+              counterText:'',filled:true,fillColor:context.area.soft,
               contentPadding:const EdgeInsets.fromLTRB(20,18,56,18),
               border:OutlineInputBorder(borderRadius:BorderRadius.circular(AppRadii.input),borderSide:BorderSide.none),
               enabledBorder:OutlineInputBorder(borderRadius:BorderRadius.circular(AppRadii.input),borderSide:BorderSide.none),
               focusedBorder:OutlineInputBorder(borderRadius:BorderRadius.circular(AppRadii.input),
-                borderSide:const BorderSide(color:AppColors.primary,width:2)),
+                borderSide: BorderSide(color:context.area.primary,width:2)),
             )),
           Positioned(right:8,bottom:8,child:ListenableBuilder(listenable:text,builder:(context,_)=>text.text.isEmpty
             ?const SizedBox.shrink()
@@ -106,24 +107,24 @@ class _ChoiceOption extends StatelessWidget {
       duration:MediaQuery.disableAnimationsOf(context)?Duration.zero:const Duration(milliseconds:120),
       decoration:BoxDecoration(
         borderRadius:BorderRadius.circular(40),
-        boxShadow:[BoxShadow(color:selected?const Color(0xFFC7BFFF):AppColors.blueBorder,offset:const Offset(0,5))],
+        boxShadow:[BoxShadow(color:selected?context.area.ring:context.area.border,offset:const Offset(0,5))],
       ),
       child:Material(
-        color:selected?AppColors.lavender:AppColors.surface,
+        color:selected?context.area.tint:AppColors.surface,
         shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(40),
-          side:BorderSide(color:selected?const Color(0xFFC7BFFF):AppColors.blueBorder,width:selected?2:1.5)),
+          side:BorderSide(color:selected?context.area.ring:context.area.border,width:selected?2:1.5)),
         clipBehavior:Clip.antiAlias,
         child:InkWell(onTap:onTap,child:Padding(padding:const EdgeInsets.symmetric(horizontal:18,vertical:16),child:Row(children:[
-          CircleAvatar(radius:26,backgroundColor:selected?AppColors.primary:AppColors.softBlue,
+          CircleAvatar(radius:26,backgroundColor:selected?context.area.primary:context.area.soft,
             child:icon!=null?Icon(icon,color:selected?Colors.white:AppColors.text,size:26)
               :Text(letter!,style:TextStyle(color:selected?Colors.white:AppColors.text,fontSize:20,fontWeight:FontWeight.w800))),
           const SizedBox(width:16),
           Expanded(child:Text(text,style:TextStyle(fontSize:19,fontWeight:FontWeight.w700,height:1.3,
-            color:selected?AppColors.primary:AppColors.text))),
+            color:selected?context.area.primary:AppColors.text))),
           const SizedBox(width:12),
           selected
-            ?const CircleAvatar(radius:20,backgroundColor:AppColors.primary,child:Icon(Icons.check_rounded,color:Colors.white,size:24))
-            :const CircleAvatar(radius:20,backgroundColor:AppColors.softBlue),
+            ? CircleAvatar(radius:20,backgroundColor:context.area.primary,child:Icon(Icons.check_rounded,color:Colors.white,size:24))
+            : CircleAvatar(radius:20,backgroundColor:context.area.soft),
         ]))),
       ),
     ),

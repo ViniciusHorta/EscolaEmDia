@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/area_palette.dart';
 import '../../core/theme/app_tokens.dart';
 
 /// neutral: botão branco com contorno lavanda (DESIGN.md «Ghost / Neutral Button»).
@@ -55,14 +56,14 @@ class _AppButtonState extends State<AppButton> {
     final neutral = widget.variant == AppButtonVariant.neutral;
     final (fill, shadow, foreground) = switch (widget.variant) {
       AppButtonVariant.primary => (
-          AppColors.primary,
-          AppColors.primaryPressed,
+          context.area.primary,
+          context.area.primaryPressed,
           Colors.white
         ),
       AppButtonVariant.secondary => (
-          AppColors.softBlue,
-          AppColors.blueBorder,
-          AppColors.primary
+          context.area.soft,
+          context.area.border,
+          context.area.primary
         ),
       AppButtonVariant.success => (
           AppColors.success,
@@ -71,7 +72,7 @@ class _AppButtonState extends State<AppButton> {
         ),
       AppButtonVariant.neutral => (
           AppColors.surface,
-          AppColors.blueBorder,
+          context.area.border,
           AppColors.text
         ),
       AppButtonVariant.danger => (
@@ -102,15 +103,15 @@ class _AppButtonState extends State<AppButton> {
           style: FilledButton.styleFrom(
             backgroundColor: fill,
             foregroundColor: foreground,
-            disabledBackgroundColor: AppColors.softBlue,
+            disabledBackgroundColor: context.area.soft,
             disabledForegroundColor: AppColors.muted,
             minimumSize: const Size(48, 56),
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 17),
             shape: StadiumBorder(
                 side: secondary
-                    ? const BorderSide(color: AppColors.blueBorder)
+                    ? BorderSide(color: context.area.border)
                     : neutral
-                        ? const BorderSide(color: AppColors.lavender, width: 2)
+                        ? BorderSide(color: context.area.tint, width: 2)
                         : BorderSide.none),
             textStyle: Theme.of(context).textTheme.labelLarge,
           ),

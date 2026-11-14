@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/area_palette.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../../../shared/widgets/app_badge.dart';
 import '../../../../shared/widgets/app_card.dart';
@@ -14,7 +15,7 @@ class ChildFeedbackCard extends StatelessWidget {
       'partially_correct' => ('Parcialmente correta', AppColors.amber, AppColors.amberSoft, Icons.contrast_rounded),
       'incorrect' => ('Incorreta', AppColors.error, AppColors.coralSoft, Icons.refresh_rounded),
       'pending_review' => ('Aguarda revisão', AppColors.amber, AppColors.amberSoft, Icons.hourglass_empty_rounded),
-      _ => ('Sem resposta', AppColors.muted, AppColors.softBlue, Icons.remove_rounded),
+      _ => ('Sem resposta', AppColors.muted, context.area.soft, Icons.remove_rounded),
     };
     return AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Row(children: [Expanded(child: Text('Pergunta ${question.number}', style: Theme.of(context).textTheme.titleMedium))]),

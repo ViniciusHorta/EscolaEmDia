@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/area_palette.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/config/supabase_config.dart';
-import '../../../core/theme/app_tokens.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/brand/app_logo.dart';
@@ -83,8 +83,11 @@ class _AuthGateState extends State<AuthGate> {
                         child: ParentPinGate(
                           key: ValueKey(auth.user!.id),
                           auth: auth,
-                          builder: (unlocked) => FamilyWorkspacePage(
-                            key: ValueKey(auth.user!.id), auth: auth, parentAccess: unlocked),
+                          // Área do responsável por omissão; o seletor de perfis e o espaço
+                          // do aluno aplicam as cores da marca por cima.
+                          builder: (unlocked) => AreaTheme(palette: AreaPalette.parent,
+                            child: FamilyWorkspacePage(
+                              key: ValueKey(auth.user!.id), auth: auth, parentAccess: unlocked)),
                         ),
                       )
                     : AccountSessionPage(auth: auth),
@@ -130,7 +133,7 @@ class _AccountSessionPageState extends State<AccountSessionPage> {
       children: [
         AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Icon(confirmed ? Icons.verified_user_outlined : Icons.mark_email_unread_outlined,
-            size: 56, color: AppColors.primary),
+            size: 56, color: context.area.primary),
           const SizedBox(height: 16),
           Text(auth.user?.email ?? '', textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.titleMedium),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/area_palette.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../shared/widgets/app_badge.dart';
 import '../../../shared/widgets/app_button.dart';
@@ -116,7 +117,7 @@ class _WorksheetAttemptPageState extends State<WorksheetAttemptPage> {
     final blocked=controller.busy||controller.conflictQuestion!=null;
     final gutter=MediaQuery.sizeOf(context).width<640?16.0:32.0;
     return Scaffold(
-      backgroundColor:AppColors.background,
+      backgroundColor:context.area.background,
       body:Column(children:[
         AttemptTopBar(
           title:'Pergunta ${controller.index+1} de $total',
@@ -147,7 +148,7 @@ class _WorksheetAttemptPageState extends State<WorksheetAttemptPage> {
               ],
               if(!controller.writable)...[
                 const SizedBox(height:16),
-                const AppCard(color:AppColors.softBlue,child:Text('Esta tentativa está apenas disponível para consulta.')),
+                AppCard(color:context.area.soft,child:Text('Esta tentativa está apenas disponível para consulta.')),
               ],
               const SizedBox(height:20),
               AppCard(padding:const EdgeInsets.all(28),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
@@ -160,15 +161,15 @@ class _WorksheetAttemptPageState extends State<WorksheetAttemptPage> {
                   const SizedBox(height:12),
                   Theme(data:Theme.of(context).copyWith(dividerColor:Colors.transparent),child:ExpansionTile(
                     tilePadding:EdgeInsets.zero,
-                    leading:const Icon(Icons.auto_stories_rounded,color:AppColors.primary),
-                    title:const Text('Ler o texto',style:TextStyle(fontWeight:FontWeight.w700,color:AppColors.primary)),
+                    leading: Icon(Icons.auto_stories_rounded,color:context.area.primary),
+                    title: Text('Ler o texto',style:TextStyle(fontWeight:FontWeight.w700,color:context.area.primary)),
                     children:[Padding(padding:const EdgeInsets.only(bottom:8),child:Text(data.text,style:const TextStyle(fontSize:16,height:1.5)))])),
                 ],
               ])),
               const SizedBox(height:24),
               QuestionAnswerEditor(key:ValueKey('${data.id}-${q.id}-${controller.viewVersion}'),question:q,writtenAnswerMode:data.writtenAnswerMode,value:controller.values[q.id]??{'mode':'unanswered'},enabled:enabled,onChanged:controller.edit),
               if(controller.problem!=null)...[
-                const SizedBox(height:20),Semantics(liveRegion:true,child:AppCard(color:AppColors.softBlue,child:Text(controller.problem!))),
+                const SizedBox(height:20),Semantics(liveRegion:true,child:AppCard(color:context.area.soft,child:Text(controller.problem!))),
                 const SizedBox(height:12),
                 if(controller.conflictQuestion!=null)...[
                   AppButton(label:'Manter a minha resposta',onPressed:controller.busy?null:()=>run(()=>controller.resolveConflict(keepMine:true))),
@@ -206,8 +207,8 @@ class _BottomNavigation extends StatelessWidget {
   const _BottomNavigation({required this.children});
   final List<Widget> children;
   @override Widget build(BuildContext context)=>Container(
-    decoration:BoxDecoration(color:AppColors.background,border:const Border(top:BorderSide(color:AppColors.lavender)),
-      boxShadow:[BoxShadow(color:AppColors.primary.withValues(alpha:0.05),blurRadius:14,offset:const Offset(0,-6))]),
+    decoration:BoxDecoration(color:context.area.background,border: Border(top:BorderSide(color:context.area.tint)),
+      boxShadow:[BoxShadow(color:context.area.primary.withValues(alpha:0.05),blurRadius:14,offset:const Offset(0,-6))]),
     child:SafeArea(top:false,child:Center(child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:720),
       child:Padding(padding:const EdgeInsets.fromLTRB(16,14,16,8),child:Row(children:children))))),
   );

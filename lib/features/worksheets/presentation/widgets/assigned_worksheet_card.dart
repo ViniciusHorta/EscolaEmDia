@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/area_palette.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/utils/subject_icons.dart';
 import '../../../../shared/widgets/app_badge.dart';
@@ -26,10 +27,10 @@ class AssignedWorksheetCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(36),
-        border: Border.all(color: AppColors.lavender, width: 2),
+        border: Border.all(color: context.area.tint, width: 2),
         boxShadow: [
-          const BoxShadow(color: AppColors.blueBorder, offset: Offset(0, 5)),
-          BoxShadow(color: AppColors.primary.withValues(alpha: 0.06), blurRadius: 20, offset: const Offset(0, 10)),
+          BoxShadow(color: context.area.border, offset: Offset(0, 5)),
+          BoxShadow(color: context.area.primary.withValues(alpha: 0.06), blurRadius: 20, offset: const Offset(0, 10)),
         ],
       ),
       padding: const EdgeInsets.all(24),
@@ -93,12 +94,12 @@ class AssignedWorksheetTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: AppColors.lavender, width: 1.5),
+        border: Border.all(color: context.area.tint, width: 1.5),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Row(children: [
-          ExcludeSemantics(child: CircleAvatar(radius: 28, backgroundColor: AppColors.lavender,
-            child: Icon(subjectIcon(item.subjectName), color: AppColors.primary))),
+          ExcludeSemantics(child: CircleAvatar(radius: 28, backgroundColor: context.area.tint,
+            child: Icon(subjectIcon(item.subjectName), color: context.area.primary))),
           const SizedBox(width: 14),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('${item.subjectName}: ${item.title}', maxLines: 2, overflow: TextOverflow.ellipsis,
@@ -127,9 +128,9 @@ class _PillAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => DecoratedBox(
-    decoration: const BoxDecoration(
+    decoration: BoxDecoration(
       borderRadius: BorderRadius.all(Radius.circular(AppRadii.pill)),
-      boxShadow: [BoxShadow(color: AppColors.blueBorder, offset: Offset(0, 3))],
+      boxShadow: [BoxShadow(color: context.area.border, offset: Offset(0, 3))],
     ),
     child: TextButton.icon(
       onPressed: onPressed,
@@ -137,11 +138,11 @@ class _PillAction extends StatelessWidget {
       icon: Icon(icon, size: 20),
       label: Text(label),
       style: TextButton.styleFrom(
-        backgroundColor: AppColors.softBlue,
-        foregroundColor: AppColors.primary,
+        backgroundColor: context.area.soft,
+        foregroundColor: context.area.primary,
         minimumSize: const Size(48, 46),
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        shape: const StadiumBorder(side: BorderSide(color: AppColors.blueBorder)),
+        shape: StadiumBorder(side: BorderSide(color: context.area.border)),
         textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(fontSize: 15),
       ),
     ),

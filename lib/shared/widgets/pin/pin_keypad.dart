@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/area_palette.dart';
 import '../../../core/theme/app_tokens.dart';
 
 /// Teclado numérico tátil (Stitch: Seleção de Perfil e PIN Infantil).
@@ -28,8 +29,8 @@ class PinKeypad extends StatelessWidget {
           required VoidCallback action,
           VoidCallback? longPress,
           Widget? child,
-          Color fill = AppColors.softBlue,
-          Color shadow = AppColors.blueBorder,
+          Color? fill,
+          Color? shadow,
         }) =>
             _TactileKey(
               width: width,
@@ -37,8 +38,8 @@ class PinKeypad extends StatelessWidget {
               enabled: enabled,
               onTap: action,
               onLongPress: longPress,
-              fill: fill,
-              shadow: shadow,
+              fill: fill ?? context.area.soft,
+              shadow: shadow ?? context.area.border,
               child: child!,
             );
         const digitStyle = TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: AppColors.text);
@@ -124,7 +125,7 @@ class _TactileKeyState extends State<_TactileKey> {
           boxShadow: [BoxShadow(color: widget.enabled ? widget.shadow : AppColors.outline, offset: Offset(0, down ? 1 : 4))],
         ),
         child: Material(
-          color: widget.enabled ? widget.fill : AppColors.softBlue.withValues(alpha: 0.6),
+          color: widget.enabled ? widget.fill : context.area.soft.withValues(alpha: 0.6),
           shape: const StadiumBorder(),
           clipBehavior: Clip.antiAlias,
           child: InkWell(

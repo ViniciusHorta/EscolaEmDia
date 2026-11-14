@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/area_palette.dart';
 import 'package:flutter/services.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/request_id.dart';
@@ -120,12 +121,12 @@ class _ChildProfilePageState extends State<ChildProfilePage> {
 
   Widget keepPinCard() => Container(
     padding: const EdgeInsets.all(20),
-    decoration: BoxDecoration(color: AppColors.softBlue, borderRadius: BorderRadius.circular(32),
-      border: Border.all(color: AppColors.blueBorder)),
+    decoration: BoxDecoration(color: context.area.soft, borderRadius: BorderRadius.circular(32),
+      border: Border.all(color: context.area.border)),
     child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Container(width: 48, height: 48,
-          decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(16)),
+          decoration: BoxDecoration(color: context.area.primary, borderRadius: BorderRadius.circular(16)),
           child: const Icon(Icons.lock_outline_rounded, color: Colors.white)),
         const SizedBox(width: 14),
         const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -148,7 +149,7 @@ class _ChildProfilePageState extends State<ChildProfilePage> {
   Widget sectionLabel(IconData icon, String text, {Widget? trailing}) => Padding(
     padding: const EdgeInsets.only(bottom: 12),
     child: Row(children: [
-      Icon(icon, color: AppColors.primary, size: 22),
+      Icon(icon, color: context.area.primary, size: 22),
       const SizedBox(width: 10),
       Expanded(child: Text(text, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.text))),
       if (trailing != null) trailing,
@@ -157,7 +158,7 @@ class _ChildProfilePageState extends State<ChildProfilePage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: AppColors.background,
+    backgroundColor: context.area.background,
     body: SafeArea(child: SingleChildScrollView(
       key: ValueKey('profile-$confirming-$pinStep'),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -169,7 +170,7 @@ class _ChildProfilePageState extends State<ChildProfilePage> {
             const SizedBox(width: 12),
             Expanded(child: Text('Editar perfil', textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleLarge)),
             const SizedBox(width: 12),
-            const CircleAvatar(backgroundColor: AppColors.lavender, child: Icon(Icons.manage_accounts_rounded, color: AppColors.primary)),
+            CircleAvatar(backgroundColor: context.area.tint, child: Icon(Icons.manage_accounts_rounded, color: context.area.primary)),
           ]) else OnboardingHeader(title: 'Perfil do Educando',
             step: pinStep ? 4 : 3, section: pinStep ? 'PIN Infantil' : 'Perfil',
             icon: pinStep ? Icons.lock_outline_rounded : Icons.face_rounded,
@@ -190,7 +191,7 @@ class _ChildProfilePageState extends State<ChildProfilePage> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: AppColors.lavender)),
+                border: Border.all(color: context.area.tint)),
               child: const Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 CircleAvatar(radius: 20, backgroundColor: AppColors.successSoft,
                   child: Icon(Icons.verified_user_outlined, color: AppColors.success, size: 22)),
@@ -214,21 +215,21 @@ class _ChildProfilePageState extends State<ChildProfilePage> {
                 validator: (value) => value == null || value.trim().isEmpty ? 'Indica a alcunha da criança.' : null,
                 decoration: InputDecoration(
                   hintText: 'Alcunha da criança',
-                  filled: true, fillColor: AppColors.softBlue,
+                  filled: true, fillColor: context.area.soft,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-                  suffixIcon: const Padding(padding: EdgeInsets.only(right: 8),
-                    child: CircleAvatar(radius: 18, backgroundColor: AppColors.lavender,
-                      child: Icon(Icons.edit_rounded, size: 18, color: AppColors.primary))),
+                  suffixIcon: Padding(padding: EdgeInsets.only(right: 8),
+                    child: CircleAvatar(radius: 18, backgroundColor: context.area.tint,
+                      child: Icon(Icons.edit_rounded, size: 18, color: context.area.primary))),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadii.pill), borderSide: BorderSide.none),
                   enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadii.pill), borderSide: BorderSide.none),
                   focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadii.pill),
-                    borderSide: const BorderSide(color: AppColors.primary, width: 2)),
+                    borderSide: BorderSide(color: context.area.primary, width: 2)),
                 ),
               ),
               const SizedBox(height: 26),
               sectionLabel(Icons.sentiment_satisfied_alt_rounded, 'Escolhe o Avatar Amigo',
                 trailing: Text('Escolhido: ${ChildAvatars.label(avatar)}',
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary))),
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: context.area.primary))),
               AvatarSelector(value: avatar, enabled: !busy, onChanged: (value) => setState(() => avatar = value)),
               const SizedBox(height: 26),
               sectionLabel(Icons.school_outlined, 'Ano Escolar (Ensino Básico)'),
@@ -236,7 +237,7 @@ class _ChildProfilePageState extends State<ChildProfilePage> {
             ]))),
           ] else AppCard(child: Row(children: [
             Container(width: 64, height: 64, alignment: Alignment.center,
-              decoration: const BoxDecoration(color: AppColors.lavender, shape: BoxShape.circle),
+              decoration: BoxDecoration(color: context.area.tint, shape: BoxShape.circle),
               child: ExcludeSemantics(child: Text(ChildAvatars.emoji(avatar), style: const TextStyle(fontSize: 36)))),
             const SizedBox(width: 16),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -249,12 +250,12 @@ class _ChildProfilePageState extends State<ChildProfilePage> {
           const SizedBox(height: 20),
           if (!needsPin) keepPinCard() else Container(
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(color: AppColors.softBlue, borderRadius: BorderRadius.circular(32),
-              border: Border.all(color: AppColors.blueBorder)),
+            decoration: BoxDecoration(color: context.area.soft, borderRadius: BorderRadius.circular(32),
+              border: Border.all(color: context.area.border)),
             child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
               Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Container(width: 48, height: 48,
-                  decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(16)),
+                  decoration: BoxDecoration(color: context.area.primary, borderRadius: BorderRadius.circular(16)),
                   child: const Icon(Icons.lock_outline_rounded, color: Colors.white)),
                 const SizedBox(width: 14),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

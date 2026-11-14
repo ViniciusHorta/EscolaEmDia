@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/area_palette.dart';
 import '../../../core/theme/app_tokens.dart';
 
 class PinIndicators extends StatelessWidget {
@@ -25,22 +26,22 @@ class PinIndicators extends StatelessWidget {
               height: 66,
               decoration: BoxDecoration(
                 color: !enabled
-                    ? AppColors.softBlue
+                    ? context.area.soft
                     : i < filled
-                        ? AppColors.lavender
+                        ? context.area.tint
                         : AppColors.surface,
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
                     color: hasError
                         ? AppColors.error
                         : i < filled || i == filled
-                            ? AppColors.primary
+                            ? context.area.primary
                             : AppColors.outline,
                     width: i == filled && !hasError && enabled ? 2.5 : 2),
               ),
               alignment: Alignment.center,
               child: i < filled
-                  ? const Icon(Icons.circle, size: 18, color: AppColors.primary)
+                  ? Icon(Icons.circle, size: 18, color: context.area.primary)
                   : null,
             )),
           ],

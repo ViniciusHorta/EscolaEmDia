@@ -33,6 +33,20 @@ window.A = window.A || {};
     NO_PUBLISHED_VERSION: 'A ficha ainda não tem nenhuma versão publicada. Abre-a e usa «Guardar e publicar».',
     INVALID_STATUS: 'Estado inválido.',
     REPORT_NOT_FOUND: 'O relato não existe.',
+    FREE_WORKSHEET_TOO_MANY_QUESTIONS: 'Fichas Free não podem ter mais perguntas do que o limite do plano gratuito. Reduz as perguntas ou muda a ficha para Premium.',
+    INVALID_TIER: 'Tipo de acesso inválido (Free ou Premium).',
+    CHILD_NOT_FOUND: 'A criança não existe.',
+    INVALID_DAYS: 'Número de dias inválido (1 a 3650).',
+    NO_MANUAL_SUBSCRIPTION: 'A criança não tem Premium manual ativo. Assinaturas pagas gerem-se na plataforma de origem.',
+    CHILD_ALREADY_PREMIUM: 'A criança já tem uma assinatura Premium ativa.',
+    SETTING_NOT_FOUND: 'Limite desconhecido.',
+    SETTING_OUT_OF_RANGE: 'Valor fora das margens permitidas.',
+    SUBSCRIPTION_NOT_FOUND: 'A assinatura não existe.',
+    SUBSCRIPTION_NOT_ACTIVE: 'A assinatura já não está ativa.',
+    ALREADY_NOT_RENEWING: 'A assinatura já está cancelada (não renova).',
+    CHANNEL_NOT_SUPPORTED: 'Esta forma de pagamento não pode ser cancelada daqui.',
+    PAYMENTS_UNAVAILABLE: 'O servidor não tem as credenciais desta plataforma de pagamento.',
+    UNAUTHORIZED: 'Chave sem permissão para esta ação. Usa a chave service_role legacy (JWT).',
     MIGRATION_MISSING: 'As funções de administração não existem na base. Aplica a migração 202611060001_admin_catalogue_management.sql.',
   };
   class ApiError extends Error {
@@ -60,10 +74,31 @@ window.A = window.A || {};
     if (!res.ok) {
       if (body && (body.code === 'PGRST202' || body.code === '42883')) throw new ApiError('MIGRATION_MISSING');
       if (res.status === 401 || res.status === 403) throw new ApiError('AUTH', 'Chave sem permissão. Usa a chave service_role legacy (JWT).');
+      // Erros lançados pela base (raise exception) com código conhecido.
+      if (body && A.errorText[body.message]) {
+        throw new ApiError(body.message, A.errorText[body.message] + (body.details ? ' ' + body.details : ''));
+      }
       throw new ApiError('HTTP', (body && (body.message || body.hint)) || `HTTP ${res.status}: ${text.slice(0, 200)}`);
     }
     if (body && typeof body === 'object' && !Array.isArray(body) && body.error) throw new ApiError(body.error);
     return body;
+  };
+
+  // Edge Functions de administração (ex.: admin-billing). Autorização: a mesma chave service_role.
+  A.fn = async (path, body) => {
+    let res;
+    try {
+      res = await fetch(`${A.state.url}/functions/v1/${path}`, { method: 'POST', headers: headers(), body: JSON.stringify(body ?? {}) });
+    } catch (e) {
+      throw new ApiError('NETWORK', 'Sem ligação ao Supabase (' + e.message + ').');
+    }
+    const data = await res.json().catch(() => null);
+    if (res.status === 404 && !data?.error) throw new ApiError('HTTP', 'A Edge Function não existe neste projeto. Faz o deploy de admin-billing.');
+    if (!res.ok || data?.error) {
+      const code = data?.error || 'HTTP';
+      throw new ApiError(code, (A.errorText[code] || `Erro ${res.status}`) + (data?.message ? ' — ' + data.message : ''));
+    }
+    return data;
   };
 
   A.loadCatalogue = async () => {
@@ -115,13 +150,14 @@ window.A = window.A || {};
 
   // ---------- Diálogo genérico ----------
   // onSubmit(form) pode lançar erro: a mensagem aparece e o diálogo mantém-se aberto.
-  A.dialog = ({ title, body, ok = 'Guardar', danger = false, info = false, onSubmit }) => new Promise((resolve) => {
+  A.dialog = ({ title, body, ok = 'Guardar', cancel = 'Cancelar', danger = false, info = false, onSubmit }) => new Promise((resolve) => {
     const dlg = A.$('dlg'), form = A.$('dlgForm'), okBtn = A.$('dlgOk');
     A.$('dlgTitle').textContent = title;
     A.$('dlgBody').innerHTML = body;
     A.$('dlgErr').innerHTML = '';
     okBtn.textContent = ok;
     okBtn.className = danger ? 'danger' : '';
+    A.$('dlgCancel').textContent = cancel;
     A.$('dlgCancel').hidden = info; // diálogo só informativo: apenas «Fechar»
     const cleanup = (value) => { form.onsubmit = null; A.$('dlgCancel').onclick = null; dlg.onclose = null; if (dlg.open) dlg.close(); resolve(value); };
     form.onsubmit = async (ev) => {

@@ -17,7 +17,7 @@ class DeleteAccountPage extends StatefulWidget {
 
   static Future<bool> open(BuildContext context, AccountService service) async =>
       await Navigator.of(context).push<bool>(
-        MaterialPageRoute(builder: (_) => DeleteAccountPage(service: service)),
+        MaterialPageRoute(builder: (_) => InheritedTheme.captureAll(context, DeleteAccountPage(service: service))),
       ) ==
       true;
 
@@ -156,6 +156,8 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
     const SizedBox(height: 16),
     section('Bom saber', const [
       'Se outro adulto também gere a família, a família e as crianças ficam com ele. Só a tua conta sai.',
+      'As assinaturas Premium pagas com cartão ou na Google Play são canceladas automaticamente e deixam de ser cobradas.',
+      'Assinaturas feitas no iPhone/iPad têm de ser canceladas por ti nas definições da conta Apple (a Apple não permite cancelar por nós).',
       'As fichas do catálogo não são dados teus e continuam disponíveis para outras famílias.',
       'As cópias de segurança são substituídas automaticamente e deixam de conter os teus dados no prazo máximo de 30 dias.',
     ]),

@@ -10,6 +10,9 @@
     archived: '<span class="badge grey">Arquivada</span>',
   })[w.status] || `<span class="badge">${esc(w.status)}</span>`;
   const hasPendingDraft = (w) => w.latest && !w.latest.publishedAt && w.publishedVersionCount > 0;
+  const tierBadge = (w) => w.accessTier === 'free'
+    ? `<button class="badge ok" data-act="tier" data-id="${w.id}" title="Catálogo gratuito. Clica para mudar para Premium.">Free</button>`
+    : `<button class="badge premium" data-act="tier" data-id="${w.id}" title="Só para crianças Premium. Clica para mudar para Free.">★ Premium</button>`;
 
   W.render = () => {
     const fs = $('fSubject'), ft = $('fTopic');
@@ -33,6 +36,8 @@
       if (topic && !(l.topicIds || []).includes(topic)) return false;
       if (status === 'pending' && !hasPendingDraft(w)) return false;
       if (status === 'reports' && !w.openReportCount) return false;
+      if ((status === 'free' || status === 'premium') && w.accessTier !== status) return false;
+      if (status === 'overlimit' && !w.exceedsFreeLimit) return false;
       if (['published', 'draft', 'archived'].includes(status) && w.status !== status) return false;
       if (q) {
         const hay = A.norm([w.title, w.subjectName, ...(l.topicIds || []).map((id) => A.topic(id)?.name || '')].join(' '));
@@ -60,6 +65,8 @@
           <div class="meta">${esc(w.subjectName)} • ${l.schoolYear || '?'}.º Ano • ${topics.length ? topics.map(esc).join(', ') : '<i>sem tema</i>'}</div>
           <div class="badges">
             ${statusBadge(w)}
+            ${tierBadge(w)}
+            ${w.exceedsFreeLimit ? '<span class="badge err" title="Ficha Free com mais perguntas do que o limite atual. Continua válida, mas uma nova versão só pode ser publicada dentro do limite (ou como Premium).">Acima do limite Free</span>' : ''}
             ${hasPendingDraft(w) ? '<span class="badge warn" title="Há alterações gravadas que os responsáveis ainda não veem">Rascunho por publicar</span>' : ''}
             <span class="badge grey" title="Versão mais recente">v${l.versionNumber || 1}</span>
             <span class="badge grey">${l.questionCount || 0} perguntas${counts ? ' • ' + counts : ''}</span>
@@ -86,6 +93,21 @@
       await A.rpc('admin_set_worksheet_status', { p_id: id, p_status: status });
       await A.app.reload({ catalogue: false });
       A.toast('ok', status === 'archived' ? 'Ficha arquivada.' : 'Ficha reativada: volta a aparecer aos responsáveis.');
+    } catch (e) { A.fail(e); }
+  }
+
+  async function toggleTier(id) {
+    const w = A.state.worksheets.find((x) => x.id === id);
+    if (!w) return;
+    const next = w.accessTier === 'free' ? 'premium' : 'free';
+    const text = next === 'premium'
+      ? `Mudar «${w.title}» para Premium?\n\nCrianças no plano gratuito deixam de a poder receber. Fichas já atribuídas não iniciadas também deixam de poder ser iniciadas por essas crianças.`
+      : `Mudar «${w.title}» para Free?\n\nPassa a estar disponível para todas as crianças, incluindo as do plano gratuito.`;
+    if (!confirm(text)) return;
+    try {
+      await A.rpc('admin_set_worksheet_tier', { p_id: id, p_tier: next });
+      await A.app.reload({ catalogue: false });
+      A.toast('ok', next === 'free' ? 'Ficha marcada como Free.' : 'Ficha marcada como Premium.');
     } catch (e) { A.fail(e); }
   }
 
@@ -122,6 +144,7 @@
         edit: () => A.editor.open(id),
         archive: () => setStatus(id, 'archived'),
         publish: () => setStatus(id, 'published'),
+        tier: () => toggleTier(id),
         delete: () => remove(id),
         reports: () => A.reports.showForWorksheet(id),
       })[el.dataset.act]?.();

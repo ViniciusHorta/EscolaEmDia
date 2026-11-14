@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/area_palette.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../app_card.dart';
 
@@ -23,17 +24,17 @@ class ProfileCard extends StatelessWidget {
         child: Column(children: [
           CircleAvatar(
               radius: 34,
-              backgroundColor: AppColors.lavender,
-              child: Icon(avatar, color: AppColors.primary, size: 38)),
+              backgroundColor: context.area.tint,
+              child: Icon(avatar, color: context.area.primary, size: 38)),
           const SizedBox(height: 14),
           Text(name, style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 6),
           Text('$schoolYear.º Ano',
-              style: const TextStyle(
-                  color: AppColors.primary, fontWeight: FontWeight.w700)),
+              style: TextStyle(
+                  color: context.area.primary, fontWeight: FontWeight.w700)),
           const SizedBox(height: 10),
           Icon(selected ? Icons.check_circle_rounded : Icons.circle_outlined,
-              color: selected ? AppColors.primary : AppColors.outline,
+              color: selected ? context.area.primary : AppColors.outline,
               semanticLabel: selected ? 'Selecionado' : 'Selecionar'),
         ]),
       );

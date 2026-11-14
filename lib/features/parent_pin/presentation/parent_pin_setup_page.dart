@@ -93,7 +93,7 @@ class _ParentPinSetupPageState extends State<ParentPinSetupPage> {
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           OnboardingHeader(title: 'Configurar PIN do Responsável', step: 2, onBack: busy ? null : back),
           const SizedBox(height: 32),
-          const Center(child: AppBadge(label: 'Passo 2 de 5 • Segurança', icon: Icons.verified_user_outlined)),
+          Center(child: AppBadge(label: 'Passo 2 de 5 • Segurança', icon: Icons.verified_user_outlined)),
           const SizedBox(height: 20),
           Text(confirming ? 'Confirma o PIN do responsável' : 'Define o PIN do responsável',
             textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineMedium),

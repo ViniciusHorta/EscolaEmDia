@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/area_palette.dart';
 import '../../../../core/theme/app_tokens.dart';
 
 /// Escolha do ano escolar: botões para o ciclo (1.º, 2.º ou 3.º) e, por baixo, as linhas
@@ -74,9 +75,9 @@ class _CycleButton extends StatelessWidget {
     button: true, selected: selected, inMutuallyExclusiveGroup: true, excludeSemantics: true,
     label: '$label, $years',
     child: Material(
-      color: selected ? AppColors.primary : AppColors.softBlue,
+      color: selected ? context.area.primary : context.area.soft,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.pill),
-        side: BorderSide(color: selected ? AppColors.primary : AppColors.blueBorder, width: selected ? 2 : 1)),
+        side: BorderSide(color: selected ? context.area.primary : context.area.border, width: selected ? 2 : 1)),
       clipBehavior: Clip.antiAlias,
       child: InkWell(onTap: onTap, child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: 56),
@@ -111,17 +112,17 @@ class _YearRow extends StatelessWidget {
       duration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : const Duration(milliseconds: 120),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: selected ? const Color(0xFFF59E0B) : AppColors.blueBorder, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: selected ? const Color(0xFFF59E0B) : context.area.border, offset: const Offset(0, 4))],
       ),
       child: Material(
-        color: selected ? const Color(0xFFFFE7C2) : AppColors.softBlue,
+        color: selected ? const Color(0xFFFFE7C2) : context.area.soft,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24),
-          side: BorderSide(color: selected ? const Color(0xFFF59E0B) : AppColors.blueBorder, width: selected ? 2 : 1)),
+          side: BorderSide(color: selected ? const Color(0xFFF59E0B) : context.area.border, width: selected ? 2 : 1)),
         clipBehavior: Clip.antiAlias,
         child: InkWell(onTap: onTap, child: Padding(
           padding: const EdgeInsets.fromLTRB(12, 12, 14, 12),
           child: Row(children: [
-            CircleAvatar(radius: 24, backgroundColor: selected ? const Color(0xFFFEA619) : AppColors.blueBorder,
+            CircleAvatar(radius: 24, backgroundColor: selected ? const Color(0xFFFEA619) : context.area.border,
               child: Text('$year.º', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800,
                 color: selected ? Colors.white : AppColors.text))),
             const SizedBox(width: 14),
@@ -130,7 +131,7 @@ class _YearRow extends StatelessWidget {
               const SizedBox(height: 4),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                decoration: BoxDecoration(color: selected ? Colors.white.withValues(alpha: 0.7) : AppColors.lavender,
+                decoration: BoxDecoration(color: selected ? Colors.white.withValues(alpha: 0.7) : context.area.tint,
                   borderRadius: BorderRadius.circular(AppRadii.pill)),
                 child: Text(ages, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.muted)),
               ),

@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../../core/theme/area_palette.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../shared/widgets/app_badge.dart';
@@ -6,6 +7,7 @@ import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/pin/app_pin_input.dart';
 import '../../family/data/family_service.dart';
+import '../../billing/domain/billing_models.dart';
 import '../../family/domain/family_models.dart';
 import '../data/child_session_service.dart';
 import '../../attempts/presentation/worksheet_attempt_page.dart';
@@ -46,6 +48,8 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
   String? feedbackAttemptId;
   AssignedWorksheet? activeAssignment;
   AssignedWorksheet? repeatCandidate;
+  /// Plano e utilização de hoje da criança autenticada (só para mensagens; sem ofertas).
+  ChildDailyAccess? dailyAccess;
   String? repeatFromAttemptId;
   int childTab = 0;
 
@@ -135,7 +139,12 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
   }
 
   Future<List<AssignedWorksheet>> fetchAssignments(String childId) async {
-    try {return await widget.sessions.assignments(childId);}
+    dailyAccess=null;
+    try {
+      final items=await widget.sessions.assignments(childId);
+      if(mounted&&authenticated?.id==childId)setState(()=>dailyAccess=widget.sessions.lastAccess);
+      return items;
+    }
     on ChildSessionException catch(failure){
       if(failure.ended && mounted && authenticated?.id==childId)setState((){authenticated=null;activeAssignment=null;feedbackAttemptId=null;repeatCandidate=null;repeatFromAttemptId=null;});
       rethrow;
@@ -155,8 +164,8 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
         ]));
       }
       final items=snapshot.data??[];
-      if(items.isEmpty)return const AppCard(child:Column(children:[
-        Icon(Icons.menu_book_rounded,size:56,color:AppColors.primary),SizedBox(height:18),
+      if(items.isEmpty)return AppCard(child:Column(children:[
+        Icon(Icons.menu_book_rounded,size:56,color:context.area.primary),SizedBox(height:18),
         Text('Ainda não tens fichas para fazer.',textAlign:TextAlign.center,style:TextStyle(fontSize:20,fontWeight:FontWeight.w700)),
         SizedBox(height:10),Text('Quando o teu responsável preparar uma ficha, ela vai aparecer aqui.',textAlign:TextAlign.center),
       ]));
@@ -168,6 +177,7 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
       final paused=items.where((item)=>item.stage==AssignmentStage.paused).toList();
       final delivered=items.where((item)=>item.stage==AssignmentStage.delivered).toList();
       return Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+        if(dailyNotice() case final notice?)Padding(padding:const EdgeInsets.only(bottom:16),child:notice),
         for(final item in todo)card(item,featured:true),
         if(paused.isNotEmpty)...[
           if(todo.isNotEmpty)const SizedBox(height:12),
@@ -190,18 +200,58 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
       feedbackAttemptId=assignment.latestCompletedAttemptId;
     });
   }
+  /// Mensagem para a criança quando não pode começar uma ficha nova (null = pode).
+  /// Retomar uma ficha em curso nunca é bloqueado.
+  String? startBlockedMessage(AssignedWorksheet assignment){
+    final access=dailyAccess;
+    if(access==null||access.isPremium)return null;
+    if(access.isLocked)return 'Ainda não podes começar fichas novas. Pede ajuda ao teu responsável.';
+    if(assignment.worksheet.isPremium)return 'Esta ficha não está disponível agora. Pede ajuda ao teu responsável.';
+    if(access.attemptQuotaReached)return 'Já fizeste a tua ficha de hoje. Muito bem! Volta amanhã para fazer outra.';
+    return null;
+  }
+  Widget? dailyNotice(){
+    final access=dailyAccess;
+    if(access==null||access.isPremium)return null;
+    final (emoji,title,text)=access.isLocked
+      ? ('🔒','Ainda não podes começar fichas novas','Pede ajuda ao teu responsável.')
+      : access.attemptQuotaReached
+        ? ('🌟','Já fizeste a tua ficha de hoje!','Muito bem! Volta amanhã para fazer outra.')
+        : (null,null,null);
+    if(title==null)return null;
+    return Semantics(liveRegion:true,child:AppCard(color:context.area.soft,child:Row(children:[
+      ExcludeSemantics(child:Text(emoji!,style:const TextStyle(fontSize:36))),
+      const SizedBox(width:14),
+      Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+        Text(title,style:const TextStyle(fontSize:18,fontWeight:FontWeight.w700,color:AppColors.text)),
+        const SizedBox(height:4),Text(text!,style:const TextStyle(color:AppColors.muted)),
+      ])),
+    ])));
+  }
+  void showStartBlocked(String message)=>showDialog<void>(context:context,builder:(context)=>AlertDialog(
+    icon:const Text('🌙',style:TextStyle(fontSize:40)),
+    content:Text(message,textAlign:TextAlign.center,style:const TextStyle(fontSize:17,height:1.4)),
+    actions:[TextButton(onPressed:()=>Navigator.pop(context),child:const Text('Está bem'))],
+  ));
   void openAssignment(AssignedWorksheet assignment) {
     if(busy||authenticated?.id!=assignment.childId)return;
+    if(assignment.activeAttemptId==null){
+      final blocked=startBlockedMessage(assignment);
+      if(blocked!=null){showStartBlocked(blocked);return;}
+      dailyAccess=dailyAccess?.withNewAttempt();
+    }
     setState(() { activeAssignment=assignment;feedbackAttemptId=null;repeatCandidate=null;repeatFromAttemptId=null; });
   }
   void prepareRepeat(AssignedWorksheet assignment,String previousId) {
     if(busy||authenticated?.id!=assignment.childId)return;
+    final blocked=startBlockedMessage(assignment);
+    if(blocked!=null){showStartBlocked(blocked);return;}
     setState(() { activeAssignment=null;feedbackAttemptId=null;repeatCandidate=assignment;repeatFromAttemptId=previousId; });
   }
   void beginRepeat() {
     final candidate=repeatCandidate;
     if(candidate==null||repeatFromAttemptId==null||authenticated?.id!=candidate.childId)return;
-    setState(() { activeAssignment=candidate;feedbackAttemptId=null;repeatCandidate=null; });
+    setState(() { activeAssignment=candidate;feedbackAttemptId=null;repeatCandidate=null;dailyAccess=dailyAccess?.withNewAttempt(); });
   }
   void cancelRepeat() {
     setState(() {
@@ -261,7 +311,7 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
     );
     if (authenticated != null) return studySpace(authenticated!);
     return PopScope(canPop: false, child: Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.area.background,
       body: SafeArea(child: SingleChildScrollView(child: Center(child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 640),
         child: Padding(
@@ -288,7 +338,7 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
               Container(
                 padding: const EdgeInsets.fromLTRB(20, 28, 20, 24),
                 decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(36),
-                  boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.07), blurRadius: 24, offset: const Offset(0, 10))]),
+                  boxShadow: [BoxShadow(color: context.area.primary.withValues(alpha: 0.07), blurRadius: 24, offset: const Offset(0, 10))]),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                   Center(child: AppPinInput(key: ValueKey(inputVersion), label: 'PIN de ${selected!.displayName}',
                     enabled: !busy && waitSeconds == 0,
@@ -333,10 +383,10 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
     builder: (sheet) => SafeArea(child: Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
-        ListTile(leading: const Icon(Icons.switch_account_rounded, color: AppColors.primary),
+        ListTile(leading: Icon(Icons.switch_account_rounded, color: context.area.primary),
           title: const Text('Mudar de utilizador'),
           onTap: () {Navigator.pop(sheet); changeUser();}),
-        ListTile(leading: const Icon(Icons.lock_outline_rounded, color: AppColors.primary),
+        ListTile(leading: Icon(Icons.lock_outline_rounded, color: context.area.primary),
           title: const Text('Área do Responsável'),
           onTap: () {Navigator.pop(sheet); widget.onOpenParents();}),
         ListTile(leading: const Icon(Icons.logout_rounded, color: AppColors.muted),
@@ -347,7 +397,7 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
   );
 
   Widget studySpace(ChildProfile child) => PopScope(canPop: false, child: Scaffold(
-    backgroundColor: AppColors.background,
+    backgroundColor: context.area.background,
     body: Column(children: [
       _StudyTopBar(child: child, busy: busy, onParents: widget.onOpenParents, onAccount: showAccountSheet),
       Expanded(child: RefreshIndicator(
@@ -376,12 +426,12 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
     bottomNavigationBar: NavigationBarTheme(
       data: NavigationBarThemeData(
         backgroundColor: Colors.white,
-        indicatorColor: AppColors.lavender,
+        indicatorColor: context.area.tint,
         surfaceTintColor: Colors.transparent,
         labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(fontSize: 15,
-          fontWeight: FontWeight.w700, color: states.contains(WidgetState.selected) ? AppColors.primary : AppColors.muted)),
+          fontWeight: FontWeight.w700, color: states.contains(WidgetState.selected) ? context.area.primary : AppColors.muted)),
         iconTheme: WidgetStateProperty.resolveWith((states) => IconThemeData(size: 28,
-          color: states.contains(WidgetState.selected) ? AppColors.primary : AppColors.muted)),
+          color: states.contains(WidgetState.selected) ? context.area.primary : AppColors.muted)),
       ),
       child: NavigationBar(
         selectedIndex: childTab,
@@ -410,7 +460,7 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
           if (mounted && authenticated == null) {setState(() => childTab = 0); choose(member);}
         },
         child: Row(children: [
-          ExcludeSemantics(child: CircleAvatar(radius: 28, backgroundColor: AppColors.lavender,
+          ExcludeSemantics(child: CircleAvatar(radius: 28, backgroundColor: context.area.tint,
             child: Text(ChildAvatars.emoji(member.avatarId), style: const TextStyle(fontSize: 30)))),
           const SizedBox(width: 14),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -419,7 +469,7 @@ class _ChildEntryPageState extends State<ChildEntryPage> with WidgetsBindingObse
           ])),
           member.id == current.id
             ? const AppBadge(label: 'Sou eu', icon: Icons.check_rounded)
-            : const Icon(Icons.chevron_right_rounded, color: AppColors.primary),
+            : Icon(Icons.chevron_right_rounded, color: context.area.primary),
         ]),
       ),
     ),
@@ -438,6 +488,9 @@ class _ProfileCard extends StatelessWidget {
   final bool selected;
   final VoidCallback? onTap;
 
+  /// Os cartões das crianças mostram já as cores do espaço infantil.
+  static const _child = AreaPalette.child;
+
   @override
   Widget build(BuildContext context) => Semantics(
     button: true, selected: selected, excludeSemantics: true,
@@ -446,12 +499,12 @@ class _ProfileCard extends StatelessWidget {
       duration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : const Duration(milliseconds: 150),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(32),
-        boxShadow: [BoxShadow(color: selected ? AppColors.primary : AppColors.outline, offset: const Offset(0, 6))],
+        boxShadow: [BoxShadow(color: selected ? _child.primary : AppColors.outline, offset: const Offset(0, 6))],
       ),
       child: Material(
         color: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32),
-          side: BorderSide(color: selected ? AppColors.lavender : Colors.transparent, width: 2)),
+          side: BorderSide(color: selected ? _child.tint : Colors.transparent, width: 2)),
         clipBehavior: Clip.antiAlias,
         child: InkWell(onTap: onTap, child: Padding(
           padding: const EdgeInsets.fromLTRB(12, 24, 12, 22),
@@ -459,13 +512,13 @@ class _ProfileCard extends StatelessWidget {
             SizedBox(width: 104, height: 100, child: Stack(children: [
               Positioned(left: 0, top: 0, child: Container(
                 width: 96, height: 96, alignment: Alignment.center,
-                decoration: BoxDecoration(color: AppColors.lavender, shape: BoxShape.circle,
-                  border: Border.all(color: selected ? const Color(0xFFC7BFFF) : AppColors.softBlue, width: 4)),
+                decoration: BoxDecoration(color: _child.tint, shape: BoxShape.circle,
+                  border: Border.all(color: selected ? _child.ring : _child.soft, width: 4)),
                 child: Text(ChildAvatars.emoji(child.avatarId), style: const TextStyle(fontSize: 50)),
               )),
               Positioned(right: 0, bottom: 0, child: CircleAvatar(
                 radius: 18,
-                backgroundColor: selected ? AppColors.primary : AppColors.softBlue,
+                backgroundColor: selected ? _child.primary : _child.soft,
                 child: Icon(selected ? Icons.check_rounded : Icons.lock_outline_rounded,
                   size: 20, color: selected ? Colors.white : AppColors.muted),
               )),
@@ -475,7 +528,7 @@ class _ProfileCard extends StatelessWidget {
               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.text)),
             const SizedBox(height: 4),
             Text('${child.schoolYear}.º Ano', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700,
-              color: selected ? AppColors.primary : AppColors.muted)),
+              color: selected ? _child.primary : AppColors.muted)),
           ]),
         )),
       ),
@@ -492,8 +545,8 @@ class _StudyTopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    decoration: BoxDecoration(color: AppColors.background, boxShadow: [
-      BoxShadow(color: AppColors.primary.withValues(alpha: 0.05), blurRadius: 14, offset: const Offset(0, 6)),
+    decoration: BoxDecoration(color: context.area.background, boxShadow: [
+      BoxShadow(color: context.area.primary.withValues(alpha: 0.05), blurRadius: 14, offset: const Offset(0, 6)),
     ]),
     child: SafeArea(bottom: false, child: Center(child: ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 760),
@@ -502,27 +555,28 @@ class _StudyTopBar extends StatelessWidget {
         child: Row(children: [
           ExcludeSemantics(child: Container(
             width: 52, height: 52, alignment: Alignment.center,
-            decoration: BoxDecoration(color: AppColors.lavender, shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFFC7BFFF), width: 3)),
+            decoration: BoxDecoration(color: context.area.tint, shape: BoxShape.circle,
+              border: Border.all(color: context.area.ring, width: 3)),
             child: Text(ChildAvatars.emoji(child.avatarId), style: const TextStyle(fontSize: 26)),
           )),
           const SizedBox(width: 12),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('Olá, ${child.displayName}! 👋', maxLines: 1, overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.text)),
-            Semantics(header: true, child: const FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft,
+            Semantics(header: true, child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft,
               child: Text('O Meu Espaço de Estudo',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.primary)))),
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: context.area.primary)))),
           ])),
           const SizedBox(width: 8),
           IconButton.filledTonal(
             onPressed: busy ? null : onParents, tooltip: 'Área do Responsável',
-            style: IconButton.styleFrom(backgroundColor: AppColors.softBlue, minimumSize: const Size(52, 52)),
-            icon: const Icon(Icons.lock_outline_rounded, color: AppColors.amber)),
+            // Cores da área do responsável: indica para onde este botão leva.
+            style: IconButton.styleFrom(backgroundColor: AreaPalette.parent.tint, minimumSize: const Size(52, 52)),
+            icon: Icon(Icons.lock_outline_rounded, color: AreaPalette.parent.primary)),
           const SizedBox(width: 8),
           IconButton.filled(
             onPressed: busy ? null : onAccount, tooltip: 'Mudar de utilizador ou sair',
-            style: IconButton.styleFrom(backgroundColor: AppColors.primary, minimumSize: const Size(52, 52)),
+            style: IconButton.styleFrom(backgroundColor: context.area.primary, minimumSize: const Size(52, 52)),
             icon: const Icon(Icons.person_outline_rounded)),
         ]),
       ),
@@ -550,16 +604,16 @@ class _StudyHero extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: AppColors.lavender,
+          color: context.area.tint,
           borderRadius: BorderRadius.circular(36),
-          boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.08), blurRadius: 20, offset: const Offset(0, 8))],
+          boxShadow: [BoxShadow(color: context.area.primary.withValues(alpha: 0.08), blurRadius: 20, offset: const Offset(0, 8))],
         ),
         child: Row(children: [
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            AppBadge(label: '${child.schoolYear}.º Ano', icon: Icons.star_rounded, background: Colors.white, color: AppColors.primary),
+            AppBadge(label: '${child.schoolYear}.º Ano', icon: Icons.star_rounded, background: Colors.white, color: context.area.primary),
             const SizedBox(height: 12),
             Text('Olá, ${child.displayName}! 👋',
-              style: const TextStyle(fontSize: 28, height: 1.15, fontWeight: FontWeight.w800, color: AppColors.primary)),
+              style: TextStyle(fontSize: 28, height: 1.15, fontWeight: FontWeight.w800, color: context.area.primary)),
             const SizedBox(height: 8),
             Semantics(liveRegion: true, child: Text(message, style: const TextStyle(fontSize: 18, height: 1.4, color: AppColors.text))),
           ])),
@@ -568,7 +622,7 @@ class _StudyHero extends StatelessWidget {
             Positioned(left: 0, bottom: 0, child: Container(
               width: 88, height: 88, alignment: Alignment.center,
               decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle,
-                boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.12), blurRadius: 16)]),
+                boxShadow: [BoxShadow(color: context.area.primary.withValues(alpha: 0.12), blurRadius: 16)]),
               child: Text(ChildAvatars.emoji(child.avatarId), style: const TextStyle(fontSize: 46)),
             )),
             const Positioned(right: 0, top: 0, child: CircleAvatar(radius: 17, backgroundColor: Color(0xFF10B981),
@@ -595,29 +649,32 @@ class _ParentsCard extends StatelessWidget {
   const _ParentsCard({required this.onTap});
   final VoidCallback? onTap;
 
+  /// Mostra já as cores da área do responsável.
+  static const _parent = AreaPalette.parent;
+
   @override
   Widget build(BuildContext context) => Semantics(
     button: true, excludeSemantics: true, label: 'Perfil Responsável. Pede o PIN do responsável.',
     child: Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppRadii.pill),
-        boxShadow: const [BoxShadow(color: AppColors.outline, offset: Offset(0, 4))],
+        boxShadow: [BoxShadow(color: _parent.border, offset: const Offset(0, 4))],
       ),
       child: Material(
-        color: AppColors.surface,
-        shape: const StadiumBorder(),
+        color: _parent.soft,
+        shape: StadiumBorder(side: BorderSide(color: _parent.border, width: 2)),
         clipBehavior: Clip.antiAlias,
         child: InkWell(onTap: onTap, child: Padding(
           padding: const EdgeInsets.fromLTRB(10, 10, 20, 10),
           child: Row(children: [
-            const CircleAvatar(radius: 24, backgroundColor: AppColors.amberSoft,
-              child: Icon(Icons.family_restroom_rounded, color: AppColors.amber)),
+            CircleAvatar(radius: 24, backgroundColor: _parent.primary,
+              child: const Icon(Icons.family_restroom_rounded, color: Colors.white)),
             const SizedBox(width: 14),
             const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('Responsável', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.text)),
               Text('Entrar com o PIN do responsável', style: TextStyle(fontSize: 14, color: AppColors.muted)),
             ])),
-            const Icon(Icons.lock_outline_rounded, color: AppColors.muted),
+            Icon(Icons.lock_outline_rounded, color: _parent.primary),
           ]),
         )),
       ),

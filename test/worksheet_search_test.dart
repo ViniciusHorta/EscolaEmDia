@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:escola_em_dia/features/billing/domain/billing_models.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:escola_em_dia/core/theme/app_theme.dart';
@@ -34,11 +35,13 @@ class FakeWorksheets extends WorksheetService {
   @override
   Future<List<SchoolTopic>> topics(String subjectId, int year) async => const [fractions, tables];
   @override
-  Future<List<WorksheetSummary>> proposals(String subjectId, int year, Set<String> topicIds) async {
+  Future<List<WorksheetSummary>> proposals(String subjectId, int year, Set<String> topicIds, {String? childId}) async {
     if (topicIds.isEmpty) return catalogue;
     final names = {for (final t in [fractions, tables]) if (topicIds.contains(t.id)) t.name};
     return catalogue.where((w) => w.topicNames.toSet().containsAll(names) && names.containsAll(w.topicNames)).toList();
   }
+  @override
+  Future<ChildDailyAccess?> childAccess(String childId) async => null;
   @override
   Future<Map> detail(WorksheetSummary worksheet) async { opened.add(worksheet.title); return {'content': {'questions': []}}; }
 }

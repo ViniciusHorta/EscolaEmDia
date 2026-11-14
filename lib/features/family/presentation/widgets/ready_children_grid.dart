@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_tokens.dart';
+import '../../../../core/theme/area_palette.dart';
+import '../../../../shared/widgets/premium_crown.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../domain/family_models.dart';
@@ -60,7 +62,7 @@ class _ChildTile extends StatelessWidget {
     child: AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Container(width: 64, height: 64, alignment: Alignment.center,
-          decoration: const BoxDecoration(color: AppColors.lavender, shape: BoxShape.circle),
+          decoration: BoxDecoration(color: context.area.tint, shape: BoxShape.circle),
           child: ExcludeSemantics(child: Text(ChildAvatars.emoji(child.avatarId), style: const TextStyle(fontSize: 36)))),
         const Spacer(),
         if (isNew) Container(
@@ -70,8 +72,11 @@ class _ChildTile extends StatelessWidget {
         ),
       ]),
       const SizedBox(height: 14),
-      Text(child.displayName, maxLines: 1, overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.titleLarge),
+      Row(children: [
+        Flexible(child: Text(child.displayName, maxLines: 1, overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.titleLarge)),
+        PremiumCrown(isPremium: child.isPremium, size: 22),
+      ]),
       const SizedBox(height: 4),
       Text('${child.schoolYear}.º Ano • ${ChildAvatars.label(child.avatarId)}',
         style: const TextStyle(color: AppColors.muted)),
@@ -100,19 +105,19 @@ class _AddChildTile extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadii.card),
         child: CustomPaint(
-          painter: const _DashedBorderPainter(color: AppColors.outline, radius: AppRadii.card),
+          painter: _DashedBorderPainter(color: context.area.border, radius: AppRadii.card),
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: ReadyChildrenGrid.tileMinHeight),
-            child: const Padding(
-              padding: EdgeInsets.all(AppSpacing.lg),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
               child: ExcludeSemantics(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                CircleAvatar(radius: 28, backgroundColor: AppColors.lavender,
-                  child: Icon(Icons.add_rounded, size: 32, color: AppColors.primary)),
-                SizedBox(height: 14),
+                CircleAvatar(radius: 28, backgroundColor: context.area.tint,
+                  child: Icon(Icons.add_rounded, size: 32, color: context.area.primary)),
+                const SizedBox(height: 14),
                 Text('Adicionar criança', textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.primary)),
-                SizedBox(height: 4),
-                Text('Cria o perfil de outro educando', textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: context.area.primary)),
+                const SizedBox(height: 4),
+                const Text('Cria o perfil de outro educando', textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 13, color: AppColors.muted)),
               ])),
             ),

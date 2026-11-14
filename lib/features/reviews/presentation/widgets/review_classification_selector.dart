@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/area_palette.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../domain/parent_review_models.dart';
 
@@ -51,11 +52,11 @@ class _Tile extends StatelessWidget {
         duration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : const Duration(milliseconds: 120),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppRadii.pill),
-          boxShadow: [BoxShadow(color: selected ? style.shadow : AppColors.blueBorder, offset: const Offset(0, 4))],
+          boxShadow: [BoxShadow(color: selected ? style.shadow : context.area.border, offset: const Offset(0, 4))],
         ),
         child: Material(
           color: selected ? style.soft : AppColors.surface,
-          shape: StadiumBorder(side: BorderSide(color: selected ? style.shadow : AppColors.blueBorder, width: selected ? 2 : 1.5)),
+          shape: StadiumBorder(side: BorderSide(color: selected ? style.shadow : context.area.border, width: selected ? 2 : 1.5)),
           clipBehavior: Clip.antiAlias,
           child: InkWell(onTap: onTap, child: Opacity(opacity: enabled || selected ? 1 : 0.5, child: Padding(
             padding: const EdgeInsets.fromLTRB(10, 10, 14, 10),

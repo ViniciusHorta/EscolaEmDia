@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/area_palette.dart';
 import '../../../../core/theme/app_tokens.dart';
 
 /// Botão redondo tátil (Stitch: pausa / perfil no topo das perguntas).
@@ -15,17 +16,17 @@ class RoundActionButton extends StatelessWidget {
     child: Container(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        boxShadow: [BoxShadow(color: filled ? AppColors.primaryPressed : AppColors.blueBorder, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: filled ? context.area.primaryPressed : context.area.border, offset: const Offset(0, 4))],
       ),
       child: Material(
-        color: filled ? AppColors.primary : AppColors.softBlue,
-        shape: CircleBorder(side: filled ? BorderSide.none : const BorderSide(color: AppColors.blueBorder)),
+        color: filled ? context.area.primary : context.area.soft,
+        shape: CircleBorder(side: filled ? BorderSide.none : BorderSide(color: context.area.border)),
         child: InkWell(
           customBorder: const CircleBorder(),
           onTap: onPressed,
           child: SizedBox(width: 52, height: 52, child: Icon(icon,
             semanticLabel: tooltip,
-            color: filled ? Colors.white : AppColors.primary, size: 26)),
+            color: filled ? Colors.white : context.area.primary, size: 26)),
         ),
       ),
     ),
@@ -42,8 +43,8 @@ class AttemptTopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    decoration: BoxDecoration(color: AppColors.background, boxShadow: [
-      BoxShadow(color: AppColors.primary.withValues(alpha: 0.05), blurRadius: 14, offset: const Offset(0, 6)),
+    decoration: BoxDecoration(color: context.area.background, boxShadow: [
+      BoxShadow(color: context.area.primary.withValues(alpha: 0.05), blurRadius: 14, offset: const Offset(0, 6)),
     ]),
     child: SafeArea(bottom: false, child: Center(child: ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 720),
@@ -87,7 +88,7 @@ class SegmentedProgress extends StatelessWidget {
           height: 10,
           margin: EdgeInsets.only(right: i == answered.length - 1 ? 0 : 6),
           decoration: BoxDecoration(
-            color: i == current ? AppColors.primary : answered[i] ? const Color(0xFF10B981) : AppColors.blueBorder,
+            color: i == current ? context.area.primary : answered[i] ? const Color(0xFF10B981) : context.area.border,
             borderRadius: BorderRadius.circular(AppRadii.pill),
           ),
         )),
@@ -111,7 +112,7 @@ class HighlightedPrompt extends StatelessWidget {
     var last = 0;
     for (final match in _number.allMatches(text)) {
       if (match.start > last) spans.add(TextSpan(text: text.substring(last, match.start)));
-      spans.add(TextSpan(text: match.group(0), style: const TextStyle(color: AppColors.primary)));
+      spans.add(TextSpan(text: match.group(0), style: TextStyle(color: context.area.primary)));
       last = match.end;
     }
     if (last < text.length) spans.add(TextSpan(text: text.substring(last)));

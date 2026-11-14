@@ -14,6 +14,9 @@ supabase/functions/.env.*
 !supabase/functions/.env.example
 supabase/.temp/
 
+# Wrangler (Cloudflare) local dev state and build output
+.wrangler/
+
 # Flutter iOS generated files
 ios/Flutter/Generated.xcconfig
 ios/Flutter/ephemeral/

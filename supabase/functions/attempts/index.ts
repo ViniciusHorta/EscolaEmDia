@@ -19,6 +19,13 @@ const messages: Record<string, string> = {
   ASSIGNMENT_WITHDRAWN:
     "Esta ficha deixou de estar disponível. As respostas já guardadas foram preservadas.",
   ATTEMPT_READ_ONLY: "Esta tentativa já não permite alterar respostas.",
+  // Mensagens para a criança: nunca mencionam preços nem compras.
+  DAILY_ATTEMPT_LIMIT_REACHED:
+    "Já fizeste a tua ficha de hoje. Muito bem! Volta amanhã para fazer outra.",
+  PREMIUM_WORKSHEET_UNAVAILABLE:
+    "Esta ficha não está disponível agora. Pede ajuda ao teu responsável.",
+  CHILD_PLAN_LOCKED:
+    "Ainda não podes começar fichas novas. Pede ajuda ao teu responsável.",
   QUESTION_NOT_FOUND: "Esta pergunta não pertence à ficha.",
   INVALID_ANSWER: "Verifica a resposta. O texto pode ter até 5000 caracteres.",
   ANSWER_REVISION_CONFLICT:
@@ -295,6 +302,10 @@ Deno.serve(async (req: Request) => {
           ? 401
           : code === "ATTEMPT_NOT_FOUND" || code === "QUESTION_NOT_FOUND"
             ? 404
+            : code === "DAILY_ATTEMPT_LIMIT_REACHED" ||
+                code === "PREMIUM_WORKSHEET_UNAVAILABLE" ||
+                code === "CHILD_PLAN_LOCKED"
+              ? 403
             : code === "INVALID_ANSWER"
               ? 422
               : code === "STORAGE_UNAVAILABLE"

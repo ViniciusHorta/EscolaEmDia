@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/area_palette.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../../../shared/widgets/app_card.dart';
 import 'family_brand_card.dart';
@@ -56,8 +57,8 @@ class AuthCardHeader extends StatelessWidget {
       const Spacer(),
       ExcludeSemantics(child: CircleAvatar(
         radius: 32,
-        backgroundColor: AppColors.lavender,
-        child: Icon(icon, color: AppColors.primary, size: 32),
+        backgroundColor: context.area.tint,
+        child: Icon(icon, color: context.area.primary, size: 32),
       )),
       const Spacer(),
       const SizedBox(width: 48),
@@ -79,7 +80,7 @@ class AuthFeedback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Semantics(liveRegion: true, child: AppCard(
-    color: error ? AppColors.coralSoft : AppColors.softBlue,
+    color: error ? AppColors.coralSoft : context.area.soft,
     padding: const EdgeInsets.all(16),
     child: Text(message),
   ));

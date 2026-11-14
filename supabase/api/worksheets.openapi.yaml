@@ -6,7 +6,10 @@ info:
     Subconjunto do contrato acordado. Não gera perguntas nem versões a partir
     do cliente: propõe fichas publicadas cujos temas correspondem exatamente
     à seleção. As versões publicadas e as suas associações a temas são imutáveis.
-    Todas as listas são paginadas (50 itens) por UUID crescente e nextCursor.
+    Todas as listas são paginadas (50 itens) por UUID crescente e nextCursor,
+    exceto o catálogo (/v1/worksheets), ordenado Free → Premium com cursor
+    opaco "<tier>.<versionId>".
+    Os metadados de cada ficha incluem accessTier (free | premium).
 servers:
   - url: https://hhgxxvvreyhigxynrgmv.supabase.co/functions/v1/worksheets
 security:
@@ -51,7 +54,26 @@ paths:
     get:
       summary: Procurar propostas no catálogo publicado
       parameters:
-        - $ref: '#/components/parameters/Cursor'
+        - name: cursor
+          in: query
+          description: nextCursor opaco da página anterior ("<tier>.<versionId>")
+          schema:
+            type: string
+        - name: accessTier
+          in: query
+          description: Filtrar por catálogo Free ou Premium
+          schema:
+            type: string
+            enum: [free, premium]
+        - name: childId
+          in: query
+          description: >-
+            Criança da família do responsável. Quando indicada, cada item traz
+            childHistory {timesCompleted, lastCompletedAt} com as tentativas entregues
+            dessa criança na ficha (todas as versões). Criança de outra família → 404 CHILD_NOT_FOUND.
+          schema:
+            type: string
+            format: uuid
         - name: subjectId
           in: query
           schema:
@@ -70,7 +92,10 @@ paths:
             type: string
       responses:
         '200':
-          description: items com metadados da última versão publicada de cada ficha; nextCursor UUID ou null
+          description: >-
+            items com metadados da última versão publicada de cada ficha (inclui accessTier),
+            primeiro as fichas Free e depois as Premium; nextCursor opaco ou null; com childId,
+            cada item inclui childHistory
         default:
           $ref: '#/components/responses/Error'
   /v1/worksheets/{id}:
@@ -116,7 +141,10 @@ paths:
         '200':
           description: >-
             items com id, childId, worksheetVersionId, assignedAt, status, activeAttemptId, latestAttemptId, latestAttemptStatus, latestAttemptNumber, latestCompletedAttemptId e latestCompletedAttemptNumber (ou null) e worksheet
-            (metadados apenas); nextCursor UUID ou null. Adulto deve ser membro da família.
+            (metadados apenas, inclui accessTier); nextCursor UUID ou null; access com o plano e a
+            utilização do dia: plan (premium | free | locked), subscription, assignmentsToday,
+            assignmentLimit, attemptsToday, attemptLimit (null = ilimitado), freeMaxQuestions e
+            catalogue (all | free | none). Não contém ofertas. Adulto deve ser membro da família.
             Sessão infantil só pode consultar o próprio id. Não inclui perguntas,
             soluções, explicações ou critérios de classificação.
         default:
@@ -127,6 +155,10 @@ paths:
         Transação valida autorização do responsável, membro/família ativos e ano escolar,
         grava a atribuição e auditoria em conjunto. Repetir o mesmo clientRequestId
         não duplica a atribuição. Uma versão só pode estar ativa uma vez por criança.
+        Plano (403): CHILD_PLAN_LOCKED (criança sem vaga gratuita nem Premium),
+        PREMIUM_WORKSHEET_REQUIRED (ficha Premium para criança Free) e
+        DAILY_ASSIGNMENT_LIMIT_REACHED (limite diário do plano gratuito, dia de Lisboa;
+        fichas retiradas antes de iniciadas não contam). O cliente deve apresentar o Premium.
         A realização e repetição da ficha serão representadas por tentativas futuras.
       requestBody:
         required: true

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/area_palette.dart';
 import '../../core/theme/app_tokens.dart';
 
 class AppCard extends StatelessWidget {
@@ -27,7 +28,7 @@ class AppCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppRadii.card),
             boxShadow: [
               BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.06),
+                  color: context.area.primary.withValues(alpha: 0.06),
                   blurRadius: 20,
                   offset: const Offset(0, 8))
             ],
@@ -37,7 +38,7 @@ class AppCard extends StatelessWidget {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppRadii.card),
               side: BorderSide(
-                  color: selected ? AppColors.primary : AppColors.lavender,
+                  color: selected ? context.area.primary : context.area.tint,
                   width: selected ? 2 : 1),
             ),
             clipBehavior: Clip.antiAlias,

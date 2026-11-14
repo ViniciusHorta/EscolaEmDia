@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/area_palette.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/brand/app_logo.dart';
@@ -13,7 +14,7 @@ class FamilyBrandCard extends StatelessWidget {
       const AppLogo(size: 104, semanticLabel: null),
       const SizedBox(height: 20),
       Text('Escola em Dia', textAlign: TextAlign.center,
-        style: Theme.of(context).textTheme.headlineLarge?.copyWith(color: AppColors.primary)),
+        style: Theme.of(context).textTheme.headlineLarge?.copyWith(color: context.area.primary)),
       const SizedBox(height: 8),
       Text('Apoio escolar sereno em família', textAlign: TextAlign.center,
         style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.muted)),

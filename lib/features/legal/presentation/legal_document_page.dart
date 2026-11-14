@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/area_palette.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../domain/legal_models.dart';
 
@@ -12,12 +13,12 @@ class LegalDocumentPage extends StatelessWidget {
 
   static Future<void> open(BuildContext context, LegalDocument document, {DateTime? acceptedAt}) =>
       Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => LegalDocumentPage(document: document, acceptedAt: acceptedAt)));
+        builder: (_) => InheritedTheme.captureAll(context, LegalDocumentPage(document: document, acceptedAt: acceptedAt))));
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: AppColors.background,
-    appBar: AppBar(title: Text(document.kind.label), backgroundColor: AppColors.background),
+    backgroundColor: context.area.background,
+    appBar: AppBar(title: Text(document.kind.label), backgroundColor: context.area.background),
     body: SafeArea(child: SelectionArea(child: SingleChildScrollView(
       child: Center(child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 760),
