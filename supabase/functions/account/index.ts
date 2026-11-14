@@ -1,6 +1,8 @@
 import { createCors } from "../_shared/cors.ts";
 import { REAUTH_METHODS } from "../_shared/reauth.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { StripeError, stripeClient } from "../_shared/stripe.ts";
+import { PlayError, playClient, readServiceAccount } from "../_shared/google_play.ts";
 
 // Eliminação da conta do responsável e de todos os dados associados.
 // Exige uma reautenticação nos últimos cinco minutos (amr do JWT; ver _shared/reauth.ts),
@@ -23,6 +25,8 @@ const messages: Record<string, string> = {
   CONFIRMATION_REQUIRED: "Escreve ELIMINAR para confirmar.",
   STORAGE_UNAVAILABLE:
     "Não foi possível eliminar a conta. Tenta novamente dentro de momentos.",
+  SUBSCRIPTION_CANCEL_FAILED:
+    "Não foi possível cancelar a tua assinatura Premium. A conta não foi eliminada. Tenta novamente dentro de momentos.",
   INTERNAL_ERROR: "Não foi possível concluir o pedido. Tenta novamente.",
 };
 
@@ -140,6 +144,43 @@ Deno.serve(async (req: Request) => {
     if (body.confirmation !== "ELIMINAR")
       return fail(422, "CONFIRMATION_REQUIRED");
 
+    // 0) Assinaturas pagas das famílias que vão ser apagadas: cancelar na origem, senão o
+    // responsável continuaria a pagar. Se algum cancelamento falhar, nada é apagado.
+    //   Stripe: cancelada já. Google Play: renovação cancelada. App Store: a Apple não permite
+    //   cancelar pelo servidor (a app avisa o responsável para cancelar nas definições da Apple).
+    const { data: subscriptions, error: subsError } = await admin.rpc("account_deletion_subscriptions", {
+      p_actor_id: user.id,
+    });
+    if (subsError || !Array.isArray(subscriptions)) return fail(503, "STORAGE_UNAVAILABLE");
+    let appStoreSubscriptions = 0;
+    try {
+      for (const sub of subscriptions) {
+        if (sub.channel === "stripe") {
+          const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+          if (!stripeKey) throw new Error("stripe not configured");
+          try {
+            await stripeClient(stripeKey)(`subscriptions/${sub.externalId}`, { method: "DELETE" });
+          } catch (error) {
+            if (!(error instanceof StripeError && error.code === "resource_missing")) throw error;
+          }
+        } else if (sub.channel === "google_play") {
+          if (!sub.autoRenew) continue; // já não renova
+          const sa = readServiceAccount(), packageName = Deno.env.get("PLAY_PACKAGE_NAME");
+          if (!sa || !packageName || !sub.productId) throw new Error("play not configured");
+          try {
+            await playClient(sa, packageName).cancel(sub.productId, sub.externalId);
+          } catch (error) {
+            if (!(error instanceof PlayError && [404, 410].includes(error.status))) throw error;
+          }
+        } else if (sub.channel === "app_store") {
+          appStoreSubscriptions++;
+        }
+      }
+    } catch (error) {
+      console.error(JSON.stringify({ requestId, domain: "account", operation, cancelFailed: (error as Error).message }));
+      return fail(503, "SUBSCRIPTION_CANCEL_FAILED");
+    }
+
     // 1) Dados da aplicação (famílias, crianças, histórico). Idempotente.
     const { data, error } = await admin.rpc("delete_account_data", {
       p_actor_id: user.id,
@@ -151,7 +192,7 @@ Deno.serve(async (req: Request) => {
     const { error: deleteError } = await admin.auth.admin.deleteUser(user.id);
     if (deleteError) return fail(503, "STORAGE_UNAVAILABLE");
 
-    return reply(200, { deleted: true, ...data });
+    return reply(200, { deleted: true, ...data, appStoreSubscriptions });
   } catch {
     return fail(500, "INTERNAL_ERROR");
   }
