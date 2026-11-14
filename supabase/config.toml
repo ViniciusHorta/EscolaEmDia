@@ -1,5 +1,37 @@
 project_id = "hhgxxvvreyhigxynrgmv"
 
+# ---------------------------------------------------------------------------
+# Stack local (supabase start). Portas fora do padrão (5432x) para não colidir
+# com outros serviços na máquina de desenvolvimento.
+# ---------------------------------------------------------------------------
+[api]
+port = 55321
+
+[db]
+port = 55322
+shadow_port = 55320
+major_version = 17
+
+[db.pooler]
+port = 55329
+
+[studio]
+port = 55323
+api_url = "http://127.0.0.1"
+
+[local_smtp]
+port = 55324
+
+[analytics]
+port = 55327
+
+[edge_runtime]
+inspector_port = 55328
+
+[auth]
+site_url = "http://localhost:8080"
+additional_redirect_urls = ["http://localhost:8080", "http://127.0.0.1:8080"]
+
 [functions.parent-pin]
 # Validation is performed explicitly with auth.getUser(token) in the handler.
 # This supports the project's current signing keys without relying on the legacy gateway check.
