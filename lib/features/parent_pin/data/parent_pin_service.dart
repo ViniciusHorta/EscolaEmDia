@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../auth/data/reauthentication.dart';
 
 class ParentPinException implements Exception {
   const ParentPinException(this.message, {this.alreadyConfigured = false, this.reauthRequired = false, this.requestId});
@@ -27,29 +28,30 @@ class ParentPinService {
     }
   }
 
-  /// Reautenticação: novo início de sessão com a palavra-passe da conta atual.
-  /// O JWT resultante tem amr=password recente, exigido por [reset].
-  Future<void> reauthenticate(String password) async {
-    final email = client.auth.currentUser?.email;
-    if (email == null) {
-      throw const ParentPinException('A tua sessão terminou. Entra novamente na conta.');
-    }
+  Reauthentication get _reauth => Reauthentication(client);
+
+  /// Falso para contas criadas só com o Google: confirmam com um código por e-mail.
+  bool get hasPassword => _reauth.hasPassword;
+
+  /// Reautenticação com a palavra-passe da conta (amr=password recente).
+  Future<void> reauthenticate(String password) => _guard(() => _reauth.withPassword(password));
+
+  /// Envia um código de verificação para o e-mail da conta.
+  Future<void> sendReauthCode() => _guard(_reauth.sendEmailCode);
+
+  /// Reautenticação com o código recebido por e-mail (amr=otp recente).
+  Future<void> reauthenticateWithCode(String code) => _guard(() => _reauth.withEmailCode(code));
+
+  static Future<void> _guard(Future<void> Function() action) async {
     try {
-      await client.auth.signInWithPassword(email: email, password: password);
-    } on AuthException catch (error) {
-      throw ParentPinException(
-        error.statusCode == '429'
-            ? 'Demasiadas tentativas. Aguarda um pouco antes de tentar novamente.'
-            : error.code == 'invalid_credentials'
-                ? 'A palavra-passe não está correta.'
-                : 'Não foi possível confirmar a palavra-passe. Tenta novamente.',
-      );
-    } catch (_) {
-      throw const ParentPinException('Não foi possível ligar ao serviço. Verifica a ligação à Internet.');
+      await action();
+    } on ReauthException catch (error) {
+      throw ParentPinException(error.message);
     }
   }
 
-  /// Substitui o PIN do responsável. Só é aceite até cinco minutos após [reauthenticate].
+  /// Substitui o PIN do responsável. Só é aceite até cinco minutos após uma reautenticação
+  /// ([reauthenticate] ou [reauthenticateWithCode]).
   Future<void> reset(String pin) async {
     if (!RegExp(r'^[0-9]{4}$').hasMatch(pin)) {
       throw const ParentPinException('O PIN deve ter exatamente 4 dígitos.');
