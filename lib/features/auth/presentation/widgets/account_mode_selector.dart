@@ -24,8 +24,8 @@ class AccountModeSelector extends StatelessWidget {
       borderRadius: BorderRadius.circular(AppRadii.pill),
     ),
     child: Row(children: [
+      item(AccountMode.login, 'Entrar', Icons.login_rounded),
       item(AccountMode.register, 'Criar conta', Icons.family_restroom_rounded),
-      item(AccountMode.login, 'Já tenho conta', Icons.login_rounded),
     ]),
   );
 
