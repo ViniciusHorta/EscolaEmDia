@@ -34,6 +34,8 @@ void main() {
     expect(InvitationPreview.fromJson({'status': 'pending', 'email': 'a@x.pt', 'invitedBy': 'b@x.pt'}).pending, isTrue);
     expect(InvitationPreview.fromJson({'status': 'expired', 'email': 'a@x.pt'}).pending, isFalse);
     expect(InvitationPreview.invalid.pending, isFalse);
+    expect(InvitationPreview.fromJson({'status': 'pending', 'email': 'a@x.pt', 'accountExists': false}).accountExists, isFalse);
+    expect(InvitationPreview.fromJson({'status': 'pending', 'email': 'a@x.pt'}).accountExists, isTrue);
   });
 
   test('PendingInvitationStore guarda só tokens válidos do link', () async {

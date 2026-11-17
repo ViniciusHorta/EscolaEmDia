@@ -7,11 +7,11 @@ import '../../../family/domain/family_models.dart';
 import '../../../../shared/widgets/app_card.dart';
 
 /// No ecrã de entrada: «Foste convidado…» quando se chega pelo link do convite.
-/// [onEmail] recebe o e-mail convidado para pré-preencher o formulário.
+/// [onInvitation] recebe o convite para pré-preencher o e-mail e escolher Entrar/Criar conta.
 class InvitationBanner extends StatefulWidget {
-  const InvitationBanner({super.key, required this.client, required this.onEmail});
+  const InvitationBanner({super.key, required this.client, required this.onInvitation});
   final SupabaseClient client;
-  final ValueChanged<String> onEmail;
+  final ValueChanged<InvitationPreview> onInvitation;
 
   @override
   State<InvitationBanner> createState() => _InvitationBannerState();
@@ -32,7 +32,7 @@ class _InvitationBannerState extends State<InvitationBanner> {
     final result = await FamilyService(widget.client).previewInvitation(token);
     if (!mounted || !result.pending) return;
     setState(() => preview = result);
-    widget.onEmail(result.email);
+    widget.onInvitation(result);
   }
 
   @override
@@ -47,7 +47,9 @@ class _InvitationBannerState extends State<InvitationBanner> {
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('Tens um convite para uma família', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 4),
-          Text('${p.invitedBy ?? 'Um responsável'} convidou-te. Entra ou cria conta com ${p.email} para aceitar.'),
+          Text(p.accountExists
+            ? '${p.invitedBy ?? 'Um responsável'} convidou-te. Entra com ${p.email} para aceitar.'
+            : '${p.invitedBy ?? 'Um responsável'} convidou-te. Cria a tua conta com ${p.email} para aceitar.'),
         ])),
       ])),
     );

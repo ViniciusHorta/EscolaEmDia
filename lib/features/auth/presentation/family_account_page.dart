@@ -8,6 +8,7 @@ import '../../../shared/widgets/app_text_field.dart';
 import '../data/auth_service.dart';
 import '../../legal/data/legal_service.dart';
 import '../../legal/domain/legal_models.dart';
+import '../../family/domain/family_models.dart';
 import '../../legal/presentation/legal_document_page.dart';
 import 'password_recovery_page.dart';
 import 'widgets/invitation_banner.dart';
@@ -78,6 +79,13 @@ class _FamilyAccountPageState extends State<FamilyAccountPage> {
     email.dispose();
     password.dispose();
     super.dispose();
+  }
+
+  /// Chegou pelo link do convite: abre em «Criar conta» se o e-mail ainda não tiver conta.
+  void openInvitation(InvitationPreview invitation) {
+    if (busy || email.text.trim().isNotEmpty) return;
+    changeMode(invitation.accountExists ? AccountMode.login : AccountMode.register);
+    email.text = invitation.email;
   }
 
   void changeMode(AccountMode value) {
@@ -193,8 +201,7 @@ class _FamilyAccountPageState extends State<FamilyAccountPage> {
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             const FamilyBrandCard(),
             const SizedBox(height: 24),
-            InvitationBanner(client: widget.auth.client,
-              onEmail: (invited) {if (email.text.trim().isEmpty) email.text = invited;}),
+            InvitationBanner(client: widget.auth.client, onInvitation: openInvitation),
             AppCard(
               child: Form(
                 key: form,

@@ -120,17 +120,20 @@ class FamilyMembers {
 
 /// Dados públicos de um convite, para o ecrã «Aceitar convite».
 class InvitationPreview {
-  const InvitationPreview({required this.status, required this.email, this.invitedBy, this.expiresAt});
+  const InvitationPreview({required this.status, required this.email, this.invitedBy, this.expiresAt, this.accountExists = true});
   /// pending | accepted | expired | invalid
   final String status;
   final String email;
   final String? invitedBy;
   final DateTime? expiresAt;
+  /// O e-mail convidado já tem conta: a app abre em «Entrar»; senão em «Criar conta».
+  final bool accountExists;
   bool get pending => status == 'pending';
   factory InvitationPreview.fromJson(Map value) => InvitationPreview(
     status: value['status'] as String? ?? 'invalid', email: value['email'] as String? ?? '',
     invitedBy: value['invitedBy'] as String?,
     expiresAt: value['expiresAt'] is String ? DateTime.tryParse(value['expiresAt'] as String) : null,
+    accountExists: value['accountExists'] != false,
   );
   static const invalid = InvitationPreview(status: 'invalid', email: '');
 }

@@ -54,6 +54,7 @@ begin
   assert public.family_invitation_preview(pg_temp.tok('p1'))->>'status' = 'invalid', '3b';
   v := public.family_invitation_preview(pg_temp.tok('p2'));
   assert v->>'status' = 'pending' and v->>'invitedBy' = 'inv-owner@example.invalid', '3c: ' || v::text;
+  assert (v->>'accountExists')::boolean, '3d';
 
   -- 4. Aceitar: email tem de coincidir; sem PIN não dá.
   assert pg_temp.err(format('select public.family_accept_invitation(%L, %L)', pg_temp.id('stranger'), pg_temp.tok('p2'))) = 'INVITATION_EMAIL_MISMATCH', '4a';
@@ -88,6 +89,7 @@ begin
   assert pg_temp.err(format('select public.family_cancel_invitation(%L, %L, %L)', pg_temp.id('owner'), pg_temp.id('fam'), v_inv)) = 'INVITATION_INVALID', '8b';
   assert pg_temp.err(format('select public.family_accept_invitation(%L, %L)', pg_temp.id('busy'), pg_temp.tok('b1'))) = 'INVITATION_INVALID', '8c';
   perform public.family_invite_adult(pg_temp.id('owner'), pg_temp.id('fam'), 'quarto@example.invalid', pg_temp.tok('q4'));
+  assert not (public.family_invitation_preview(pg_temp.tok('q4'))->>'accountExists')::boolean, '8d';
 
   -- 9. Convite expirado.
   update public.family_invitations set expires_at = now() - interval '1 minute' where token_hash = pg_temp.tok('q4');
