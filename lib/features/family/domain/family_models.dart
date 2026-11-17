@@ -78,3 +78,59 @@ abstract final class ChildAvatars {
   static String emoji(String id) => choices[id]?.$2 ?? '🙂';
   static String label(String id) => choices[id]?.$1 ?? 'Amigo';
 }
+
+/// Responsável ativo da família.
+class FamilyMember {
+  const FamilyMember({required this.adultUserId, required this.email, required this.joinedAt, required this.isMe});
+  final String adultUserId;
+  final String email;
+  final DateTime joinedAt;
+  final bool isMe;
+  factory FamilyMember.fromJson(Map value) => FamilyMember(
+    adultUserId: value['adultUserId'] as String, email: (value['email'] as String?) ?? '',
+    joinedAt: DateTime.parse(value['joinedAt'] as String), isMe: value['isMe'] == true,
+  );
+}
+
+/// Convite pendente (enviado por e-mail, válido 7 dias).
+class FamilyInvitation {
+  const FamilyInvitation({required this.id, required this.email, required this.expiresAt, required this.expired});
+  final String id;
+  final String email;
+  final DateTime expiresAt;
+  final bool expired;
+  factory FamilyInvitation.fromJson(Map value) => FamilyInvitation(
+    id: value['id'] as String, email: value['email'] as String,
+    expiresAt: DateTime.parse(value['expiresAt'] as String), expired: value['expired'] == true,
+  );
+}
+
+class FamilyMembers {
+  const FamilyMembers({required this.members, required this.invitations});
+  final List<FamilyMember> members;
+  final List<FamilyInvitation> invitations;
+  /// Limite do servidor: 4 responsáveis, contando os convites pendentes válidos.
+  static const limit = 4;
+  bool get canInvite => members.length + invitations.where((i) => !i.expired).length < limit;
+  factory FamilyMembers.fromJson(Map value) => FamilyMembers(
+    members: [for (final m in (value['members'] as List? ?? const [])) FamilyMember.fromJson(m as Map)],
+    invitations: [for (final i in (value['invitations'] as List? ?? const [])) FamilyInvitation.fromJson(i as Map)],
+  );
+}
+
+/// Dados públicos de um convite, para o ecrã «Aceitar convite».
+class InvitationPreview {
+  const InvitationPreview({required this.status, required this.email, this.invitedBy, this.expiresAt});
+  /// pending | accepted | expired | invalid
+  final String status;
+  final String email;
+  final String? invitedBy;
+  final DateTime? expiresAt;
+  bool get pending => status == 'pending';
+  factory InvitationPreview.fromJson(Map value) => InvitationPreview(
+    status: value['status'] as String? ?? 'invalid', email: value['email'] as String? ?? '',
+    invitedBy: value['invitedBy'] as String?,
+    expiresAt: value['expiresAt'] is String ? DateTime.tryParse(value['expiresAt'] as String) : null,
+  );
+  static const invalid = InvitationPreview(status: 'invalid', email: '');
+}

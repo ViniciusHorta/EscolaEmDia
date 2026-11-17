@@ -10,6 +10,7 @@ import '../../legal/data/legal_service.dart';
 import '../../legal/domain/legal_models.dart';
 import '../../legal/presentation/legal_document_page.dart';
 import 'password_recovery_page.dart';
+import 'widgets/invitation_banner.dart';
 import 'widgets/account_mode_selector.dart';
 import 'widgets/family_brand_card.dart';
 
@@ -192,6 +193,8 @@ class _FamilyAccountPageState extends State<FamilyAccountPage> {
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             const FamilyBrandCard(),
             const SizedBox(height: 24),
+            InvitationBanner(client: widget.auth.client,
+              onEmail: (invited) {if (email.text.trim().isEmpty) email.text = invited;}),
             AppCard(
               child: Form(
                 key: form,
