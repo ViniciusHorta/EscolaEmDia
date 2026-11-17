@@ -1,6 +1,6 @@
 # Política de Privacidade — Escola em Dia
 
-**Última atualização:** 7 de novembro de 2026
+**Última atualização:** 17 de novembro de 2026
 
 ## 1. Introdução
 
@@ -46,6 +46,7 @@ Durante o registo e utilização da plataforma, poderemos recolher:
 - Informações de autenticação;
 - Preferências da conta;
 - Informações relacionadas com a composição da família e as permissões dos adultos;
+- Endereço de email dos adultos que o responsável convida para a família;
 - Informações sobre subscrições e pagamentos;
 - Histórico de utilização das funcionalidades da plataforma, na medida necessária à prestação do serviço.
 
@@ -70,6 +71,20 @@ Para permitir a utilização das funcionalidades educativas, poderemos recolher:
 
 Não exigimos às crianças que forneçam endereço de email, número de telefone, morada, nome completo ou data de nascimento para criar um perfil infantil.
 
+### 3.3. Vários responsáveis na mesma família
+
+Um responsável pode convidar outros adultos para a sua família (até 4 responsáveis por família), indicando o respetivo endereço de email.
+
+O email indicado é usado apenas para enviar o convite, através do nosso fornecedor de envio de emails. O convite é válido durante 7 dias e só pode ser aceite por quem entrar ou criar conta com esse email. O responsável que convida declara que o adulto convidado tem legitimidade para acompanhar as crianças da família.
+
+Depois de aceitar o convite, todos os responsáveis da família:
+
+- Veem o endereço de email dos restantes responsáveis e dos convites pendentes;
+- Têm acesso aos perfis infantis e a todos os dados educativos das crianças da família (fichas, respostas, revisões, resultados e progresso);
+- Veem o plano e o estado das subscrições das crianças, sem acesso aos dados de pagamento de outro responsável.
+
+Qualquer responsável pode cancelar convites, remover outro responsável ou sair da família. A partir desse momento, o adulto removido deixa de ter acesso aos dados da família e das crianças.
+
 ## [Secções 4 a 7 por redigir: finalidades e fundamentos jurídicos, subcontratantes e fornecedores, transferências internacionais, segurança]
 
 ## 8. Conservação e eliminação dos dados
@@ -86,6 +101,8 @@ Com a eliminação, são apagados de imediato:
 - Os problemas reportados em perguntas das fichas.
 
 Quando outro adulto gere a mesma família, a família e os perfis infantis mantêm-se para esse adulto e é apagada apenas a conta de quem pediu a eliminação. As referências a essa conta no histórico (por exemplo, quem atribuiu ou reviu uma ficha) são removidas.
+
+Os convites para a família (email convidado, data e estado) são conservados enquanto a família existir, para segurança e para o histórico da família, e são apagados com ela.
 
 Após a eliminação, conservam-se apenas:
 
