@@ -7,6 +7,9 @@
 //   DELETE /v1/families/{familyId}/members/{adultUserId}         auth + desbloqueio
 //   GET    /v1/invitations/{token}                               público (o token é o segredo)
 //   POST   /v1/invitations/{token}/accept                        auth (email do convite)
+//   POST   /v1/invitations/{token}/signup {password, legalDocumentIds}
+//          cria a conta do convidado já com o e-mail confirmado (o token prova
+//          que recebeu o e-mail); só se o convite estiver pendente e não houver conta.
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
 import { checkParentUnlock, sha256Hex } from "../_shared/parent_unlock.ts";
 import { readEmailConfig, sendEmail } from "../_shared/sendpulse.ts";
@@ -27,20 +30,22 @@ export const memberMessages: Record<string, string> = {
   MEMBER_NOT_FOUND: "Este responsável já não pertence à família.",
   LAST_MEMBER: "A família precisa de ter pelo menos um responsável.",
   EMAIL_UNAVAILABLE: "Não foi possível enviar o e-mail do convite. Tenta novamente.",
+  ACCOUNT_EXISTS: "Já existe uma conta com este e-mail. Entra com a tua palavra-passe.",
+  WEAK_PASSWORD: "Escolhe uma palavra-passe com 8 a 72 caracteres.",
 };
 
 const statusFor: Record<string, number> = {
   INVALID_REQUEST: 400, AUTH_REQUIRED: 401, ADULT_SETUP_REQUIRED: 403,
   INVITATION_EMAIL_MISMATCH: 403, FAMILY_NOT_FOUND: 404, INVITATION_INVALID: 404,
   MEMBER_NOT_FOUND: 404, ALREADY_MEMBER: 409, MEMBER_LIMIT: 409, ALREADY_IN_FAMILY: 409,
-  LAST_MEMBER: 409, INVITATION_EXPIRED: 410, RATE_LIMITED: 429,
+  LAST_MEMBER: 409, ACCOUNT_EXISTS: 409, INVITATION_EXPIRED: 410, WEAK_PASSWORD: 422, RATE_LIMITED: 429,
 };
 
 type Route =
   | { kind: "list" | "invite"; familyId: string }
   | { kind: "cancel"; familyId: string; invitationId: string }
   | { kind: "remove"; familyId: string; adultUserId: string }
-  | { kind: "preview" | "accept"; token: string };
+  | { kind: "preview" | "accept" | "signup"; token: string };
 
 export function matchMembersRoute(path: string): Route | null {
   let m = /^\/v1\/families\/([^/]+)\/members$/.exec(path);
@@ -52,11 +57,12 @@ export function matchMembersRoute(path: string): Route | null {
     return { kind: "remove", familyId: m[1], adultUserId: m[2] };
   if ((m = /^\/v1\/invitations\/([^/]+)$/.exec(path))) return { kind: "preview", token: m[1] };
   if ((m = /^\/v1\/invitations\/([^/]+)\/accept$/.exec(path))) return { kind: "accept", token: m[1] };
+  if ((m = /^\/v1\/invitations\/([^/]+)\/signup$/.exec(path))) return { kind: "signup", token: m[1] };
   return null;
 }
 
 const methodFor: Record<Route["kind"], string> = {
-  list: "GET", invite: "POST", cancel: "DELETE", remove: "DELETE", preview: "GET", accept: "POST",
+  list: "GET", invite: "POST", cancel: "DELETE", remove: "DELETE", preview: "GET", accept: "POST", signup: "POST",
 };
 
 const escapeHtml = (s: string) =>
@@ -123,6 +129,37 @@ export async function handleMembers(req: Request, route: Route, reply: Reply, fa
     if (error || !data) return fail(503, "STORAGE_UNAVAILABLE");
     if (data.status === "invalid") return fail(404, "INVITATION_INVALID");
     return reply(200, data);
+  }
+
+  if (route.kind === "signup") {
+    const body = await readJson(req);
+    const ids = body?.legalDocumentIds;
+    if (!body || Object.keys(body).some((k) => k !== "password" && k !== "legalDocumentIds")
+        || typeof body.password !== "string" || !Array.isArray(ids) || ids.length > 10
+        || ids.some((id) => typeof id !== "string" || !uuid.test(id)))
+      return fail(400, "INVALID_REQUEST");
+    const bytes = new TextEncoder().encode(body.password).length;
+    if ([...body.password].length < 8 || bytes > 72) return fail(422, "WEAK_PASSWORD");
+    const { data: invitation, error } = await admin.rpc("family_invitation_preview", {
+      p_token_hash: await sha256Hex(route.token),
+    });
+    if (error || !invitation) return fail(503, "STORAGE_UNAVAILABLE");
+    if (invitation.status === "expired") return fail(410, "INVITATION_EXPIRED");
+    if (invitation.status !== "pending") return fail(404, "INVITATION_INVALID");
+    if (invitation.accountExists) return fail(409, "ACCOUNT_EXISTS");
+    const { error: createError } = await admin.auth.admin.createUser({
+      email: invitation.email,
+      password: body.password,
+      email_confirm: true,
+      user_metadata: { legal_acceptances: ids },
+    });
+    if (createError) {
+      const code = (createError as { code?: string }).code;
+      if (code === "email_exists" || code === "user_already_exists") return fail(409, "ACCOUNT_EXISTS");
+      if (code === "weak_password") return fail(422, "WEAK_PASSWORD");
+      return fail(503, "STORAGE_UNAVAILABLE");
+    }
+    return reply(201, { email: invitation.email });
   }
 
   const accessToken = /^Bearer (\S+)$/i.exec(req.headers.get("authorization") ?? "")?.[1];

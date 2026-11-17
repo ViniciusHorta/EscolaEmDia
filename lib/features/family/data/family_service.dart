@@ -67,6 +67,11 @@ class FamilyService {
   Future<String> acceptInvitation(String token) async =>
       (await _request('/v1/invitations/$token/accept', parent: false))['familyId'] as String;
 
+  /// Cria a conta do convidado já com o e-mail confirmado (o link do convite prova-o).
+  Future<void> signupFromInvitation(String token, String password, List<String> legalDocumentIds) async =>
+      _request('/v1/invitations/$token/signup', session: false, parent: false,
+        body: {'password': password, 'legalDocumentIds': legalDocumentIds});
+
   Future<List<Map>> _list(String path) async {
     final result = <Map>[];
     String? cursor;
