@@ -17,6 +17,7 @@ class ParentShell extends StatelessWidget {
     required this.family,
     required this.onLock,
     required this.onSignOut,
+    this.accountEmail,
     this.onOpenLegal,
     this.onDeleteAccount,
     this.pendingCount = 0,
@@ -30,6 +31,8 @@ class ParentShell extends StatelessWidget {
   final Widget family;
   final VoidCallback onLock;
   final VoidCallback onSignOut;
+  /// E-mail da conta com sessão iniciada, mostrado no topo do menu de conta.
+  final String? accountEmail;
   final VoidCallback? onOpenLegal;
   final VoidCallback? onDeleteAccount;
   final int pendingCount;
@@ -106,6 +109,16 @@ class ParentShell extends StatelessWidget {
     builder: (sheet) => SafeArea(child: Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
+        if (accountEmail case final email? when email.isNotEmpty) ...[
+          ListTile(
+            leading: CircleAvatar(backgroundColor: context.area.tint,
+              child: Icon(Icons.person_rounded, color: context.area.primary)),
+            title: const Text('Sessão iniciada como', style: TextStyle(fontSize: 13, color: AppColors.muted)),
+            subtitle: SelectableText(email, maxLines: 1, style: const TextStyle(
+              fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.text)),
+          ),
+          const Divider(height: 8),
+        ],
         ListTile(
           leading: Icon(Icons.lock_outline_rounded, color: context.area.primary),
           title: const Text('Bloquear área do responsável'),

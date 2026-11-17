@@ -8,8 +8,12 @@ import '../../../shared/widgets/app_text_field.dart';
 import '../data/auth_service.dart';
 import '../../legal/data/legal_service.dart';
 import '../../legal/domain/legal_models.dart';
+import '../../family/data/family_service.dart';
+import '../../family/data/pending_invitation_store.dart';
+import '../../family/domain/family_models.dart';
 import '../../legal/presentation/legal_document_page.dart';
 import 'password_recovery_page.dart';
+import 'widgets/invitation_banner.dart';
 import 'widgets/account_mode_selector.dart';
 import 'widgets/family_brand_card.dart';
 
@@ -40,6 +44,8 @@ class _FamilyAccountPageState extends State<FamilyAccountPage> {
   List<LegalDocument>? legalDocuments;
   bool legalLoading = false;
   String? legalError;
+  /// Convite pendente do link do e-mail (ver InvitationBanner).
+  InvitationPreview? invitation;
 
   bool get registering => mode == AccountMode.register;
 
@@ -79,6 +85,26 @@ class _FamilyAccountPageState extends State<FamilyAccountPage> {
     super.dispose();
   }
 
+  /// Chegou pelo link do convite: abre em «Criar conta» se o e-mail ainda não tiver conta.
+  void openInvitation(InvitationPreview value) {
+    invitation = value;
+    if (busy || email.text.trim().isNotEmpty) return;
+    changeMode(value.accountExists ? AccountMode.login : AccountMode.register);
+    email.text = value.email;
+  }
+
+  /// Criar conta com o e-mail do convite: o servidor cria-a já confirmada e entramos logo.
+  /// Devolve false quando não se aplica (outro e-mail, conta existente, sem convite guardado).
+  Future<bool> registerFromInvitation(String submittedEmail, List<String> legalIds) async {
+    final invited = invitation;
+    if (invited == null || invited.accountExists || submittedEmail.toLowerCase() != invited.email) return false;
+    final token = await PendingInvitationStore.read();
+    if (token == null) return false;
+    await FamilyService(widget.auth.client).signupFromInvitation(token, password.text, legalIds);
+    await widget.auth.login(submittedEmail, password.text);
+    return true;
+  }
+
   void changeMode(AccountMode value) {
     if (busy || value == mode) return;
     FocusScope.of(context).unfocus();
@@ -108,9 +134,13 @@ class _FamilyAccountPageState extends State<FamilyAccountPage> {
     final submittedEmail = email.text.trim();
     setState(() { busy = true; feedback = null; confirmationEmail = null; });
     try {
-      if (isRegistration) {
+      final legalIds = isRegistration
+          ? LegalDocumentKind.values.map((kind) => legalDocument(kind)!.id).toList() : const <String>[];
+      if (isRegistration && await registerFromInvitation(submittedEmail, legalIds)) {
+        return;
+      } else if (isRegistration) {
         final pending = await widget.auth.register(submittedEmail, password.text,
-          legalDocumentIds: LegalDocumentKind.values.map((kind) => legalDocument(kind)!.id).toList());
+          legalDocumentIds: legalIds);
         if (!mounted) return;
         if (pending) {
           form.currentState?.reset();
@@ -125,6 +155,8 @@ class _FamilyAccountPageState extends State<FamilyAccountPage> {
       } else {
         await widget.auth.login(submittedEmail, password.text);
       }
+    } on FamilyException catch (failure) {
+      if (mounted) setState(() => feedback = failure.message);
     } catch (error) {
       if (!mounted) return;
       setState(() => feedback = AuthService.messageFor(error));
@@ -192,6 +224,7 @@ class _FamilyAccountPageState extends State<FamilyAccountPage> {
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             const FamilyBrandCard(),
             const SizedBox(height: 24),
+            InvitationBanner(client: widget.auth.client, onInvitation: openInvitation),
             AppCard(
               child: Form(
                 key: form,

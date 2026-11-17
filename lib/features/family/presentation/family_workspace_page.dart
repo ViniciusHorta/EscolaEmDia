@@ -33,9 +33,12 @@ import '../../progress/data/child_progress_service.dart';
 import '../../progress/presentation/child_progress_page.dart';
 import '../data/family_service.dart';
 import '../data/last_profile_store.dart';
+import '../data/pending_invitation_store.dart';
 import '../domain/family_models.dart';
+import 'accept_invitation_page.dart';
 import 'child_profile_page.dart';
 import 'parent_shell.dart';
+import 'widgets/family_members_card.dart';
 import 'widgets/ready_children_grid.dart';
 
 class FamilyWorkspacePage extends StatefulWidget {
@@ -79,7 +82,10 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
   bool parentViewReady = false;
   String? childModeFamilyId;
   bool modeLoaded = false;
-  final familyRequestId = newRequestId();
+  /// Novo pedido sempre que o adulto fica sem família (p. ex. depois de sair de uma).
+  String familyRequestId = newRequestId();
+  /// Convite recebido por e-mail, à espera de ser aceite ou dispensado.
+  String? pendingInvitation;
   List<Family> families = [];
   Family? selectedFamily;
   List<ChildProfile> children = [];
@@ -161,7 +167,9 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
       final adultId = widget.auth.user!.id;
       final stored = await ChildModeStore.read(adultId);
       final last = await LastProfileStore.read(adultId);
+      final invitation = await PendingInvitationStore.read();
       if (!mounted) return;
+      pendingInvitation = invitation;
       // Pede sempre o PIN do último perfil usado neste dispositivo: o teclado da
       // criança (já selecionada) ou o PIN do responsável por cima do seletor de perfis.
       final familyId = stored ?? last?.familyId;
@@ -414,6 +422,30 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
     editingChild = null; error = null;
   });
 
+  Future<void> invitationAccepted(String familyId) async {
+    await PendingInvitationStore.clear();
+    if (!mounted) return;
+    setState(() {pendingInvitation = null; editing = false; savedChild = null; parentTab = ParentTab.family;});
+    await load(familyId: familyId);
+    LastProfileStore.remember(widget.auth.user!.id, LastProfile.parent(familyId));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Bem-vindo à família! Já tens acesso às crianças.')));
+    }
+  }
+
+  Future<void> invitationDismissed() async {
+    await PendingInvitationStore.clear();
+    if (mounted) setState(() => pendingInvitation = null);
+  }
+
+  /// O adulto saiu da família no cartão «Responsáveis».
+  Future<void> leftFamily() async {
+    setState(() {selectedFamily = null; children = []; returnFamilyId = null; familyRequestId = newRequestId();});
+    LastProfileStore.remember(widget.auth.user!.id, const LastProfile.parent(null));
+    await load();
+  }
+
   Future<void> signOut() async {
     if (exiting) return;
     setState(() {exiting = true; error = null;});
@@ -448,6 +480,11 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
 
     if (modeLoaded && (!parentAccess.unlocked || !parentViewReady)) return ParentUnlockPage(
       access: parentAccess, onUnlocked: openParents, onExit: signOut,
+    );
+    if (pendingInvitation != null) return AcceptInvitationPage(
+      key: ValueKey(pendingInvitation), token: pendingInvitation!, service: service,
+      accountEmail: widget.auth.user?.email ?? '',
+      onAccepted: invitationAccepted, onDismiss: invitationDismissed,
     );
     if (error != null) return AppPage(title: 'Vamos tentar outra vez?', subtitle: error!, children: [
       AppButton(label: 'Tentar novamente', onPressed: exiting ? null : () {if (modeLoaded) {load();} else {initializeWorkspace();}}),
@@ -502,6 +539,7 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
       busy: exiting,
       onLock: () => parentAccess.lock(),
       onSignOut: signOut,
+      accountEmail: widget.auth.user?.email,
       onOpenLegal: () => LegalDocumentsPage.open(context, LegalService(widget.auth.client)),
       onDeleteAccount: () => DeleteAccountPage.open(context, AccountService(widget.auth.client)),
       dashboard: ParentDashboard(
@@ -627,6 +665,9 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
     const SizedBox(height: 28),
     AppButton(label: 'Adicionar criança', icon: Icons.person_add_alt_1_rounded,
       onPressed: () => setState(() => editing = true)),
+    const SizedBox(height: 28),
+    FamilyMembersCard(key: ValueKey('members-${selectedFamily!.id}'), familyId: selectedFamily!.id,
+      service: service, busy: exiting, onLeft: leftFamily),
     if (families.length > 1) ...[
       const SizedBox(height: 16),
       AppButton(label: 'Mudar de família', variant: AppButtonVariant.secondary,

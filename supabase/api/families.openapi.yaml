@@ -1,13 +1,15 @@
 openapi: 3.0.3
 info:
   title: Escola em Dia — Famílias e crianças
-  version: 1.2.0
+  version: 1.3.0
   description: >-
-    Subconjunto inicial do contrato acordado. GET/POST /v1/families e
-    GET/POST /v1/families/{id}/children e PUT
-    /v1/families/{id}/children/{childId}. Adultos usam Supabase Auth.
-    Nenhuma resposta inclui PINs ou hashes. Convites e encerramento ainda
-    não estão implementados.
+    GET/POST /v1/families, GET/POST /v1/families/{id}/children, PUT
+    /v1/families/{id}/children/{childId} e vários responsáveis por família
+    (members, invitations). Adultos usam Supabase Auth. Nenhuma resposta
+    inclui PINs, hashes ou tokens de convite. Todos os responsáveis têm as
+    mesmas permissões; máximo de 4 por família (contando convites pendentes
+    válidos) e 10 convites por família em 24 h. Encerramento de família ainda
+    não está implementado.
 servers:
   - url: https://hhgxxvvreyhigxynrgmv.supabase.co/functions/v1/families
 security:
@@ -47,7 +49,7 @@ paths:
       description: >-
         Exige e-mail confirmado e PIN do responsável configurado. Repetir o mesmo
         clientRequestId para o mesmo adulto devolve a mesma família sem
-        criar outra associação ou evento. Um adulto pode ter várias famílias.
+        criar outra associação ou evento.
       requestBody:
         required: true
         content:
@@ -207,8 +209,226 @@ paths:
                 $ref: '#/components/schemas/Child'
         default:
           $ref: '#/components/responses/Error'
+  /v1/families/{id}/members:
+    parameters:
+      - $ref: '#/components/parameters/FamilyId'
+    get:
+      summary: Responsáveis ativos e convites pendentes da família
+      responses:
+        '200':
+          description: Lista completa (sem paginação; no máximo 4 responsáveis)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FamilyMembers'
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/families/{id}/members/{adultUserId}:
+    parameters:
+      - $ref: '#/components/parameters/FamilyId'
+      - name: adultUserId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    delete:
+      security:
+        - adultSession: []
+          projectKey: []
+          parentUnlock: []
+      summary: Remover um responsável, ou sair da família quando é o próprio
+      description: >-
+        Nunca remove o último responsável ativo (409 LAST_MEMBER). As sessões de
+        criança autorizadas pelo adulto removido deixam de ser válidas.
+      responses:
+        '200':
+          description: Responsável removido (removed) ou saída do próprio (left)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [adultUserId, status]
+                properties:
+                  adultUserId: {type: string, format: uuid}
+                  status: {type: string, enum: [removed, left]}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/families/{id}/invitations:
+    parameters:
+      - $ref: '#/components/parameters/FamilyId'
+    post:
+      security:
+        - adultSession: []
+          projectKey: []
+          parentUnlock: []
+      summary: Convidar um adulto por e-mail
+      description: >-
+        Gera um token de uso único (válido 7 dias) e envia o link
+        INVITE_BASE_URL?token=… por e-mail. Só o SHA-256 do token é guardado.
+        Reenviar para o mesmo e-mail cancela o convite pendente anterior. Se o
+        e-mail não puder ser enviado, o convite é cancelado (503 EMAIL_UNAVAILABLE).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  maxLength: 254
+      responses:
+        '201':
+          description: Convite criado e e-mail enviado
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, email, status, createdAt, expiresAt]
+                properties:
+                  id: {type: string, format: uuid}
+                  email: {type: string, format: email}
+                  status: {type: string, enum: [pending]}
+                  createdAt: {type: string, format: date-time}
+                  expiresAt: {type: string, format: date-time}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/families/{id}/invitations/{invitationId}:
+    parameters:
+      - $ref: '#/components/parameters/FamilyId'
+      - name: invitationId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    delete:
+      security:
+        - adultSession: []
+          projectKey: []
+          parentUnlock: []
+      summary: Cancelar um convite pendente
+      responses:
+        '200':
+          description: Convite cancelado
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, status]
+                properties:
+                  id: {type: string, format: uuid}
+                  status: {type: string, enum: [cancelled]}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/invitations/{token}:
+    parameters:
+      - $ref: '#/components/parameters/InvitationToken'
+    get:
+      security:
+        - projectKey: []
+      summary: Ver um convite (público; o token é o segredo)
+      description: >-
+        Usado no ecrã de entrada antes do login. accountExists indica se o e-mail
+        convidado já tem conta, para a app abrir em Entrar ou Criar conta.
+        Convites cancelados ou inexistentes devolvem 404 INVITATION_INVALID.
+      responses:
+        '200':
+          description: Dados do convite
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitationPreview'
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/invitations/{token}/signup:
+    parameters:
+      - $ref: '#/components/parameters/InvitationToken'
+    post:
+      security:
+        - projectKey: []
+      summary: Criar a conta do convidado já com o e-mail confirmado
+      description: >-
+        Só para convites pendentes cujo e-mail ainda não tem conta. O token prova
+        que o convidado recebeu o e-mail, por isso a conta é criada confirmada
+        com o e-mail do convite. legalDocumentIds segue as mesmas regras do
+        registo normal. Depois, a app entra com e-mail e palavra-passe e aceita
+        o convite.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [password, legalDocumentIds]
+              properties:
+                password:
+                  type: string
+                  minLength: 8
+                  description: 8 a 72 bytes em UTF-8
+                  writeOnly: true
+                legalDocumentIds:
+                  type: array
+                  maxItems: 10
+                  items: {type: string, format: uuid}
+      responses:
+        '201':
+          description: Conta criada
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [email]
+                properties:
+                  email: {type: string, format: email}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/invitations/{token}/accept:
+    parameters:
+      - $ref: '#/components/parameters/InvitationToken'
+    post:
+      summary: Aceitar o convite com a conta atual
+      description: >-
+        Exige e-mail confirmado, PIN do responsável configurado e que o e-mail da
+        conta seja o do convite. Não exige a área do responsável desbloqueada.
+        Uma conta só pertence a uma família: se o adulto já estiver numa família
+        com crianças, devolve 409 ALREADY_IN_FAMILY; famílias vazias são
+        fechadas (ou abandonadas, se tiverem outros responsáveis). Idempotente
+        para o mesmo adulto.
+      responses:
+        '200':
+          description: Convite aceite
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [familyId]
+                properties:
+                  familyId: {type: string, format: uuid}
+        default:
+          $ref: '#/components/responses/Error'
 components:
   parameters:
+    FamilyId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    InvitationToken:
+      name: token
+      in: path
+      required: true
+      description: Token do link do e-mail (inv_ seguido de 64 hexadecimais)
+      schema:
+        type: string
+        pattern: '^inv_[0-9a-f]{64}$'
     Cursor:
       name: cursor
       in: query
@@ -279,13 +499,57 @@ components:
             status: {type: string, enum: [active, in_grace]}
             autoRenew: {type: boolean}
             currentPeriodEnd: {type: string, format: date-time}
+    FamilyMembers:
+      type: object
+      required: [members, invitations]
+      properties:
+        members:
+          type: array
+          items:
+            type: object
+            required: [adultUserId, email, joinedAt, isMe]
+            properties:
+              adultUserId: {type: string, format: uuid}
+              email: {type: string, format: email}
+              joinedAt: {type: string, format: date-time}
+              isMe: {type: boolean}
+        invitations:
+          type: array
+          description: Convites pendentes, incluindo expirados (expired true)
+          items:
+            type: object
+            required: [id, email, createdAt, expiresAt, expired]
+            properties:
+              id: {type: string, format: uuid}
+              email: {type: string, format: email}
+              createdAt: {type: string, format: date-time}
+              expiresAt: {type: string, format: date-time}
+              expired: {type: boolean}
+    InvitationPreview:
+      type: object
+      required: [status, email, expiresAt, accountExists]
+      properties:
+        status: {type: string, enum: [pending, accepted, expired]}
+        email: {type: string, format: email}
+        invitedBy:
+          type: string
+          format: email
+          nullable: true
+          description: E-mail de quem convidou (null se essa conta já não existir)
+        expiresAt: {type: string, format: date-time}
+        accountExists: {type: boolean}
   responses:
     Error:
       description: >-
         Erro padronizado. 400 pedido inválido; 401 sessão inválida;
-        403 e-mail/PIN do responsável em falta; 404 família ou criança inacessível;
-        409 identificador reutilizado; 413 pedido demasiado grande;
-        422 perfil inválido; 503 serviço indisponível; 500 erro interno.
+        403 e-mail/PIN do responsável em falta ou INVITATION_EMAIL_MISMATCH;
+        404 família, criança, responsável (MEMBER_NOT_FOUND) ou convite
+        (INVITATION_INVALID) inacessível; 405 método não permitido;
+        409 identificador reutilizado, ALREADY_MEMBER, MEMBER_LIMIT,
+        ALREADY_IN_FAMILY, LAST_MEMBER ou ACCOUNT_EXISTS; 410 INVITATION_EXPIRED;
+        413 pedido demasiado grande; 422 perfil inválido ou WEAK_PASSWORD;
+        429 RATE_LIMITED; 503 serviço indisponível ou EMAIL_UNAVAILABLE;
+        500 erro interno.
       content:
         application/json:
           schema:

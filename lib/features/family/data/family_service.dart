@@ -38,6 +38,40 @@ class FamilyService {
     }),
   );
 
+  /// Responsáveis ativos e convites pendentes da família.
+  Future<FamilyMembers> listMembers(String familyId) async =>
+      FamilyMembers.fromJson(await _request('/v1/families/$familyId/members', method: HttpMethod.get));
+
+  /// Envia um convite por e-mail. Reenviar para o mesmo e-mail substitui o anterior.
+  Future<void> inviteAdult(String familyId, String email) async =>
+      _request('/v1/families/$familyId/invitations', body: {'email': email.trim()});
+
+  Future<void> cancelInvitation(String familyId, String invitationId) async =>
+      _request('/v1/families/$familyId/invitations/$invitationId', method: HttpMethod.delete);
+
+  /// Remove outro responsável, ou sai da família quando [adultUserId] é o próprio.
+  Future<void> removeMember(String familyId, String adultUserId) async =>
+      _request('/v1/families/$familyId/members/$adultUserId', method: HttpMethod.delete);
+
+  /// Dados do convite; não exige sessão (aparece também no ecrã de entrada).
+  Future<InvitationPreview> previewInvitation(String token) async {
+    try {
+      return InvitationPreview.fromJson(
+        await _request('/v1/invitations/$token', method: HttpMethod.get, session: false));
+    } on FamilyException {
+      return InvitationPreview.invalid;
+    }
+  }
+
+  /// Aceita o convite com a conta atual. Devolve o id da família.
+  Future<String> acceptInvitation(String token) async =>
+      (await _request('/v1/invitations/$token/accept', parent: false))['familyId'] as String;
+
+  /// Cria a conta do convidado já com o e-mail confirmado (o link do convite prova-o).
+  Future<void> signupFromInvitation(String token, String password, List<String> legalDocumentIds) async =>
+      _request('/v1/invitations/$token/signup', session: false, parent: false,
+        body: {'password': password, 'legalDocumentIds': legalDocumentIds});
+
   Future<List<Map>> _list(String path) async {
     final result = <Map>[];
     String? cursor;
@@ -60,12 +94,13 @@ class FamilyService {
   }
 
   Future<Map> _request(String path, {HttpMethod method = HttpMethod.post,
-    Map<String, dynamic>? body, Map<String, dynamic>? query}) async {
+    Map<String, dynamic>? body, Map<String, dynamic>? query, bool? parent, bool session = true}) async {
     try {
-      var session = client.auth.currentSession;
-      if (session?.isExpired == true) session = (await client.auth.refreshSession()).session;
-      if (session == null) throw const FamilyException('A tua sessão terminou. Entra novamente na conta.');
-      final needsParent = method != HttpMethod.get;
+      var current = session ? client.auth.currentSession : null;
+      if (current?.isExpired == true) current = (await client.auth.refreshSession()).session;
+      if (session && current == null) throw const FamilyException('A tua sessão terminou. Entra novamente na conta.');
+      // Por omissão, só as leituras dispensam a área do responsável desbloqueada.
+      final needsParent = parent ?? method != HttpMethod.get;
       final capability = needsParent ? parentToken?.call() : null;
       if (needsParent && capability == null) {
         onParentLocked?.call();
@@ -73,7 +108,8 @@ class FamilyService {
       }
       final response = await client.functions.invoke('families$path', method: method,
         body: body, queryParameters: query,
-        headers: {'Authorization': 'Bearer ${session.accessToken}', if (capability != null) 'X-Parent-Unlock': capability});
+        headers: {if (current != null) 'Authorization': 'Bearer ${current.accessToken}',
+          if (capability != null) 'X-Parent-Unlock': capability});
       if (response.data is! Map) throw const FamilyException('Não foi possível confirmar o pedido. Tenta novamente.');
       return response.data as Map;
     } on FamilyException { rethrow; }

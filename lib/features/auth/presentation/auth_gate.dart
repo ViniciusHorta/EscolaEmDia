@@ -10,6 +10,7 @@ import '../data/auth_service.dart';
 import 'family_account_page.dart';
 import 'new_password_page.dart';
 import '../../parent_pin/presentation/parent_pin_gate.dart';
+import '../../family/data/pending_invitation_store.dart';
 import '../../family/presentation/family_workspace_page.dart';
 import '../../legal/data/legal_service.dart';
 import '../../legal/presentation/legal_consent_gate.dart';
@@ -32,6 +33,8 @@ class _AuthGateState extends State<AuthGate> {
   }
 
   Future<AuthService> initialize() async {
+    // Link do convite (/convite?token=…): guarda-o antes do login/criação de conta.
+    await PendingInvitationStore.captureFromUrl();
     final supabase = await Supabase.initialize(
       url: SupabaseConfig.url,
       anonKey: SupabaseConfig.publishableKey,

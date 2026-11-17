@@ -1,6 +1,6 @@
 # Termos e Condições de Utilização — Escola em Dia
 
-**Última atualização:** 14 de novembro de 2026
+**Última atualização:** 17 de novembro de 2026
 
 ## 1. Introdução
 
@@ -66,9 +66,13 @@ O acesso poderá ser realizado através de email e palavra-passe ou de serviços
 
 O Escola em Dia permite organizar os utilizadores em famílias.
 
-Cada família poderá incluir perfis infantis e adultos autorizados, de acordo com as funcionalidades disponibilizadas.
+Cada família poderá incluir perfis infantis e até 4 adultos autorizados («responsáveis»).
 
-Os adultos autorizados poderão gerir as atividades educativas e consultar os dados das crianças associadas à respetiva família.
+Um responsável pode convidar outro adulto por email. O convite é válido durante 7 dias e só pode ser aceite com uma conta associada ao email convidado. Cada conta pode pertencer apenas a uma família: um adulto que já gere uma família com perfis infantis não pode aceitar um convite para outra família.
+
+Todos os responsáveis de uma família têm as mesmas permissões: gerir os perfis infantis e as atividades educativas, consultar os dados das crianças, convidar outros adultos, cancelar convites e remover outros responsáveis. Qualquer responsável pode sair da família, desde que esta mantenha pelo menos um responsável.
+
+As subscrições Premium são contratadas e geridas pelo responsável que as subscreveu, através do respetivo canal de pagamento, mesmo que esse responsável saia da família ou seja removido.
 
 O adulto que cria ou administra um perfil infantil declara possuir legitimidade para o fazer e compromete-se a respeitar os direitos e interesses da criança e dos demais responsáveis legais.
 
