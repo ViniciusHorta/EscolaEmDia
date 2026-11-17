@@ -9,6 +9,7 @@ STAGING_URL="https://${STAGING_REF}.supabase.co"
 # Chave pública (publishable) — pode estar no git. Segredos (Stripe, etc.) vão para
 # supabase/functions/.env.staging, que está fora do git.
 STAGING_PUBLISHABLE_KEY="sb_publishable_NWfWgS9UZbh25mplti0j0A_807dbcMb"
+STAGING_GOOGLE_WEB_CLIENT_ID="958174914246-p6b4ti1v4gabepef7gepndoc002tbnqh.apps.googleusercontent.com"
 
 cd "$(dirname "$0")/.."
 
@@ -36,24 +37,28 @@ case "$cmd" in
   app)
     flutter run -d chrome --web-port 8080 \
       --dart-define=SUPABASE_URL="$STAGING_URL" \
-      --dart-define=SUPABASE_PUBLISHABLE_KEY="$STAGING_PUBLISHABLE_KEY" "$@"
+      --dart-define=SUPABASE_PUBLISHABLE_KEY="$STAGING_PUBLISHABLE_KEY" \
+      --dart-define=GOOGLE_WEB_CLIENT_ID="$STAGING_GOOGLE_WEB_CLIENT_ID" "$@"
     ;;
   device)
     flutter run ${1:+-d "$1"} \
       --dart-define=SUPABASE_URL="$STAGING_URL" \
-      --dart-define=SUPABASE_PUBLISHABLE_KEY="$STAGING_PUBLISHABLE_KEY" "${@:2}"
+      --dart-define=SUPABASE_PUBLISHABLE_KEY="$STAGING_PUBLISHABLE_KEY" \
+      --dart-define=GOOGLE_WEB_CLIENT_ID="$STAGING_GOOGLE_WEB_CLIENT_ID" "${@:2}"
     ;;
   bundle)
     [ -f android/key.properties ] || { echo "Falta android/key.properties (chave de upload). O Google Play recusa builds de debug."; exit 1; }
     flutter build appbundle --release \
       --dart-define=SUPABASE_URL="$STAGING_URL" \
-      --dart-define=SUPABASE_PUBLISHABLE_KEY="$STAGING_PUBLISHABLE_KEY" "$@"
+      --dart-define=SUPABASE_PUBLISHABLE_KEY="$STAGING_PUBLISHABLE_KEY" \
+      --dart-define=GOOGLE_WEB_CLIENT_ID="$STAGING_GOOGLE_WEB_CLIENT_ID" "$@"
     echo "→ build/app/outputs/bundle/release/app-release.aab"
     ;;
   ipa)
     flutter build ipa --release \
       --dart-define=SUPABASE_URL="$STAGING_URL" \
-      --dart-define=SUPABASE_PUBLISHABLE_KEY="$STAGING_PUBLISHABLE_KEY" "$@"
+      --dart-define=SUPABASE_PUBLISHABLE_KEY="$STAGING_PUBLISHABLE_KEY" \
+      --dart-define=GOOGLE_WEB_CLIENT_ID="$STAGING_GOOGLE_WEB_CLIENT_ID" "$@"
     echo "→ build/ios/ipa/ (enviar para o TestFlight com a app Transporter ou: xcrun altool / Xcode → Organizer)"
     ;;
   db:dry)    supabase db push --remote="$STAGING_REF" --dry-run ;;

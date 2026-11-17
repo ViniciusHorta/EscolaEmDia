@@ -34,7 +34,7 @@ class _FamilyAccountPageState extends State<FamilyAccountPage> {
   bool acceptedTerms = false;
   bool showTermsError = false;
   bool busy = false;
-  bool googleLoading = false;
+  String? providerLoading; // 'google' | 'apple'
   String? feedback;
   String? confirmationEmail;
   List<LegalDocument>? legalDocuments;
@@ -133,16 +133,20 @@ class _FamilyAccountPageState extends State<FamilyAccountPage> {
     }
   }
 
-  Future<void> signInWithGoogle() async {
+  Future<void> signInWithProvider(String provider) async {
     if (busy) return;
     FocusScope.of(context).unfocus();
-    setState(() { busy = true; googleLoading = true; feedback = null; confirmationEmail = null; });
+    setState(() { busy = true; providerLoading = provider; feedback = null; confirmationEmail = null; });
     try {
-      await widget.auth.signInWithGoogle();
+      if (provider == 'apple') {
+        await widget.auth.signInWithApple();
+      } else {
+        await widget.auth.signInWithGoogle();
+      }
     } catch (error) {
       if (mounted) setState(() => feedback = AuthService.messageFor(error));
     } finally {
-      if (mounted) setState(() { busy = false; googleLoading = false; });
+      if (mounted) setState(() { busy = false; providerLoading = null; });
     }
   }
 
@@ -289,7 +293,7 @@ class _FamilyAccountPageState extends State<FamilyAccountPage> {
                   AppButton(
                     label: registering ? 'Continuar para Configuração Familiar' : 'Entrar na minha conta',
                     icon: Icons.arrow_forward_rounded,
-                    loading: busy && !googleLoading,
+                    loading: busy && providerLoading == null,
                     onPressed: busy ? null : submit,
                   ),
                   const SizedBox(height: 28),
@@ -300,13 +304,21 @@ class _FamilyAccountPageState extends State<FamilyAccountPage> {
                   ]),
                   const SizedBox(height: 24),
                   Row(children: [
-                    const Expanded(child: AppButton(label: 'Apple', icon: Icons.apple, variant: AppButtonVariant.secondary, onPressed: null)),
-                    const SizedBox(width: 12),
+                    if (AuthService.appleAvailable) ...[
+                      Expanded(child: AppButton(
+                        label: 'Apple',
+                        icon: Icons.apple,
+                        variant: AppButtonVariant.secondary,
+                        loading: providerLoading == 'apple',
+                        onPressed: busy ? null : () => signInWithProvider('apple'),
+                      )),
+                      const SizedBox(width: 12),
+                    ],
                     Expanded(child: AppButton(
                       label: 'Google',
                       variant: AppButtonVariant.secondary,
-                      loading: googleLoading,
-                      onPressed: busy ? null : signInWithGoogle,
+                      loading: providerLoading == 'google',
+                      onPressed: busy ? null : () => signInWithProvider('google'),
                     )),
                   ]),
                 ])),
