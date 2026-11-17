@@ -1,6 +1,11 @@
-// Envio de emails transacionais pela SMTP API do SendPulse (sem SDK).
-// Segredos: SENDPULSE_CLIENT_ID, SENDPULSE_CLIENT_SECRET (Definições da conta → API),
-// EMAIL_FROM_ADDRESS (remetente verificado no SendPulse SMTP) e EMAIL_FROM_NAME (opcional).
+// Envio de emails transacionais pelo SMTP do SendPulse.
+// Segredos: SEND_PULSE_SMPT (servidor, ex.: smtp-pulse.com), SEND_PULSE_PORT (2525 ou 465;
+// as Edge Functions bloqueiam 25 e 587), SEND_PULSE_USER, SEND_PULSE_PW,
+// EMAIL_FROM_ADDRESS (remetente verificado no SendPulse; por omissão SEND_PULSE_USER)
+// e EMAIL_FROM_NAME (opcional).
+// @deno-types="npm:@types/nodemailer@6.4.17"
+import nodemailer from "npm:nodemailer@6.9.16";
+
 export class EmailError extends Error {
   constructor(public status: number, message: string) {
     super(message);
@@ -14,66 +19,47 @@ export type EmailMessage = {
   text: string;
 };
 
-type Config = { clientId: string; clientSecret: string; fromEmail: string; fromName: string };
-
-const API = "https://api.sendpulse.com";
-let cached: { token: string; expires: number } | null = null;
-
-export function readEmailConfig(): Config | null {
-  const clientId = Deno.env.get("SENDPULSE_CLIENT_ID");
-  const clientSecret = Deno.env.get("SENDPULSE_CLIENT_SECRET");
-  const fromEmail = Deno.env.get("EMAIL_FROM_ADDRESS");
-  if (!clientId || !clientSecret || !fromEmail) return null;
-  return { clientId, clientSecret, fromEmail, fromName: Deno.env.get("EMAIL_FROM_NAME") ?? "Escola em Dia" };
-}
-
-// O SendPulse exige o HTML em base64; btoa sozinho estraga acentos, por isso passa por UTF-8.
-export const base64Utf8 = (value: string) => {
-  let s = "";
-  for (const b of new TextEncoder().encode(value)) s += String.fromCharCode(b);
-  return btoa(s);
+type Config = {
+  host: string; port: number; user: string; pass: string; fromEmail: string; fromName: string;
 };
 
-async function accessToken(config: Config) {
-  if (cached && cached.expires > Date.now() + 60_000) return cached.token;
-  const res = await fetch(`${API}/oauth/access_token`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      grant_type: "client_credentials",
-      client_id: config.clientId,
-      client_secret: config.clientSecret,
-    }),
-  });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok || !body.access_token) throw new EmailError(res.status, `oauth: ${body.error ?? res.status}`);
-  cached = { token: body.access_token, expires: Date.now() + (body.expires_in ?? 3600) * 1000 };
-  return cached.token;
+export function readEmailConfig(): Config | null {
+  const host = Deno.env.get("SEND_PULSE_SMPT");
+  const user = Deno.env.get("SEND_PULSE_USER");
+  const pass = Deno.env.get("SEND_PULSE_PW");
+  const port = Number(Deno.env.get("SEND_PULSE_PORT") ?? "2525");
+  if (!host || !user || !pass || !Number.isInteger(port) || port === 25 || port === 587) return null;
+  return {
+    host, port, user, pass,
+    fromEmail: Deno.env.get("EMAIL_FROM_ADDRESS") || user,
+    fromName: Deno.env.get("EMAIL_FROM_NAME") || "Escola em Dia",
+  };
 }
+
+let transport: ReturnType<typeof nodemailer.createTransport> | null = null;
 
 export async function sendEmail(message: EmailMessage, config = readEmailConfig()) {
   if (!config) throw new EmailError(503, "email não configurado");
-  const send = async (token: string) =>
-    await fetch(`${API}/smtp/emails`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({
-        email: {
-          subject: message.subject,
-          html: base64Utf8(message.html),
-          text: message.text,
-          from: { name: config.fromName, email: config.fromEmail },
-          to: [{ email: message.to.email, ...(message.to.name ? { name: message.to.name } : {}) }],
-        },
-      }),
+  transport ??= nodemailer.createTransport({
+    host: config.host,
+    port: config.port,
+    secure: config.port === 465, // 465 = TLS direto; 2525 = STARTTLS obrigatório
+    requireTLS: config.port !== 465,
+    auth: { user: config.user, pass: config.pass },
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 15_000,
+  });
+  try {
+    await transport.sendMail({
+      from: { name: config.fromName, address: config.fromEmail },
+      to: message.to.name ? { name: message.to.name, address: message.to.email } : message.to.email,
+      subject: message.subject,
+      text: message.text,
+      html: message.html,
     });
-  let res = await send(await accessToken(config));
-  if (res.status === 401) {
-    cached = null; // token revogado antes do prazo: renova uma vez
-    res = await send(await accessToken(config));
-  }
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok || body.result === false) {
-    throw new EmailError(res.status, `smtp: ${body.message ?? body.error_code ?? res.status}`);
+  } catch (e) {
+    transport = null; // a próxima tentativa abre uma ligação nova
+    throw new EmailError(503, `smtp: ${(e as Error).message}`);
   }
 }
