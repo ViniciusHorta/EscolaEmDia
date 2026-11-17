@@ -1,5 +1,6 @@
 import { createCors } from "../_shared/cors.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { handleMembers, matchMembersRoute, memberMessages } from "./members.ts";
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const avatars = new Set(["fox", "owl", "bear", "lynx", "dolphin", "rabbit"]);
@@ -29,12 +30,13 @@ const messages: Record<string, string> = {
   METHOD_NOT_ALLOWED: "Método não permitido.",
   REQUEST_TOO_LARGE: "O pedido excede o tamanho permitido.",
   INTERNAL_ERROR: "Não foi possível concluir o pedido. Tenta novamente.",
+  ...memberMessages,
 };
 
 Deno.serve(async (req: Request) => {
   const requestId = crypto.randomUUID();
   const corsPolicy = createCors(req, {
-    methods: "GET, POST, PUT, OPTIONS",
+    methods: "GET, POST, PUT, DELETE, OPTIONS",
     parentUnlock: true,
     retryAfter: false,
   });
@@ -47,7 +49,10 @@ Deno.serve(async (req: Request) => {
   const childItemRoute =
     /^\/v1\/families\/([^/]+)\/children\/([^/]+)$/.exec(path);
   const isFamilies = path === "/v1/families";
-  const operation = isFamilies
+  const membersRoute = matchMembersRoute(path);
+  const operation = membersRoute
+    ? "members"
+    : isFamilies
     ? "families"
     : childRoute
       ? "children"
@@ -90,6 +95,13 @@ Deno.serve(async (req: Request) => {
   if (!corsPolicy.allowed) return fail(403, "ORIGIN_NOT_ALLOWED");
   if (corsPolicy.preflightResponse) return corsPolicy.preflightResponse;
   if (operation === "unknown") return fail(404, "ROUTE_NOT_FOUND");
+  if (membersRoute) {
+    try {
+      return await handleMembers(req, membersRoute, reply, fail);
+    } catch {
+      return fail(500, "INTERNAL_ERROR");
+    }
+  }
   if (
     childItemRoute
       ? req.method !== "PUT"
