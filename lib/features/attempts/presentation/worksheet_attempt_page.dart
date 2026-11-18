@@ -159,8 +159,9 @@ class _WorksheetAttemptPageState extends State<WorksheetAttemptPage> {
                     ? null
                     : () => run(() async {
                           await controller.refreshForSubmission();
-                          if (mounted)
+                          if (mounted) {
                             setState(() => confirmingDelivery = false);
+                          }
                         }))
           else
             AppButton(
@@ -201,11 +202,12 @@ class _WorksheetAttemptPageState extends State<WorksheetAttemptPage> {
       child: ListenableBuilder(
           listenable: controller,
           builder: (context, _) {
-            if (controller.loading)
+            if (controller.loading) {
               return const Scaffold(
                   body: Center(
                       child: CircularProgressIndicator(
                           semanticsLabel: 'A abrir a tua ficha')));
+            }
             if (!controller.ready) {
               return AppPage(
                   title: 'Vamos tentar outra vez?',
@@ -275,8 +277,9 @@ class _WorksheetAttemptPageState extends State<WorksheetAttemptPage> {
                   ]);
             }
             if (controller.result == null &&
-                (controller.deliveryPending || confirmingDelivery))
+                (controller.deliveryPending || confirmingDelivery)) {
               return confirmation();
+            }
             final data = controller.snapshot!;
             final q = controller.question;
             final enabled = !controller.busy &&

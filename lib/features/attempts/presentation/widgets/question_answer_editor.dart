@@ -35,8 +35,9 @@ class _QuestionAnswerEditorState extends State<QuestionAnswerEditor> {
   @override
   void didUpdateWidget(covariant QuestionAnswerEditor oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.value['mode'] == 'typed' && widget.value['text'] != text.text)
+    if (widget.value['mode'] == 'typed' && widget.value['text'] != text.text) {
       text.text = widget.value['text'] as String? ?? '';
+    }
   }
 
   @override
