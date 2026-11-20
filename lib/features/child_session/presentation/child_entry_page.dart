@@ -82,8 +82,9 @@ class _ChildEntryPageState extends State<ChildEntryPage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && authenticated != null && !busy)
+    if (state == AppLifecycleState.resumed && authenticated != null && !busy) {
       validateSession();
+    }
   }
 
   int get waitSeconds {
@@ -110,8 +111,9 @@ class _ChildEntryPageState extends State<ChildEntryPage>
     } on FamilyException catch (failure) {
       if (mounted) setState(() => error = failure.message);
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(() => error = 'Não foi possível carregar os perfis.');
+      }
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -158,9 +160,10 @@ class _ChildEntryPageState extends State<ChildEntryPage>
         error = failure.message;
         pin = '';
         inputVersion++;
-        if (failure.retryAfter != null)
+        if (failure.retryAfter != null) {
           blockedUntil =
               DateTime.now().add(Duration(seconds: failure.retryAfter!));
+        }
       });
       if (failure.retryAfter != null) {
         ticker?.cancel();
@@ -184,7 +187,7 @@ class _ChildEntryPageState extends State<ChildEntryPage>
         widget.sessions.expiresAt?.difference(DateTime.now()) ?? Duration.zero;
     expiry = Timer(remaining.isNegative ? Duration.zero : remaining, () {
       widget.sessions.forgetExpired();
-      if (mounted)
+      if (mounted) {
         setState(() {
           authenticated = null;
           activeAssignment = null;
@@ -193,6 +196,7 @@ class _ChildEntryPageState extends State<ChildEntryPage>
           repeatFromAttemptId = null;
           error = 'A tua sessão terminou. Introduz o PIN para continuar.';
         });
+      }
     });
   }
 
@@ -211,7 +215,7 @@ class _ChildEntryPageState extends State<ChildEntryPage>
         scheduleExpiry();
       }
     } on ChildSessionException catch (failure) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           error = failure.message;
           if (failure.ended) {
@@ -222,6 +226,7 @@ class _ChildEntryPageState extends State<ChildEntryPage>
             repeatFromAttemptId = null;
           }
         });
+      }
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -231,11 +236,12 @@ class _ChildEntryPageState extends State<ChildEntryPage>
     dailyAccess = null;
     try {
       final items = await widget.sessions.assignments(childId);
-      if (mounted && authenticated?.id == childId)
+      if (mounted && authenticated?.id == childId) {
         setState(() => dailyAccess = widget.sessions.lastAccess);
+      }
       return items;
     } on ChildSessionException catch (failure) {
-      if (failure.ended && mounted && authenticated?.id == childId)
+      if (failure.ended && mounted && authenticated?.id == childId) {
         setState(() {
           authenticated = null;
           activeAssignment = null;
@@ -243,6 +249,7 @@ class _ChildEntryPageState extends State<ChildEntryPage>
           repeatCandidate = null;
           repeatFromAttemptId = null;
         });
+      }
       rethrow;
     }
   }
@@ -251,10 +258,11 @@ class _ChildEntryPageState extends State<ChildEntryPage>
       FutureBuilder<List<AssignedWorksheet>>(
         future: assignedWorksheets,
         builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done)
+          if (snapshot.connectionState != ConnectionState.done) {
             return const Center(
                 child: CircularProgressIndicator(
                     semanticsLabel: 'A carregar as tuas fichas'));
+          }
           if (snapshot.hasError) {
             final failure = snapshot.error;
             return AppCard(
@@ -337,7 +345,9 @@ class _ChildEntryPageState extends State<ChildEntryPage>
   void showFeedback(AssignedWorksheet assignment) {
     if (busy ||
         authenticated?.id != assignment.childId ||
-        assignment.latestCompletedAttemptId == null) return;
+        assignment.latestCompletedAttemptId == null) {
+      return;
+    }
     setState(() {
       activeAssignment = null;
       repeatCandidate = null;
@@ -351,12 +361,15 @@ class _ChildEntryPageState extends State<ChildEntryPage>
   String? startBlockedMessage(AssignedWorksheet assignment) {
     final access = dailyAccess;
     if (access == null || access.isPremium) return null;
-    if (access.isLocked)
+    if (access.isLocked) {
       return 'Ainda não podes começar fichas novas. Pede ajuda ao teu responsável.';
-    if (assignment.worksheet.isPremium)
+    }
+    if (assignment.worksheet.isPremium) {
       return 'Esta ficha não está disponível agora. Pede ajuda ao teu responsável.';
-    if (access.attemptQuotaReached)
+    }
+    if (access.attemptQuotaReached) {
       return 'Já fizeste a tua ficha de hoje. Muito bem! Volta amanhã para fazer outra.';
+    }
     return null;
   }
 
@@ -450,7 +463,9 @@ class _ChildEntryPageState extends State<ChildEntryPage>
     final candidate = repeatCandidate;
     if (candidate == null ||
         repeatFromAttemptId == null ||
-        authenticated?.id != candidate.childId) return;
+        authenticated?.id != candidate.childId) {
+      return;
+    }
     setState(() {
       activeAssignment = candidate;
       feedbackAttemptId = null;
@@ -463,8 +478,9 @@ class _ChildEntryPageState extends State<ChildEntryPage>
     setState(() {
       repeatCandidate = null;
       repeatFromAttemptId = null;
-      if (authenticated != null)
+      if (authenticated != null) {
         assignedWorksheets = fetchAssignments(authenticated!.id);
+      }
     });
   }
 
@@ -477,7 +493,7 @@ class _ChildEntryPageState extends State<ChildEntryPage>
     try {
       await widget.sessions.endSession();
       expiry?.cancel();
-      if (mounted)
+      if (mounted) {
         setState(() {
           authenticated = null;
           activeAssignment = null;
@@ -487,6 +503,7 @@ class _ChildEntryPageState extends State<ChildEntryPage>
           pin = '';
           inputVersion++;
         });
+      }
     } on ChildSessionException catch (failure) {
       if (mounted) setState(() => error = failure.message);
     } finally {
@@ -504,9 +521,10 @@ class _ChildEntryPageState extends State<ChildEntryPage>
       await widget.sessions.endSession();
       await widget.onExitDevice();
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(() =>
             error = 'Não foi possível sair do dispositivo. Tenta novamente.');
+      }
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -522,11 +540,12 @@ class _ChildEntryPageState extends State<ChildEntryPage>
 
   @override
   Widget build(BuildContext context) {
-    if (loading)
+    if (loading) {
       return const Scaffold(
           body: Center(
               child: CircularProgressIndicator(
                   semanticsLabel: 'A carregar os perfis')));
+    }
     if (authenticated != null && feedbackAttemptId != null) {
       return ChildFeedbackPage(
         key: ValueKey(feedbackAttemptId),

@@ -232,12 +232,13 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
       // Acabou de definir o PIN: entra direto na área do responsável.
       if (familyId == null && parentAccess.unlocked) await openParents();
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           loading = false;
           error =
               'Não foi possível recuperar o modo de acesso deste dispositivo.';
         });
+      }
     }
   }
 
@@ -255,24 +256,27 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
       // O espaço infantil abre com a criança indicada (ou a primeira) já selecionada.
       final childId =
           preferredChildId ?? (children.isEmpty ? null : children.first.id);
-      if (childId != null)
+      if (childId != null) {
         await LastProfileStore.remember(
             adultId, LastProfile.child(family.id, childId));
+      }
       enteringChildMode = true;
       try {
         await parentAccess.lock();
       } finally {
         enteringChildMode = false;
       }
-      if (mounted)
+      if (mounted) {
         setState(() {
           childModeFamilyId = family.id;
           requestingParent = false;
         });
+      }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(() => error =
             'Não foi possível abrir o espaço infantil. Tenta novamente.');
+      }
     } finally {
       if (mounted) setState(() => exiting = false);
     }
@@ -315,8 +319,9 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
         selectedFamily = selected;
         children = profiles;
         editing = available.isEmpty || (selected != null && profiles.isEmpty);
-        if (selected != null && profiles.isNotEmpty)
+        if (selected != null && profiles.isNotEmpty) {
           returnFamilyId = selected.id;
+        }
       });
       if (!billingHandled &&
           selected != null &&
@@ -327,9 +332,10 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
     } on FamilyException catch (failure) {
       if (mounted) setState(() => error = failure.message);
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(() => error =
             'Não foi possível carregar a tua família. Tenta novamente.');
+      }
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -344,8 +350,9 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
   PremiumSubscribe stripeCheckout(String childId) => () async {
         try {
           final url = await billing.checkoutUrl(childId);
-          if (!await launchUrl(url, webOnlyWindowName: '_self'))
+          if (!await launchUrl(url, webOnlyWindowName: '_self')) {
             return 'Não foi possível abrir o pagamento.';
+          }
           return null;
         } on BillingException catch (failure) {
           if (failure.code == 'CHILD_ALREADY_PREMIUM') load();
@@ -358,13 +365,15 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
     if (family == null) return;
     try {
       final url = await billing.portalUrl(family.id);
-      if (!await launchUrl(url, webOnlyWindowName: '_self'))
+      if (!await launchUrl(url, webOnlyWindowName: '_self')) {
         throw const BillingException(
             'Não foi possível abrir a gestão da subscrição.');
+      }
     } on BillingException catch (failure) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(failure.message)));
+      }
     }
   }
 
@@ -567,8 +576,9 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
     var family = selectedFamily;
     if (family == null) {
       family = await service.createFamily(familyRequestId);
-      if (!mounted)
+      if (!mounted) {
         throw const FamilyException('Volta a entrar para continuar.');
+      }
       // Keep the family ID on a failed child request so retrying cannot create another family.
       selectedFamily = family;
       families = [family];
@@ -644,9 +654,10 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
       await parentAccess.lock();
       await widget.auth.signOut();
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(
             () => error = 'Não foi possível sair da conta. Tenta novamente.');
+      }
     } finally {
       if (mounted) setState(() => exiting = false);
     }
@@ -850,8 +861,9 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
         onEnterChild: enterAsChild,
         busy: exiting,
         onPendingCount: (count) {
-          if (mounted && count != pendingCount)
+          if (mounted && count != pendingCount) {
             setState(() => pendingCount = count);
+          }
         },
       ),
       worksheets: worksheetsTab(),
