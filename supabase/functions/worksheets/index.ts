@@ -430,7 +430,21 @@ Deno.serve(async (req: Request) => {
       if (cursor) query = query.gt("id", cursor);
       const { data, error } = await query;
       if (error) return fail(503, "STORAGE_UNAVAILABLE");
-      const rows = (data ?? []).slice(0, 50);
+      // Só temas com pelo menos uma ficha publicada: temas criados no admin para organizar
+      // conteúdos ainda sem fichas não aparecem vazios aos responsáveis.
+      const { data: used, error: usedError } = await admin
+        .from("worksheet_catalogue")
+        .select("topic_ids")
+        .eq("worksheet_status", "published")
+        .eq("is_latest", true)
+        .eq("subject_id", subjectId)
+        .eq("school_year", year);
+      if (usedError) return fail(503, "STORAGE_UNAVAILABLE");
+      const usedIds = new Set(
+        (used ?? []).flatMap((r: { topic_ids: string[] }) => r.topic_ids),
+      );
+      const page = (data ?? []).slice(0, 50);
+      const rows = page.filter((t) => usedIds.has(t.id));
       return reply(200, {
         items: rows.map((t) => ({
           id: t.id,
@@ -438,7 +452,7 @@ Deno.serve(async (req: Request) => {
           subjectId: t.subject_id,
           schoolYear: t.school_year,
         })),
-        nextCursor: (data?.length ?? 0) > 50 ? rows[49].id : null,
+        nextCursor: (data?.length ?? 0) > 50 ? page[49].id : null,
       });
     }
     let query = admin

@@ -9,7 +9,7 @@ window.A = window.A || {};
   // Normaliza para pesquisa: minúsculas e sem acentos.
   A.norm = (s) => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 
-  A.state = { url: '', key: '', subjects: [], topics: [], worksheets: [], reports: [] };
+  A.state = { url: '', key: '', subjects: [], topics: [], worksheets: [], reports: [], contents: [], contentsMissing: false };
 
   // ---------- Erros ----------
   A.errorText = {
@@ -32,6 +32,12 @@ window.A = window.A || {};
     WORKSHEET_PUBLISHED: 'Fichas já publicadas não podem ser apagadas (podem ter atribuições e respostas). Arquiva-a.',
     NO_PUBLISHED_VERSION: 'A ficha ainda não tem nenhuma versão publicada. Abre-a e usa «Guardar e publicar».',
     INVALID_STATUS: 'Estado inválido.',
+    CONTENT_EXISTS: 'Já existe um conteúdo com esse nome neste tema.',
+    CONTENT_NOT_FOUND: 'O conteúdo não existe.',
+    CONTENT_IN_USE: 'O conteúdo tem fichas ligadas: só pode mudar para um tema da mesma disciplina e ano.',
+    CONTENT_MISMATCH: 'Os conteúdos escolhidos têm de ser da disciplina e do ano da ficha.',
+    INVALID_SEMESTER: 'Semestre inválido (1.º, 2.º ou nenhum).',
+    INVALID_ITEMS: 'Lista vazia ou demasiado longa (máx. 2000 conteúdos).',
     REPORT_NOT_FOUND: 'O relato não existe.',
     FREE_WORKSHEET_TOO_MANY_QUESTIONS: 'Fichas Free não podem ter mais perguntas do que o limite do plano gratuito. Reduz as perguntas ou muda a ficha para Premium.',
     INVALID_TIER: 'Tipo de acesso inválido (Free ou Premium).',
@@ -106,6 +112,13 @@ window.A = window.A || {};
     A.state.subjects = o.subjects || [];
     A.state.topics = o.topics || [];
   };
+  // Conteúdos da grade (só admin). Sem a migração 202611210001, o resto do admin continua a funcionar.
+  A.loadContents = async () => {
+    try { A.state.contents = (await A.rpc('admin_list_contents')) || []; A.state.contentsMissing = false; }
+    catch (e) { if (e.code !== 'MIGRATION_MISSING') throw e; A.state.contents = []; A.state.contentsMissing = true; }
+  };
+  A.contentsFor = (topicId) => A.state.contents.filter((c) => c.topicId === topicId)
+    .sort((a, b) => a.position - b.position || a.name.localeCompare(b.name, 'pt'));
   A.loadWorksheets = async () => { A.state.worksheets = (await A.rpc('admin_list_worksheets')) || []; };
 
   // ---------- Consultas ao estado ----------

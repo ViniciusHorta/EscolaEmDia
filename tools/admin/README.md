@@ -2,7 +2,8 @@
 
 Página estática para gerir o Supabase. Navegação pela barra lateral:
 
-- **Conteúdos** — fichas e perguntas, temas/disciplinas
+- **Conteúdos** — fichas e perguntas, temas/disciplinas e **Cobertura** (matriz curricular do 1.º ao 3.º ciclo › temas › conteúdos
+  × fichas publicadas: mínimo de 1 Free e 3 Premium por conteúdo; lista do que criar a seguir)
 - **Relatos** — problemas reportados pelos responsáveis nas perguntas
 - **Configurações** — documentos legais (Termos e Privacidade) e planos e limites (`billing_settings`, editáveis dentro de margens)
 - **Utilizadores** — responsáveis com famílias, crianças, plano (Premium/Free/Bloqueada), forma de pagamento,
@@ -46,12 +47,26 @@ Não publicar esta página: com a chave `service_role` tem acesso total à base.
   6 por omissão) — a base recusa. Se o limite for reduzido, as fichas já publicadas continuam válidas e aparecem
   com o selo «Acima do limite Free» (filtro próprio). Requer `202611070003_billing_limits.sql`.
 
+- **Conteúdos da grade** (só admin). Requer `202611210001_topic_contents.sql`. Nível abaixo do tema: Disciplina › Ano › Tema › Conteúdo.
+  Geridos em Cobertura (clicar numa célula): «Colar lista» com os tópicos de estudo das educadoras (uma linha por conteúdo;
+  uma linha «Tema:» muda o tema) ou «Importar rascunho» (`js/curriculum-draft.js`, Aprendizagens Essenciais — rever antes).
+  Cada ficha marca os seus conteúdos no editor; a marcação não é versionada. Os responsáveis só veem temas com fichas publicadas
+  (Edge Function `worksheets`, `/v1/topics`), por isso temas novos criados para organizar conteúdos não lhes aparecem vazios.
+
+- **Exportar / importar fichas entre ambientes** (lista de Fichas). «⇩ Exportar» grava num ficheiro JSON as fichas dos filtros atuais
+  (versão mais recente, temas, conteúdos da grade, Free/Premium). «⇧ Importar», ligado ao outro ambiente, mostra a pré-visualização:
+  fichas novas, as que já existem (mesma disciplina, título e ano: ignorar ou atualizar) e erros (ex.: disciplina em falta).
+  Temas e conteúdos são ligados pelo nome e criados se faltarem. Por omissão grava como rascunho.
+
 ## Estrutura
 
 - `js/core.js` — estado, chamadas RPC, mensagens, diálogos
 - `js/content.js` — validação das perguntas (espelha `valid_worksheet_content`), pedido para a IA, pré-visualização
 - `js/worksheets.js` / `js/editor.js` — lista e editor de fichas
 - `js/topics.js` — disciplinas e temas
+- `js/curriculum-draft.js` — rascunho dos conteúdos por disciplina/ano/tema
+- `js/transfer.js` — exportar/importar fichas entre ambientes
+- `js/coverage.js` — cobertura do catálogo; a matriz curricular e os mínimos (`MIN_FREE`, `MIN_PREMIUM`) estão no topo do ficheiro
 - `js/reports.js` — relatos de problemas em perguntas
 - `js/users.js` — responsáveis, assinaturas, histórico de faturação e planos e limites
 - `js/legal.js` — publicação de versões dos Termos de Utilização e da Política de Privacidade (requer `202611060006_legal_documents.sql`)

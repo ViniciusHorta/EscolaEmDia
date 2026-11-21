@@ -130,12 +130,16 @@
     renderList();
   };
 
+  W.filtered = () => filtered();
+
   W.closeEditor = () => { $('wsEditorView').hidden = true; $('wsEditorView').innerHTML = ''; $('wsListView').hidden = false; };
 
   W.init = () => {
     ['fSearch', 'fTopic', 'fStatus'].forEach((id) => $(id).addEventListener('input', renderList));
     ['fSubject', 'fYear'].forEach((id) => $(id).addEventListener('input', W.render));
     $('newWorksheet').addEventListener('click', () => A.editor.open(null));
+    $('exportWs').addEventListener('click', () => A.transfer.export());
+    $('importWs').addEventListener('click', () => A.transfer.import());
     $('wsList').addEventListener('click', (ev) => {
       const el = ev.target.closest('[data-act]');
       if (!el) return;

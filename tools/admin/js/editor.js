@@ -36,7 +36,10 @@
       dirty: false,
       ui: { ai: !id, json: false, preview: false, text: !!(latest && latest.content.text) },
       focusQuestionId: opts.focusQuestionId || null,
+      // Conteúdos da grade (só admin; não versionados).
+      contentIds: new Set(id ? A.state.contents.filter((c) => c.worksheetIds.includes(id)).map((c) => c.id) : []),
     };
+    ed.originalContents = [...ed.contentIds].sort().join(',');
     if (!Array.isArray(ed.content.questions)) ed.content.questions = [];
     ed.original = stable(ed.content);
     ed.originalMeta = stable({ y: ed.year, t: [...ed.topicIds].sort() });
@@ -82,6 +85,7 @@
         </div>
         <label>Temas</label>
         <div id="edTopics" class="topic-pick"></div>
+        <div id="edContents" class="content-pick"></div>
         <div class="version-info hint" style="margin:12px 0 0">${versionInfo(d, li)}</div>
       </section>
 
@@ -183,6 +187,29 @@
       <label class="${ed.topicIds.has(t.id) ? 'on' : ''}" ${t.archivedAt ? 'title="Tema arquivado: desmarca-o para gravar"' : ''}><input type="checkbox" data-topic="${t.id}" ${ed.topicIds.has(t.id) ? 'checked' : ''}> ${esc(t.name)}${t.archivedAt ? ' <span class="badge grey">arquivado</span>' : ''}</label>`).join('')
       + `<button class="sm secondary" data-act="new-topic">+ Novo tema</button>`
       + (topics.length ? '' : ' <span class="hint" style="margin:0">Ainda não há temas para esta disciplina e ano.</span>');
+    renderContents();
+  }
+
+  // Conteúdos da grade da disciplina e ano (de qualquer tema; os temas escolhidos primeiro).
+  // Só no admin: contam para a Cobertura e não criam versão nova.
+  function renderContents() {
+    const box = $('edContents');
+    if (!box) return;
+    if (A.state.contentsMissing) { box.innerHTML = ''; return; }
+    const groups = A.state.topics.filter((t) => t.subjectId === ed.subjectId && t.schoolYear === Number(ed.year))
+      .map((t) => ({ t, list: A.contentsFor(t.id) })).filter((g) => g.list.length)
+      .sort((a, b) => (ed.topicIds.has(b.t.id) - ed.topicIds.has(a.t.id)) || a.t.name.localeCompare(b.t.name, 'pt'));
+    // Conteúdos de outra disciplina/ano (depois de mudar estes campos) saem da ficha.
+    const allowed = new Set(groups.flatMap((g) => g.list.map((c) => c.id)));
+    [...ed.contentIds].forEach((id) => { if (!allowed.has(id)) ed.contentIds.delete(id); });
+    const chip = (c) => `<label class="${ed.contentIds.has(c.id) ? 'on' : ''}"><input type="checkbox" data-content="${c.id}" ${ed.contentIds.has(c.id) ? 'checked' : ''}> ${esc(c.name)}${c.semester ? ` <span class="muted small">${c.semester}.º S</span>` : ''}</label>`;
+    const n = ed.contentIds.size;
+    box.innerHTML = !groups.length
+      ? '<label>Conteúdos da grade</label><span class="hint">Ainda não há conteúdos para esta disciplina e ano (adiciona-os em Cobertura).</span>'
+      : `<details class="tool" ${n || ed.topicIds.size ? 'open' : ''}><summary>Conteúdos da grade <span class="badge ${n ? 'ok' : 'warn'}">${n} marcado${n === 1 ? '' : 's'}</span>
+          <span class="muted small">(só admin — contam para a Cobertura; mudar não cria versão nova)</span></summary>
+        ${groups.map((g) => `<div class="grp"><b>${esc(g.t.name)}${ed.topicIds.has(g.t.id) ? ' ✓' : ''}</b><div class="topic-pick">${g.list.map(chip).join('')}</div></div>`).join('')}
+      </details>`;
   }
 
   function renderQuestions() {
@@ -371,6 +398,12 @@
         p_worksheet_id: ed.id || null, p_subject_id: ed.subjectId, p_school_year: Number(ed.year),
         p_topic_ids: [...ed.topicIds], p_title: ed.title.trim(), p_content: content, p_publish: !!publish,
       });
+      // A ficha já está gravada: se os conteúdos falharem, voltar a gravar não cria outra ficha.
+      if (!ed.id) ed.id = r.worksheetId;
+      const contentIds = [...ed.contentIds].sort();
+      if (!A.state.contentsMissing && contentIds.join(',') !== ed.originalContents) {
+        await A.rpc('admin_set_worksheet_contents', { p_worksheet_id: r.worksheetId, p_content_ids: contentIds });
+      }
       const text = r.newVersion && r.published ? `Versão ${r.versionNumber} criada e publicada ✓`
         : r.newVersion ? `Versão ${r.versionNumber} gravada como rascunho (os responsáveis não a veem ainda).`
         : r.publishedNow ? `Versão ${r.versionNumber} publicada ✓`
@@ -421,7 +454,13 @@
       if (el.dataset.topic) {
         if (el.checked) ed.topicIds.add(el.dataset.topic); else ed.topicIds.delete(el.dataset.topic);
         el.closest('label').classList.toggle('on', el.checked);
-        refreshAiPrompt(); changed({ preview: false });
+        renderContents(); refreshAiPrompt(); changed({ preview: false });
+        return;
+      }
+      if (el.dataset.content) {
+        if (el.checked) ed.contentIds.add(el.dataset.content); else ed.contentIds.delete(el.dataset.content);
+        el.closest('label').classList.toggle('on', el.checked);
+        changed({ preview: false });
         return;
       }
       const card = el.closest('.q-card');

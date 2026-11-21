@@ -12,7 +12,7 @@
     box.innerHTML = A.msg('warn', 'A ligar…');
     $('connect').disabled = true;
     try {
-      await Promise.all([A.loadCatalogue(), A.loadWorksheets(), A.reports.load(), A.legal.load()]);
+      await Promise.all([A.loadCatalogue(), A.loadWorksheets(), A.loadContents(), A.reports.load(), A.legal.load()]);
       // Secções que dependem de migrações mais recentes não impedem a ligação (mostram o erro na própria secção).
       await A.users.load();
       $('key').value = '';
@@ -38,6 +38,7 @@
   function renderAll() {
     A.worksheets.render();
     A.topics.render();
+    A.coverage.render();
     A.reports.render();
     A.legal.render();
     A.users.render();
@@ -46,7 +47,7 @@
   // Recarrega dados da base sem fechar o editor aberto.
   app.reload = async ({ catalogue = true, worksheets = true, reports = false, legal = false, users = false } = {}) => {
     try {
-      await Promise.all([catalogue && A.loadCatalogue(), worksheets && A.loadWorksheets(), reports && A.reports.load(),
+      await Promise.all([catalogue && A.loadCatalogue(), worksheets && A.loadWorksheets(), (catalogue || worksheets) && A.loadContents(), reports && A.reports.load(),
         legal && A.legal.load(), users && A.users.load()].filter(Boolean));
       renderAll();
     } catch (e) { A.fail(e); }
@@ -78,6 +79,7 @@
   A.worksheets.init();
   A.editor.init();
   A.reports.init();
+  A.coverage.init();
   A.legal.init();
   A.users.init();
 })();
