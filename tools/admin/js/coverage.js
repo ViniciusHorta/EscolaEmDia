@@ -91,6 +91,8 @@
             total: contents.length, done: contents.filter((c) => !c.missing).length,
             missFree: contents.reduce((n, c) => n + c.missFree, 0), missPremium: contents.reduce((n, c) => n + c.missPremium, 0),
             published: ws.filter(isPublished).length,
+            wsTarget: contents.length * (C.MIN_FREE + C.MIN_PREMIUM),
+            wsDone: contents.reduce((n, c) => n + (C.MIN_FREE + C.MIN_PREMIUM - c.missing), 0),
             unlinked: ws.filter((w) => isPublished(w) && !linked.has(w.id)),
           });
         }
@@ -112,6 +114,7 @@
     }
     return `<td class="cov-cell ${level(c)} ${isOpen ? 'open' : ''}" ${attrs} title="${esc(`${c.cur.name} • ${c.year}.º Ano\n${c.done} de ${c.total} conteúdos com o mínimo\nFaltam ${c.missFree} Free e ${c.missPremium} Premium`)}">
       <span>${c.done}/${c.total} conteúdos</span>
+      <span class="cov-d">${c.wsDone}/${c.wsTarget} fichas</span>
       ${c.done < c.total ? `<span class="cov-d">faltam ${c.missFree} F • ${c.missPremium} ★</span>` : '<span class="cov-d">completo ✓</span>'}
       ${c.unlinked.length ? `<span class="cov-d">${c.unlinked.length} sem conteúdo</span>` : ''}
     </td>`;
@@ -121,6 +124,7 @@
     const mine = all.filter((c) => c.cycle === cyc.cycle);
     const total = mine.reduce((n, c) => n + c.total, 0), done = mine.reduce((n, c) => n + c.done, 0);
     const pct = total ? Math.round((done / total) * 100) : 0;
+    const wsTarget = mine.reduce((n, c) => n + c.wsTarget, 0), wsDone = mine.reduce((n, c) => n + c.wsDone, 0);
     const subjects = cyc.subjects.filter((s) => s.fichas)
       .filter((s) => !onlyGaps || mine.some((c) => c.cur === s && (!c.total || c.done < c.total)));
     const out = cyc.subjects.filter((s) => !s.fichas).map((s) => s.name);
@@ -133,6 +137,7 @@
       <div class="row" style="margin-bottom:10px">
         <h3 style="margin:0">${cyc.cycle}</h3>
         <span class="badge ${!total ? 'grey' : pct === 100 ? 'ok' : pct ? 'warn' : 'err'}">${done}/${total} conteúdos completos • ${pct}%</span>
+        ${wsTarget ? `<span class="badge grey">${wsDone}/${wsTarget} fichas feitas • ${Math.round((wsDone / wsTarget) * 100)}%</span>` : ''}
       </div>
       <div class="cov-bar"><span style="width:${pct}%"></span></div>
       ${rows ? `<div style="overflow-x:auto"><table class="tbl cov-tbl">
@@ -167,14 +172,16 @@
           <td class="small muted">${semLabel(c.semester)}</td>
           <td>${countBadge(c.free, C.MIN_FREE, 'free')} ${countBadge(c.premium, C.MIN_PREMIUM, 'premium')}${c.drafts ? ` <span class="badge grey">+${c.drafts} rasc.</span>` : ''}</td>
           <td class="small">${c.ws.map((w) => `<a href="#" data-act="edit-ws" data-id="${w.id}" class="${isPublished(w) ? '' : 'muted'}">${esc(w.title)}</a>`).join(', ') || '<span class="muted">—</span>'}</td>
-          <td class="actions"><button class="icon" data-act="edit" data-id="${c.id}" title="Editar">✎</button><button class="icon" data-act="del" data-id="${c.id}" title="Apagar">🗑</button></td>
+          <td class="actions"><button class="sm ${c.missing ? '' : 'secondary'}" data-act="new-ws" data-id="${c.id}" title="Criar uma ficha para este conteúdo">+ Ficha</button>
+            <button class="icon" data-act="edit" data-id="${c.id}" title="Editar">✎</button><button class="icon" data-act="del" data-id="${c.id}" title="Apagar">🗑</button></td>
         </tr>`).join('') : '<tr><td colspan="5" class="muted small">Sem conteúdos neste tema.</td></tr>');
     }).join('');
     const unlinked = cell ? cell.unlinked : [];
     return `<section class="cov-detail">
       <div class="row" style="margin-bottom:8px">
         <h3 style="margin:0">${esc(subject.name)} • ${open.year}.º Ano</h3>
-        ${cell && cell.total ? `<span class="badge ${level(cell) === 'ok' ? 'ok' : 'warn'}">${cell.done}/${cell.total} conteúdos completos</span>` : ''}
+        ${cell && cell.total ? `<span class="badge ${level(cell) === 'ok' ? 'ok' : 'warn'}">${cell.done}/${cell.total} conteúdos completos</span>
+          <span class="badge grey">${cell.wsDone}/${cell.wsTarget} fichas feitas</span>` : ''}
         <span class="spacer"></span>
         <button class="sm secondary" data-act="list">Ver fichas</button>
         <button class="sm secondary" data-act="paste">📋 Colar lista</button>
@@ -205,7 +212,8 @@
       <td><b>${esc(x.cell.cur.name)}</b> <span class="muted small">› ${esc(A.topic(x.topicId)?.name || '')}</span><div>${esc(x.name)}</div></td>
       <td class="small muted">${semLabel(x.semester)}</td>
       <td>${x.missFree ? `<span class="badge ok">+${x.missFree} Free</span>` : ''} ${x.missPremium ? `<span class="badge premium">+${x.missPremium} Premium</span>` : ''}</td>
-      <td class="actions"><button class="sm secondary" data-cell="1" data-subject="${x.subjectId}" data-year="${x.schoolYear}">Abrir</button></td>
+      <td class="actions"><button class="sm" data-act="new-ws" data-id="${x.id}">+ Ficha</button>
+        <button class="sm secondary" data-cell="1" data-subject="${x.subjectId}" data-year="${x.schoolYear}">Abrir</button></td>
     </tr>`).join('');
     return `<div class="page-head"><h2>O que criar a seguir</h2><span class="badge grey">${gaps.length} conteúdos</span></div>
       <p class="hint">Primeiro os conteúdos sem nenhuma ficha Free (o plano gratuito não tem nada), depois os do 1.º semestre e por ano.</p>
@@ -224,12 +232,18 @@
       Se for o mesmo que uma disciplina da matriz com outro nome, acrescenta-o aos <code>aliases</code> em <code>js/coverage.js</code>.`);
   }
 
+  // Para as rotas: célula aberta ({ subjectId, year }) ou null.
+  C.current = () => open;
+  C.setOpen = (o) => { open = o && A.subject(o.subjectId) ? o : null; C.render(); };
+
   C.render = () => {
     if (!$('covStats')) return;
     const all = cells();
     const scoped = all.filter((c) => !cycleFilter || c.cycle === cycleFilter);
     const sum = (f) => scoped.reduce((n, c) => n + f(c), 0);
+    const wsT = sum((c) => c.wsTarget), wsD = sum((c) => c.wsDone);
     $('covStats').innerHTML = `<div class="stats">
+      <div class="stat"><b>${wsD}/${wsT}</b><span>fichas feitas${wsT ? ` • ${Math.round((wsD / wsT) * 100)}%` : ''}</span></div>
       <div class="stat"><b>${sum((c) => c.done)}/${sum((c) => c.total)}</b><span>conteúdos completos</span></div>
       <div class="stat"><b>${sum((c) => c.contents.filter((x) => !x.free && !x.premium).length)}</b><span>conteúdos sem nenhuma ficha</span></div>
       <div class="stat"><b>${sum((c) => c.missFree)}</b><span>fichas Free em falta</span></div>
@@ -386,6 +400,31 @@
     if (r && r !== true) { await reload(); A.toast('ok', importText(r)); }
   }
 
+  // Próximo título livre: «‹conteúdo› - 01», «- 02», … (na mesma disciplina e ano).
+  C.nextTitle = (name, subjectId, year) => {
+    const base = key(name), used = new Set();
+    for (const w of A.state.worksheets) {
+      if (w.subjectId !== subjectId || w.latest?.schoolYear !== year) continue;
+      const m = key(w.title).match(/^(.*) (\d+)$/);
+      if (m && m[1] === base) used.add(Number(m[2]));
+    }
+    let n = 1;
+    while (used.has(n)) n++;
+    return `${name} - ${String(n).padStart(2, '0')}`;
+  };
+
+  // Nova ficha pré-preenchida para um conteúdo; Free se ainda faltar a Free desse conteúdo.
+  function newWorksheet(contentId) {
+    const c = A.state.contents.find((x) => x.id === contentId);
+    if (!c) return;
+    const byId = wsById(), st = contentStats(c, byId);
+    if (!open || open.subjectId !== c.subjectId || open.year !== c.schoolYear) { open = { subjectId: c.subjectId, year: c.schoolYear }; A.app.sync(); }
+    // O router abre o editor a partir do endereço (assim um recarregar mantém tudo preenchido).
+    const q = new URLSearchParams({ disciplina: c.subjectId, ano: c.schoolYear, tema: c.topicId, conteudo: c.id,
+      titulo: C.nextTitle(c.name, c.subjectId, c.schoolYear), tipo: st.missFree ? 'free' : 'premium', voltar: 'cobertura' });
+    location.hash = `#/fichas/nova?${q}`;
+  }
+
   function openList() {
     A.app.showTab('worksheets');
     A.worksheets.closeEditor();
@@ -406,11 +445,12 @@
         ev.preventDefault();
         const same = open && open.subjectId === cell.dataset.subject && open.year === Number(cell.dataset.year);
         open = same && cell.tagName === 'TD' ? null : { subjectId: cell.dataset.subject, year: Number(cell.dataset.year) };
-        C.render();
+        C.render(); A.app.sync();
         if (open) $('covDetail').scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
       }
       const el = ev.target.closest('[data-act]');
+      if (el && el.dataset.act === 'new-ws') { ev.preventDefault(); newWorksheet(el.dataset.id); return; }
       if (!el || !open) return;
       ev.preventDefault();
       ({
@@ -420,7 +460,7 @@
         paste: pasteList,
         draft: importDraft,
         list: openList,
-        close: () => { open = null; C.render(); },
+        close: () => { open = null; C.render(); A.app.sync(); },
         'edit-ws': () => A.editor.open(el.dataset.id),
       })[el.dataset.act]?.();
     });

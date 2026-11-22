@@ -21,6 +21,8 @@
       $('appView').hidden = false;
       $('connLabel').textContent = new URL(url).hostname.split('.')[0];
       renderAll();
+      // Volta à página do endereço (ex.: depois de recarregar e voltar a ligar).
+      await navigate();
     } catch (e) {
       A.state.key = '';
       box.innerHTML = A.msg('err', 'Não foi possível ligar: ' + esc(e.message) +
@@ -53,12 +55,68 @@
     } catch (e) { A.fail(e); }
   };
 
+  let current = 'worksheets';
   app.showTab = (tab) => {
+    current = tab;
     document.querySelectorAll('nav.side button').forEach((b) => b.classList.toggle('active', b.dataset.tab === tab));
     document.querySelectorAll('.tab').forEach((el) => { el.hidden = el.id !== 'tab-' + tab; });
     if (tab === 'reports') A.reports.render();
     window.scrollTo({ top: 0 });
+    app.sync();
   };
+
+  // ---------- Rotas no endereço (#/…) ----------
+  // #/fichas, #/fichas/nova, #/fichas/<id>, #/temas, #/cobertura, #/cobertura/<disciplina>/<ano>,
+  // #/relatos, #/documentos, #/planos, #/responsaveis. Funciona também a abrir o ficheiro do disco.
+  const SLUG = { worksheets: 'fichas', topics: 'temas', coverage: 'cobertura', reports: 'relatos', legal: 'documentos', plans: 'planos', users: 'responsaveis' };
+  const TAB = Object.fromEntries(Object.entries(SLUG).map(([t, s]) => [s, t]));
+  let routing = false;
+
+  // Endereço que corresponde ao que está no ecrã.
+  function path() {
+    const ws = A.editor.currentId();
+    if (current === 'worksheets' && ws) { const q = A.editor.query(); return `#/fichas/${ws}${q ? '?' + q : ''}`; }
+    if (current === 'coverage') { const o = A.coverage.current(); if (o) return `#/cobertura/${o.subjectId}/${o.year}`; }
+    return `#/${SLUG[current] || 'fichas'}`;
+  }
+
+  // Atualiza o endereço (cria entrada no histórico, para o «voltar» do navegador funcionar).
+  app.sync = () => {
+    if ($('appView').hidden) return;
+    const want = path();
+    if (location.hash === want) return;
+    if (routing) history.replaceState(null, '', want); else location.hash = want;
+  };
+
+  // Mostra a página do endereço atual.
+  async function navigate() {
+    if ($('appView').hidden || location.hash === path()) return;
+    const [route, query = ''] = location.hash.replace(/^#\/?/, '').split('?');
+    const [slug, a, b] = route.split('/');
+    const tab = TAB[slug] || 'worksheets';
+    const ws = A.editor.currentId();
+    if (ws && A.editor.isDirty() && !(tab === 'worksheets' && a === ws)
+        && !confirm('Há alterações por gravar nesta ficha. Descartar?')) { app.sync(); return; }
+    routing = true;
+    try {
+      if (tab === 'worksheets' && a) {
+        if (a === 'nova') {
+          // Ficha nova, pré-preenchida pelos parâmetros (ex.: vinda da Cobertura).
+          if (ws !== 'nova' || A.editor.query() !== query) {
+            const p = new URLSearchParams(query);
+            const prefill = p.get('disciplina') ? { subjectId: p.get('disciplina'), year: Number(p.get('ano')) || 1,
+              topicIds: p.getAll('tema'), contentIds: p.getAll('conteudo'), title: p.get('titulo') || '', tier: p.get('tipo') === 'free' ? 'free' : 'premium' } : null;
+            await A.editor.open(null, { force: true, prefill, query, returnTo: TAB[p.get('voltar')] || null });
+          }
+        } else if (a !== ws) await A.editor.open(a, { force: true });
+        return;
+      }
+      if (ws) A.editor.discard();
+      if (tab === 'coverage') A.coverage.setOpen(a && Number(b) ? { subjectId: a, year: Number(b) } : null);
+      app.showTab(tab);
+    } finally { routing = false; app.sync(); }
+  }
+  window.addEventListener('hashchange', () => { navigate(); });
 
   function beforeUnload(ev) {
     if (A.editor.isDirty()) { ev.preventDefault(); ev.returnValue = ''; }

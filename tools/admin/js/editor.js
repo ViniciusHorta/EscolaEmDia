@@ -13,10 +13,16 @@
   const letter = (j) => String.fromCharCode(65 + j);
 
   E.isDirty = () => !!(ed && ed.dirty);
+  // Para as rotas: id da ficha aberta («nova» se ainda não foi gravada), ou null.
+  E.currentId = () => (ed ? ed.id || 'nova' : null);
+  // Parâmetros da ficha nova pré-preenchida (ficam no endereço para sobreviver a um recarregar).
+  E.query = () => (ed && !ed.id ? ed.query || '' : '');
+  // Fecha sem perguntar (a confirmação já foi feita pelo router).
+  E.discard = () => { ed = null; A.worksheets.closeEditor(); };
 
   // ---------- Abrir / fechar ----------
   E.open = async (id, opts = {}) => {
-    if (ed && ed.dirty && !confirm('Há alterações por gravar nesta ficha. Descartar?')) return;
+    if (!opts.force && ed && ed.dirty && !confirm('Há alterações por gravar nesta ficha. Descartar?')) return;
     A.app.showTab('worksheets');
     let data = null;
     if (id) {
@@ -26,20 +32,27 @@
     }
     const listItem = id ? A.state.worksheets.find((w) => w.id === id) : null;
     const latest = data && data.latest;
+    // Ficha nova pré-preenchida (ex.: «+ Ficha» num conteúdo da Cobertura).
+    const pre = !id && opts.prefill ? opts.prefill : null;
     ed = {
       id, data, listItem,
-      title: data ? data.title : '',
-      subjectId: data ? data.subjectId : ($('fSubject').value || A.state.subjects[0]?.id || ''),
-      year: latest ? latest.schoolYear : (Number($('fYear').value) || 1),
-      topicIds: new Set(latest ? latest.topicIds : ($('fTopic').value ? [$('fTopic').value] : [])),
-      content: latest ? clone(latest.content) : { instructions: '', questions: [] },
+      returnTo: opts.returnTo || null,
+      query: opts.query || '',
+      tier: pre?.tier || 'premium', // só para fichas novas; aplicado depois de gravar
+      title: data ? data.title : (pre?.title || ''),
+      subjectId: data ? data.subjectId : (pre?.subjectId || $('fSubject').value || A.state.subjects[0]?.id || ''),
+      year: latest ? latest.schoolYear : (pre?.year || Number($('fYear').value) || 1),
+      topicIds: new Set(latest ? latest.topicIds : pre ? pre.topicIds : ($('fTopic').value ? [$('fTopic').value] : [])),
+      // «Publicar e criar outra»: a ficha nova herda as instruções e o texto da anterior.
+      content: latest ? clone(latest.content) : { instructions: opts.carry?.instructions || '', ...(opts.carry?.text ? { text: opts.carry.text } : {}), questions: [] },
       dirty: false,
-      ui: { ai: !id, json: false, preview: false, text: !!(latest && latest.content.text) },
+      ui: { ai: !id, json: false, preview: false, text: !!(latest ? latest.content.text : opts.carry?.text) },
       focusQuestionId: opts.focusQuestionId || null,
       // Conteúdos da grade (só admin; não versionados).
-      contentIds: new Set(id ? A.state.contents.filter((c) => c.worksheetIds.includes(id)).map((c) => c.id) : []),
+      contentIds: new Set(id ? A.state.contents.filter((c) => c.worksheetIds.includes(id)).map((c) => c.id) : (pre?.contentIds || [])),
     };
-    ed.originalContents = [...ed.contentIds].sort().join(',');
+    // Numa ficha nova nada está gravado: os conteúdos pré-marcados também têm de ser gravados.
+    ed.originalContents = id ? [...ed.contentIds].sort().join(',') : '';
     if (!Array.isArray(ed.content.questions)) ed.content.questions = [];
     ed.original = stable(ed.content);
     ed.originalMeta = stable({ y: ed.year, t: [...ed.topicIds].sort() });
@@ -48,8 +61,10 @@
 
   function close() {
     if (ed && ed.dirty && !confirm('Há alterações por gravar nesta ficha. Descartar?')) return;
+    const back = ed && ed.returnTo;
     ed = null;
     A.worksheets.closeEditor();
+    if (back) A.app.showTab(back);
   }
 
   const hasPublished = () => !!(ed.data && ed.data.versions.some((v) => v.publishedAt));
@@ -67,10 +82,12 @@
       : ({ published: '<span class="badge ok">Publicada</span>', draft: '<span class="badge warn">Rascunho</span>', archived: '<span class="badge grey">Arquivada</span>' })[d.status] || '';
     view.innerHTML = `
       <div class="page-head">
-        <button class="ghost" data-act="back">← Fichas</button>
+        <button class="ghost" data-act="back">← ${ed.returnTo === 'coverage' ? 'Cobertura' : 'Fichas'}</button>
         <h2>${d ? 'Editar ficha' : 'Nova ficha'}</h2> ${statusBadge}
         ${d && d.isSample ? '<span class="badge grey">Exemplo</span>' : ''}
-        ${!d ? '<span class="badge premium" title="Fichas novas são Premium. Depois de gravar, podes mudá-la para Free na lista.">★ Premium</span>'
+        ${!d ? (ed.tier === 'free'
+            ? '<button class="badge ok" data-act="tier-new" title="Ficha nova Free. Clica para mudar para Premium.">Free</button>'
+            : '<button class="badge premium" data-act="tier-new" title="Ficha nova Premium. Clica para mudar para Free.">★ Premium</button>')
           : d.accessTier === 'free' ? `<span class="badge ok" title="Máximo de ${d.freeMaxQuestions} perguntas">Free</span>`
           : '<span class="badge premium">★ Premium</span>'}
       </div>
@@ -148,6 +165,7 @@
         <button class="secondary" data-act="back">Fechar</button>
         <button class="secondary" data-act="save-draft" id="edDraft">Guardar rascunho</button>
         <button class="success" data-act="save-publish" id="edPublish">Guardar e publicar</button>
+        <button class="success" data-act="save-next" id="edNext" title="Publica esta ficha e começa outra com a mesma disciplina, ano, temas, conteúdos e tipo (sem perguntas)">Publicar e criar outra</button>
       </div></div>`;
     renderTopics();
     renderQuestions();
@@ -155,6 +173,7 @@
     if (ed.ui.json) $('jsonEdit').value = JSON.stringify(ed.content, null, 2);
     if (ed.ui.preview) $('previewBox').innerHTML = A.renderPreview(ed.content);
     window.scrollTo({ top: 0 });
+    A.app.sync();
     if (ed.focusQuestionId) {
       const card = view.querySelector(`.q-card[data-qid="${CSS.escape(ed.focusQuestionId)}"]`);
       ed.focusQuestionId = null;
@@ -289,6 +308,7 @@
     $('edStatus').innerHTML = status;
     $('edDraft').disabled = !ok;
     $('edPublish').disabled = !ok;
+    $('edNext').disabled = !ok;
     $('edDraft').title = latestPublished() ? 'Grava sem mudar o que os responsáveis veem (uma nova versão fica em rascunho)' : 'Grava sem mostrar aos responsáveis';
     return ok;
   }
@@ -334,6 +354,7 @@
     $('aiPrompt').value = A.buildAiPrompt({
       year: ed.year, subject: A.subject(ed.subjectId)?.name || '', counts, extra: $('aiExtra').value.trim(), title: ed.title.trim(),
       topics: [...ed.topicIds].map((id) => A.topic(id)?.name).filter(Boolean),
+      contents: [...ed.contentIds].map((id) => A.state.contents.find((c) => c.id === id)?.name).filter(Boolean),
     });
   }
 
@@ -384,7 +405,19 @@
   }
 
   // ---------- Gravar ----------
-  async function save(publish) {
+  // Dados que passam para a ficha seguinte («Publicar e criar outra»).
+  function nextFrom() {
+    const m = ed.title.trim().match(/^(.*\S)\s+-\s+\d+$/);
+    return {
+      base: m ? m[1] : null, title: ed.title.trim(),
+      prefill: { subjectId: ed.subjectId, year: Number(ed.year), topicIds: [...ed.topicIds], contentIds: [...ed.contentIds],
+        tier: (ed.data ? ed.data.accessTier : ed.tier) === 'free' ? 'free' : 'premium' },
+      carry: { instructions: ed.content.instructions || '', text: ed.content.text || '' },
+      returnTo: ed.returnTo,
+    };
+  }
+
+  async function save(publish, next = false) {
     if (!validate()) return;
     const content = A.cleanContent(ed.content);
     const d = ed.data;
@@ -392,14 +425,20 @@
     if (publish && newVersion && ed.listItem && ed.listItem.assignmentCount) {
       if (!confirm(`Publicar a v${d.latest.versionNumber + 1}?\n\nAs ${ed.listItem.assignmentCount} atribuição(ões) existentes continuam com a versão que já tinham; as novas atribuições usam a nova versão.`)) return;
     }
-    $('edDraft').disabled = $('edPublish').disabled = true;
+    const nx = next ? nextFrom() : null;
+    $('edDraft').disabled = $('edPublish').disabled = $('edNext').disabled = true;
     try {
       const r = await A.rpc('admin_save_worksheet', {
         p_worksheet_id: ed.id || null, p_subject_id: ed.subjectId, p_school_year: Number(ed.year),
         p_topic_ids: [...ed.topicIds], p_title: ed.title.trim(), p_content: content, p_publish: !!publish,
       });
       // A ficha já está gravada: se os conteúdos falharem, voltar a gravar não cria outra ficha.
-      if (!ed.id) ed.id = r.worksheetId;
+      const isNew = !ed.id;
+      if (isNew) ed.id = r.worksheetId;
+      if (isNew && ed.tier === 'free') {
+        await A.rpc('admin_set_worksheet_tier', { p_id: r.worksheetId, p_tier: 'free' });
+        ed.tier = 'saved';
+      }
       const contentIds = [...ed.contentIds].sort();
       if (!A.state.contentsMissing && contentIds.join(',') !== ed.originalContents) {
         await A.rpc('admin_set_worksheet_contents', { p_worksheet_id: r.worksheetId, p_content_ids: contentIds });
@@ -408,10 +447,24 @@
         : r.newVersion ? `Versão ${r.versionNumber} gravada como rascunho (os responsáveis não a veem ainda).`
         : r.publishedNow ? `Versão ${r.versionNumber} publicada ✓`
         : r.published ? 'Alterações gravadas ✓' : 'Rascunho gravado ✓';
-      // Depois de gravar, volta à lista de fichas (já atualizada).
+      // Depois de gravar, volta à lista de fichas (ou à Cobertura, se veio de lá), já atualizada.
+      const back = ed.returnTo;
       ed = null;
       A.worksheets.closeEditor();
       await A.app.reload();
+      if (nx) {
+        // Título seguinte: «‹conteúdo› - 02», «- 03», … (ou o mesmo título, se não tiver número).
+        const pre = { ...nx.prefill, title: nx.base ? A.coverage.nextTitle(nx.base, nx.prefill.subjectId, nx.prefill.year) : nx.title };
+        const q = new URLSearchParams({ disciplina: pre.subjectId, ano: pre.year, titulo: pre.title, tipo: pre.tier });
+        pre.topicIds.forEach((t) => q.append('tema', t));
+        pre.contentIds.forEach((c) => q.append('conteudo', c));
+        const slug = { coverage: 'cobertura', worksheets: 'fichas' }[nx.returnTo];
+        if (slug) q.set('voltar', slug);
+        await E.open(null, { force: true, prefill: pre, query: q.toString(), returnTo: nx.returnTo, carry: nx.carry });
+        A.toast('ok', `${text} Nova ficha pronta.`);
+        return;
+      }
+      if (back) A.app.showTab(back);
       A.toast('ok', text);
     } catch (e) {
       A.fail(e);
@@ -499,8 +552,10 @@
       const qs = ed.content.questions;
       switch (act) {
         case 'back': close(); return;
+        case 'tier-new': ed.tier = ed.tier === 'free' ? 'premium' : 'free'; render(); return;
         case 'save-draft': save(false); return;
         case 'save-publish': save(true); return;
+        case 'save-next': save(true, true); return;
         case 'add': {
           qs.push(blankQuestion(btn.dataset.type));
           changed({ questions: true });

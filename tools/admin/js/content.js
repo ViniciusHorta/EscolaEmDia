@@ -189,10 +189,10 @@ Regras validadas pela base de dados:
 • written: sem "options" nem "correctAnswer"; corrigida pelos responsáveis no Painel do Responsável.
 • "explanation" é opcional mas recomendada.`;
 
-  A.buildAiPrompt = ({ year, subject, topics, counts, extra, title }) => {
+  A.buildAiPrompt = ({ year, subject, topics, counts, extra, title, contents = [] }) => {
     const total = counts.mc + counts.tf + counts.wr;
     const topicText = topics.length ? topics.map((t) => `«${t}»`).join(' e ') : '(tema)';
-    return `És um professor do ${Number(year) >= 7 ? '3.º' : Number(year) >= 5 ? '2.º' : '1.º'} Ciclo do Ensino Básico em Portugal. Cria uma ficha de exercícios para uma criança do ${year}.º ano, na disciplina de ${subject || '(disciplina)'}, sobre ${topics.length > 1 ? 'os temas' : 'o tema'} ${topicText}, alinhada com as Aprendizagens Essenciais.${title ? `\nTítulo pretendido: «${title}».` : ''}
+    return `És um professor do ${Number(year) >= 7 ? '3.º' : Number(year) >= 5 ? '2.º' : '1.º'} Ciclo do Ensino Básico em Portugal. Cria uma ficha de exercícios para uma criança do ${year}.º ano, na disciplina de ${subject || '(disciplina)'}, sobre ${topics.length > 1 ? 'os temas' : 'o tema'} ${topicText}, alinhada com as Aprendizagens Essenciais.${contents.length ? `\nConteúdo${contents.length > 1 ? 's' : ''} a trabalhar (todas as perguntas devem incidir sobre ${contents.length > 1 ? 'estes conteúdos' : 'este conteúdo'}): ${contents.map((c) => `«${c}»`).join(', ')}.` : ''}${title ? `\nTítulo pretendido: «${title}».` : ''}
 
 Composição (exatamente ${total} perguntas):
 • ${counts.mc} de escolha múltipla ("multiple-choice") com 3 ou 4 opções e uma só resposta certa;
@@ -201,7 +201,7 @@ Composição (exatamente ${total} perguntas):
 ${extra ? `\nIndicações adicionais: ${extra}\n` : ''}
 Regras de conteúdo:
 • Português de Portugal (pt-PT), frases curtas e claras, adequadas à idade (${Number(year) + 5}–${Number(year) + 6} anos).
-• Varia a posição da resposta certa nas perguntas de escolha múltipla; opções erradas plausíveis.
+${Number(year) === 1 ? '• 1.º ano: usa emojis nos enunciados e nas opções para ajudar a criança a perceber as palavras (ex.: «🐱 gato»).\n' : ''}• Varia a posição da resposta certa nas perguntas de escolha múltipla; opções erradas plausíveis.
 • Equilibra as respostas verdadeiro/falso (não ponhas todas iguais).
 • Sem dados pessoais, marcas, violência ou temas sensíveis.
 • "explanation": explicação curta e encorajadora para a criança (escolha múltipla e verdadeiro/falso); nas abertas, a resposta esperada e os critérios para os responsáveis.

@@ -132,7 +132,7 @@
 
   W.filtered = () => filtered();
 
-  W.closeEditor = () => { $('wsEditorView').hidden = true; $('wsEditorView').innerHTML = ''; $('wsListView').hidden = false; };
+  W.closeEditor = () => { $('wsEditorView').hidden = true; $('wsEditorView').innerHTML = ''; $('wsListView').hidden = false; A.app.sync(); };
 
   W.init = () => {
     ['fSearch', 'fTopic', 'fStatus'].forEach((id) => $(id).addEventListener('input', renderList));

@@ -16,6 +16,8 @@ Página estática para gerir o Supabase. Navegação pela barra lateral:
    e `202611060003_archive_topics.sql`, e fazer deploy da Edge Function `worksheets` (esconde temas arquivados aos responsáveis).
 2. Abrir `tools/admin/index.html` diretamente no navegador (duplo clique).
 3. Ligar com o URL do projeto e a chave `service_role` **legacy (JWT)**. A chave fica só em memória.
+4. A página atual fica no endereço (`#/fichas/<id>`, `#/cobertura/<disciplina>/<ano>`, `#/temas`, …): o «voltar» do navegador
+   funciona e, ao recarregar, depois de voltar a ligar, o admin abre a mesma página (a chave volta a ser pedida).
 
 Não publicar esta página: com a chave `service_role` tem acesso total à base.
 
