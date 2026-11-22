@@ -1,3 +1,4 @@
+import '../../../shared/widgets/question_image.dart';
 import '../../attempts/domain/submission_summary.dart';
 import '../../family/domain/family_models.dart';
 
@@ -33,8 +34,9 @@ class ReviewOption {
 class ParentReviewQuestion {
   const ParentReviewQuestion({required this.id, required this.type, required this.prompt,
     required this.answerType, required this.reviewable, required this.options,
-    required this.explanation, this.answerId, this.text, this.selectedOptionId, this.correctOptionId, this.review});
+    required this.explanation, this.answerId, this.text, this.selectedOptionId, this.correctOptionId, this.review, this.image});
   final String id, type, prompt, answerType, explanation;
+  final QuestionImage? image;
   final String? answerId, text, selectedOptionId, correctOptionId;
   final bool reviewable;
   final List<ReviewOption> options;
@@ -47,6 +49,7 @@ class ParentReviewQuestion {
     explanation: value['explanation'] as String? ?? '',
     options: (value['options'] as List).map((item) => ReviewOption(item['id'] as String, item['text'] as String)).toList(),
     review: value['review'] is Map ? AnswerReview.fromJson(value['review'] as Map) : null,
+    image: QuestionImage.tryParse(value['image']),
   );
   /// Correção automática: escolha múltipla ou Verdadeiro/Falso.
   bool get automatic => type == 'multiple-choice' || type == 'true_false';
