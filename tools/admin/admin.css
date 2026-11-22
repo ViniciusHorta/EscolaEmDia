@@ -272,3 +272,16 @@ dialog h3 { margin: 0 0 14px; font-size: 18px; }
 .cov-na { color: var(--outline); }
 .cov-tbl { border-collapse: separate; border-spacing: 4px; }
 .cov-tbl th, .cov-tbl td { border-bottom: 0; }
+
+/* ---------- Imagem das perguntas ---------- */
+label.btn-file { display: inline-block; margin: 0; font-weight: 700; font-size: 13px; border-radius: 999px; padding: 6px 12px; cursor: pointer;
+  background: var(--soft); color: var(--primary); border: 1px solid var(--border); box-shadow: 0 3px 0 var(--border); white-space: nowrap; }
+label.btn-file:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--border); }
+label.btn-file.busy { opacity: .6; pointer-events: none; }
+label.btn-file.busy::after { content: ' …'; }
+.q-img-add { margin-top: 8px; }
+.q-img { display: flex; gap: 14px; align-items: flex-start; margin-top: 10px; padding: 10px; border: 1px dashed var(--border); border-radius: 14px; }
+.q-img img { width: 160px; max-height: 160px; object-fit: contain; border-radius: 10px; background: var(--soft); flex: none; }
+.q-img-side { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.q-img-side label.small { margin: 0; }
+.q-img-pv { display: block; max-width: 100%; max-height: 220px; object-fit: contain; border-radius: 10px; margin-bottom: 6px; }
