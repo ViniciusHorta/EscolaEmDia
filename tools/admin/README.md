@@ -36,6 +36,10 @@ Não publicar esta página: com a chave `service_role` tem acesso total à base.
   «🖼 Adicionar imagem» envia o ficheiro (PNG, JPEG, WebP ou GIF; fotos grandes são reduzidas para WebP até 1600 px, máx. 2 MB)
   para o bucket público `question-images` e guarda na pergunta `"image": {"path": "…", "alt": "…"}`.
   «Remover imagem» só a tira da pergunta: o ficheiro fica no bucket, porque versões antigas publicadas podem usá-lo.
+  Nome do ficheiro: `<disciplina>/<ano>/<título-da-ficha>/<pergunta>-<AAAAMMDD-HHMMSS>.<ext>`
+  (ex.: `matematica/5/comparacao-e-ordenacao-de-fracoes-e-decimais-na-reta-02/q1-20261122-194233.webp`).
+  A exportação/importação de fichas mantém o caminho, mas **não copia os ficheiros**: para levar as imagens
+  para outro ambiente, copia a pasta da ficha no bucket `question-images` com o mesmo caminho.
 
 - **Documentos legais são imutáveis.** Cada publicação cria uma versão nova. «Exige novo aceite» obriga todos os responsáveis
   a aceitar no próximo acesso (com o resumo «O que mudou»); desmarcar só para correções menores. A primeira versão exige sempre aceite.

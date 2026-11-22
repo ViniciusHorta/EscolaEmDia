@@ -127,15 +127,28 @@ window.A = window.A || {};
     return blob || file;
   }
 
-  // Envia uma imagem e devolve o caminho no bucket (ex.: "3f2a….webp").
+  // Texto → pedaço de caminho seguro: sem acentos, minúsculas, só letras/números e hífens.
+  A.slug = (s, max = 80) => A.norm(s).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, max).replace(/-+$/, '');
+
+  // Caminho (sem extensão) da imagem de uma pergunta, igual em todos os ambientes:
+  //   <disciplina>/<ano>/<título-da-ficha>/<pergunta>-<AAAAMMDD-HHMMSS>
+  // A data/hora evita substituir a imagem usada por versões antigas já publicadas.
+  A.questionImageBase = ({ subject, year, title, questionId }) => {
+    const d = new Date(), p = (n) => String(n).padStart(2, '0');
+    const stamp = `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+    return [A.slug(subject, 40) || 'disciplina', String(Number(year) || 0), A.slug(title) || 'ficha',
+      `${A.slug(questionId, 30) || 'q'}-${stamp}`].join('/');
+  };
+
+  // Envia uma imagem para <base>.<extensão> e devolve o caminho no bucket.
   // Os ficheiros nunca se apagam daqui: versões publicadas antigas podem continuar a usá-los.
-  A.uploadImage = async (file) => {
+  A.uploadImage = async (file, base) => {
     if (!A.IMAGE_TYPES[file.type]) throw new ApiError('IMAGE_TYPE', 'Formato não suportado. Usa PNG, JPEG, WebP ou GIF.');
     let blob;
     try { blob = await shrinkImage(file); } catch { blob = file; }
     if (blob.size > A.IMAGE_MAX_BYTES) throw new ApiError('IMAGE_SIZE', `A imagem tem ${(blob.size / 1048576).toFixed(1)} MB; o máximo é 2 MB.`);
     const type = blob.type || file.type;
-    const path = `${crypto.randomUUID()}.${A.IMAGE_TYPES[type] || 'png'}`;
+    const path = `${base || crypto.randomUUID()}.${A.IMAGE_TYPES[type] || 'png'}`;
     let res;
     try {
       res = await fetch(`${A.state.url}/storage/v1/object/${A.IMAGE_BUCKET}/${path}`, {
@@ -146,6 +159,7 @@ window.A = window.A || {};
     }
     if (!res.ok) {
       const body = await res.json().catch(() => null);
+      if (res.status === 409 || /already exists/i.test(body?.message || '')) throw new ApiError('HTTP', 'Já existe uma imagem com este nome. Espera um segundo e tenta de novo.');
       if (res.status === 404 || /bucket not found/i.test(body?.message || '')) throw new ApiError('HTTP', 'O bucket question-images não existe. Aplica a migração 202611220001_question_images_bucket.sql.');
       throw new ApiError('HTTP', 'Falha ao enviar a imagem: ' + (body?.message || body?.error || `HTTP ${res.status}`));
     }

@@ -295,10 +295,14 @@
     const card = input.closest('.q-card');
     if (!file || !card) return;
     const q = ed.content.questions[Number(card.dataset.q)];
+    // O nome do ficheiro identifica a ficha (disciplina/ano/título) e a pergunta.
+    if (!ed.title.trim()) { A.toast('warn', 'Indica primeiro o título da ficha: faz parte do nome da imagem.'); input.value = ''; return; }
+    if (!q.id || !q.id.trim()) { A.toast('warn', 'A pergunta precisa de identificador.'); input.value = ''; return; }
     const label = input.closest('label');
     if (label) label.classList.add('busy');
     try {
-      const path = await A.uploadImage(file);
+      const base = A.questionImageBase({ subject: A.subject(ed.subjectId)?.name || '', year: ed.year, title: ed.title, questionId: q.id });
+      const path = await A.uploadImage(file, base);
       q.image = { path, ...(q.image && q.image.alt ? { alt: q.image.alt } : {}) };
       changed({ questions: true });
       A.toast('ok', 'Imagem enviada ✓ Grava a ficha para a guardar.');
