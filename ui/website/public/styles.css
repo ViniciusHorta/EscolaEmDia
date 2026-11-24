@@ -406,6 +406,15 @@ p { margin: 0; }
 .cta h2 { font-size: clamp(32px, 5vw, 56px); font-weight: 800; position: relative; }
 .cta p { font-size: 19px; opacity: .9; margin: 16px 0 36px; position: relative; }
 .cta .btn { position: relative; }
+/* Store badge (Google Play) */
+.hero__store, .cta__store { display: flex; flex-wrap: wrap; gap: 12px; }
+.hero__store { margin-top: 20px; }
+.store-badge { display: inline-flex; align-items: center; gap: 10px; padding: 9px 18px 9px 14px; border-radius: 14px; background: #111; color: #fff; line-height: 1.1; font-weight: 700; font-size: 17px; box-shadow: 0 4px 0 #000; transition: transform .15s, box-shadow .15s; }
+.store-badge small { display: block; font-size: 11px; font-weight: 500; opacity: .85; letter-spacing: .02em; }
+.store-badge:hover { transform: translateY(-2px); box-shadow: 0 6px 0 #000; }
+.store-badge:active { transform: translateY(4px); box-shadow: 0 0 0 #000; }
+.store-badge__icon { flex: none; }
+.cta__store { margin-top: 18px; position: relative; justify-content: center; }
 .cta__login { display: block; margin-top: 22px; font-weight: 600; font-size: 15px; opacity: .85; position: relative; }
 .cta__login:hover { opacity: 1; text-decoration: underline; text-underline-offset: 4px; }
 .cta__sparkles i {
@@ -521,7 +530,7 @@ p { margin: 0; }
   .hero { padding: 120px 0 80px; }
   .hero__grid { grid-template-columns: 1fr; gap: 40px; text-align: center; }
   .lead { margin-inline: auto; }
-  .hero__ctas { justify-content: center; }
+  .hero__ctas, .hero__store { justify-content: center; }
   .hero__visual { min-height: 0; }
   .step, .step:nth-child(even) { grid-template-columns: 1fr; gap: 28px; text-align: center; }
   .step:nth-child(even) .step__text { order: 0; }
