@@ -7,6 +7,7 @@ import '../../../shared/widgets/app_badge.dart';
 import '../../../shared/widgets/premium_crown.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_card.dart';
+import '../../../shared/widgets/question_image.dart';
 import '../../family/domain/family_models.dart';
 import '../data/pending_reviews_service.dart';
 import '../domain/parent_review_models.dart';
@@ -367,6 +368,7 @@ class _ParentReviewPageState extends State<ParentReviewPage> {
           Text('ENUNCIADO DA PERGUNTA', style: TextStyle(fontSize: 13, letterSpacing: 1.2, fontWeight: FontWeight.w700, color: context.area.primary)),
         ]),
         const SizedBox(height: 10),
+        if (question.image != null) ...[QuestionImageView(question.image!, maxHeight: 220), const SizedBox(height: 12)],
         SelectableText('“${question.prompt}”', style: const TextStyle(fontSize: 22, height: 1.35, fontWeight: FontWeight.w700, color: AppColors.text)),
       ])),
       const SizedBox(height: 18),
@@ -804,6 +806,8 @@ class _ChoiceDetail extends StatelessWidget {
         const SizedBox(width: 10),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('$number. ${question.prompt}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+          if (question.image != null) ...[const SizedBox(height: 6), Align(alignment: Alignment.centerLeft,
+            child: QuestionImageView(question.image!, maxHeight: 120))],
           const SizedBox(height: 4),
           Text('Resposta: ${question.optionText(question.selectedOptionId)}', style: const TextStyle(fontSize: 13)),
           if (!right) Text('Correta: ${question.optionText(question.correctOptionId)}',

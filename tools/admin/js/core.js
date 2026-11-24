@@ -107,6 +107,65 @@ window.A = window.A || {};
     return data;
   };
 
+  // ---------- Imagens das questões (Storage, bucket público question-images) ----------
+  A.IMAGE_BUCKET = 'question-images';
+  A.IMAGE_MAX_BYTES = 2 * 1024 * 1024; // igual ao file_size_limit do bucket
+  A.IMAGE_TYPES = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif' };
+  A.imageUrl = (path) => `${A.state.url}/storage/v1/object/public/${A.IMAGE_BUCKET}/${String(path).split('/').map(encodeURIComponent).join('/')}`;
+
+  // Reduz fotos grandes (lado maior até 1600 px, WebP). GIF fica como está para não perder a animação.
+  async function shrinkImage(file) {
+    if (file.type === 'image/gif') return file;
+    const bmp = await createImageBitmap(file);
+    const scale = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+    if (scale === 1 && file.size <= A.IMAGE_MAX_BYTES) { bmp.close(); return file; }
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(bmp.width * scale); canvas.height = Math.round(bmp.height * scale);
+    canvas.getContext('2d').drawImage(bmp, 0, 0, canvas.width, canvas.height);
+    bmp.close();
+    const blob = await new Promise((ok) => canvas.toBlob(ok, 'image/webp', 0.85));
+    return blob || file;
+  }
+
+  // Texto → pedaço de caminho seguro: sem acentos, minúsculas, só letras/números e hífens.
+  A.slug = (s, max = 80) => A.norm(s).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, max).replace(/-+$/, '');
+
+  // Caminho (sem extensão) da imagem de uma pergunta, igual em todos os ambientes:
+  //   <disciplina>/<ano>/<título-da-ficha>/<pergunta>-<AAAAMMDD-HHMMSS>
+  // A data/hora evita substituir a imagem usada por versões antigas já publicadas.
+  A.questionImageBase = ({ subject, year, title, questionId }) => {
+    const d = new Date(), p = (n) => String(n).padStart(2, '0');
+    const stamp = `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+    return [A.slug(subject, 40) || 'disciplina', String(Number(year) || 0), A.slug(title) || 'ficha',
+      `${A.slug(questionId, 30) || 'q'}-${stamp}`].join('/');
+  };
+
+  // Envia uma imagem para <base>.<extensão> e devolve o caminho no bucket.
+  // Os ficheiros nunca se apagam daqui: versões publicadas antigas podem continuar a usá-los.
+  A.uploadImage = async (file, base) => {
+    if (!A.IMAGE_TYPES[file.type]) throw new ApiError('IMAGE_TYPE', 'Formato não suportado. Usa PNG, JPEG, WebP ou GIF.');
+    let blob;
+    try { blob = await shrinkImage(file); } catch { blob = file; }
+    if (blob.size > A.IMAGE_MAX_BYTES) throw new ApiError('IMAGE_SIZE', `A imagem tem ${(blob.size / 1048576).toFixed(1)} MB; o máximo é 2 MB.`);
+    const type = blob.type || file.type;
+    const path = `${base || crypto.randomUUID()}.${A.IMAGE_TYPES[type] || 'png'}`;
+    let res;
+    try {
+      res = await fetch(`${A.state.url}/storage/v1/object/${A.IMAGE_BUCKET}/${path}`, {
+        method: 'POST', headers: { ...headers(), 'Content-Type': type, 'Cache-Control': '31536000', 'x-upsert': 'false' }, body: blob,
+      });
+    } catch (e) {
+      throw new ApiError('NETWORK', 'Sem ligação ao Supabase (' + e.message + ').');
+    }
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      if (res.status === 409 || /already exists/i.test(body?.message || '')) throw new ApiError('HTTP', 'Já existe uma imagem com este nome. Espera um segundo e tenta de novo.');
+      if (res.status === 404 || /bucket not found/i.test(body?.message || '')) throw new ApiError('HTTP', 'O bucket question-images não existe. Aplica a migração 202611220001_question_images_bucket.sql.');
+      throw new ApiError('HTTP', 'Falha ao enviar a imagem: ' + (body?.message || body?.error || `HTTP ${res.status}`));
+    }
+    return path;
+  };
+
   A.loadCatalogue = async () => {
     const o = await A.rpc('admin_catalogue_overview');
     A.state.subjects = o.subjects || [];

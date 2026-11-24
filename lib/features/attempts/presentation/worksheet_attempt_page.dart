@@ -5,6 +5,7 @@ import '../../../shared/widgets/app_badge.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/layout/app_page.dart';
+import '../../../shared/widgets/question_image.dart';
 import '../../child_session/data/child_session_service.dart';
 import '../../worksheets/domain/worksheet_models.dart';
 import '../data/attempt_controller.dart';
@@ -386,6 +387,10 @@ class _WorksheetAttemptPageState extends State<WorksheetAttemptPage> {
                                                       fontSize: 16,
                                                       height: 1.45)),
                                               const SizedBox(height: 14),
+                                            ],
+                                            if (q.image != null) ...[
+                                              QuestionImageView(q.image!),
+                                              const SizedBox(height: 16),
                                             ],
                                             HighlightedPrompt(q.prompt,
                                                 fontSize: q.type == 'written'

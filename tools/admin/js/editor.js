@@ -241,6 +241,7 @@
   function qCard(q, i, total) {
     const typeOpts = Object.entries(A.typeLabel).map(([v, l]) => `<option value="${v}" ${q.type === v ? 'selected' : ''}>${l}</option>`).join('');
     let body = `<textarea data-f="prompt" rows="2" placeholder="${q.type === 'true_false' ? 'Afirmação (a criança decide se é verdadeira ou falsa)' : 'Enunciado da pergunta'}">${esc(q.prompt || '')}</textarea>`;
+    body += imageBlock(q);
     if (q.type === 'multiple-choice') {
       const opts = Array.isArray(q.options) ? q.options : [];
       body += `<div class="opts">` + opts.map((o, j) => `
@@ -271,6 +272,45 @@
         <button class="icon" data-act="q-dup" title="Duplicar">⧉</button>
         <button class="icon" data-act="q-del" title="Apagar pergunta">🗑</button>
       </div>${body}</div>`;
+  }
+
+  // Imagem opcional (mostrada à criança acima do enunciado).
+  function imageBlock(q) {
+    if (q.image && q.image.path) {
+      return `<div class="q-img">
+        <img src="${esc(A.imageUrl(q.image.path))}" alt="${esc(q.image.alt || '')}" loading="lazy">
+        <div class="q-img-side">
+          <label class="small">Descrição da imagem <span class="muted">(para leitores de ecrã)</span></label>
+          <input type="text" data-f="image-alt" maxlength="300" value="${esc(q.image.alt || '')}" placeholder="Ex.: Três maçãs vermelhas numa mesa">
+          <div class="row"><label class="sm secondary btn-file">Trocar imagem<input type="file" data-f="image-file" accept="image/png,image/jpeg,image/webp,image/gif" hidden></label>
+          <button class="sm secondary" data-act="img-del">Remover imagem</button></div>
+        </div></div>`;
+    }
+    return `<div class="row q-img-add"><label class="sm secondary btn-file">🖼 Adicionar imagem<input type="file" data-f="image-file" accept="image/png,image/jpeg,image/webp,image/gif" hidden></label>
+      <span class="hint" style="margin:0">Opcional · PNG, JPEG, WebP ou GIF · fotos grandes são reduzidas</span></div>`;
+  }
+
+  async function uploadQuestionImage(input) {
+    const file = input.files && input.files[0];
+    const card = input.closest('.q-card');
+    if (!file || !card) return;
+    const q = ed.content.questions[Number(card.dataset.q)];
+    // O nome do ficheiro identifica a ficha (disciplina/ano/título) e a pergunta.
+    if (!ed.title.trim()) { A.toast('warn', 'Indica primeiro o título da ficha: faz parte do nome da imagem.'); input.value = ''; return; }
+    if (!q.id || !q.id.trim()) { A.toast('warn', 'A pergunta precisa de identificador.'); input.value = ''; return; }
+    const label = input.closest('label');
+    if (label) label.classList.add('busy');
+    try {
+      const base = A.questionImageBase({ subject: A.subject(ed.subjectId)?.name || '', year: ed.year, title: ed.title, questionId: q.id });
+      const path = await A.uploadImage(file, base);
+      q.image = { path, ...(q.image && q.image.alt ? { alt: q.image.alt } : {}) };
+      changed({ questions: true });
+      A.toast('ok', 'Imagem enviada ✓ Grava a ficha para a guardar.');
+    } catch (e) {
+      A.fail(e);
+      if (label) label.classList.remove('busy');
+    }
+    input.value = '';
   }
 
   // ---------- Validação ----------
@@ -489,6 +529,7 @@
       const f = el.dataset.f;
       if (f === 'prompt' || f === 'explanation') { q[f] = el.value; changed(); }
       else if (f === 'opt-text') { q.options[Number(el.dataset.o)].text = el.value; changed(); }
+      else if (f === 'image-alt' && q.image) { q.image.alt = el.value; changed(); }
     });
 
     view.addEventListener('change', (ev) => {
@@ -520,6 +561,7 @@
       if (!card) return;
       const q = ed.content.questions[Number(card.dataset.q)];
       const f = el.dataset.f;
+      if (f === 'image-file') { uploadQuestionImage(el); return; }
       if (f === 'type') { changeType(q, el.value); changed({ questions: true }); }
       else if (f === 'correct') {
         q.correctAnswer = el.value;
@@ -571,6 +613,8 @@
         case 'q-del':
           if ((qs[i].prompt || '').trim() && !confirm(`Apagar a pergunta ${i + 1}?`)) return;
           qs.splice(i, 1); changed({ questions: true }); return;
+        // Só tira a imagem da pergunta; o ficheiro fica no bucket (versões antigas podem usá-lo).
+        case 'img-del': delete qs[i].image; changed({ questions: true }); return;
         case 'opt-add': { const q = qs[i]; q.options.push({ id: newOptionId(q), text: '' }); changed({ questions: true });
           const inputs = document.querySelectorAll(`.q-card[data-q="${i}"] [data-f=opt-text]`); inputs[inputs.length - 1].focus(); return; }
         case 'opt-del': { const q = qs[i]; const [removed] = q.options.splice(Number(btn.dataset.o), 1);

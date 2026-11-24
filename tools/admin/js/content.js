@@ -41,8 +41,20 @@
         if ('options' in q) add(i, 'Verdadeiro/falso não pode ter "options".');
       }
       if (q.explanation != null && typeof q.explanation !== 'string') add(i, '"explanation" tem de ser texto.');
+      if ('image' in q) { const e = A.imageError(q.image); if (e) add(i, e); }
     });
     return { errors };
+  };
+
+  // Espelha public.valid_question_image. Devolve o texto do erro ou null.
+  A.imageError = (img) => {
+    if (!img || typeof img !== 'object' || Array.isArray(img)) return 'Imagem inválida.';
+    const p = img.path;
+    if (typeof p !== 'string' || p.length < 5 || p.length > 200 || !/^[A-Za-z0-9_-][A-Za-z0-9/_.-]*\.(png|jpe?g|webp|gif)$/.test(p)
+      || p.includes('..') || p.includes('//')) return 'Caminho da imagem inválido.';
+    if ('alt' in img && (typeof img.alt !== 'string' || img.alt.length > 300)) return 'O texto alternativo da imagem tem de ter até 300 caracteres.';
+    if (Object.keys(img).some((k) => k !== 'path' && k !== 'alt')) return 'A imagem só pode ter "path" e "alt".';
+    return null;
   };
 
   // Limpa espaços e campos vazios antes de gravar (preserva campos desconhecidos, ex.: topicId, audioText).
@@ -57,6 +69,10 @@
       if (c.type === 'multiple-choice') c.options = c.options.map((o) => ({ ...o, text: o.text.trim() }));
       if (c.type === 'written') { delete c.options; delete c.correctAnswer; }
       if (c.type === 'true_false') delete c.options;
+      if (c.image && typeof c.image === 'object') {
+        c.image = { ...c.image };
+        if (typeof c.image.alt === 'string') { c.image.alt = c.image.alt.trim(); if (!c.image.alt) delete c.image.alt; }
+      }
       return c;
     });
     return out;
@@ -140,6 +156,11 @@
         if (typeof q.explanation !== 'string') errors.push(`${n}: "explanation" tem de ser texto.`);
         else if (q.explanation.trim()) out.explanation = q.explanation.trim();
       } else if (type !== 'written') warnings.push(`${n}: sem "explanation" (recomendada para a correção da criança).`);
+      // Imagens já enviadas (ex.: JSON exportado) mantêm-se; a IA não as cria.
+      if (q.image != null) {
+        if (A.imageError(q.image)) warnings.push(`${n}: "image" inválida ignorada.`);
+        else out.image = { ...q.image };
+      }
       return out;
     });
     const tf = content.questions.filter((q) => q && q.type === 'true_false');
@@ -214,7 +235,9 @@ ${A.schemaDoc}`;
 
   // ---------- Pré-visualização ----------
   A.renderQuestionBody = (q) => {
-    let html = `<div class="prompt">${esc(q.prompt || '')}</div>`;
+    let html = q.image && !A.imageError(q.image)
+      ? `<img class="q-img-pv" src="${esc(A.imageUrl(q.image.path))}" alt="${esc(q.image.alt || '')}" loading="lazy">` : '';
+    html += `<div class="prompt">${esc(q.prompt || '')}</div>`;
     if (q.type === 'multiple-choice' && Array.isArray(q.options)) html += `<ol type="a">` + q.options.map((o) =>
       `<li class="${o.id === q.correctAnswer ? 'correct' : ''}">${esc(o.text)}${o.id === q.correctAnswer ? ' ✓' : ''}</li>`).join('') + `</ol>`;
     if (q.type === 'true_false') html += `<div style="margin-top:6px">Resposta certa: <b style="color:var(--success)">${q.correctAnswer === true ? 'Verdadeiro' : q.correctAnswer === false ? 'Falso' : '—'}</b></div>`;

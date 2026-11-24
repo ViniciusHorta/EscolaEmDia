@@ -3,6 +3,7 @@ import '../../../../core/theme/area_palette.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../../../shared/widgets/app_badge.dart';
 import '../../../../shared/widgets/app_card.dart';
+import '../../../../shared/widgets/question_image.dart';
 import '../../domain/child_feedback_models.dart';
 
 class ChildFeedbackCard extends StatelessWidget {
@@ -19,6 +20,7 @@ class ChildFeedbackCard extends StatelessWidget {
     };
     return AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Row(children: [Expanded(child: Text('Pergunta ${question.number}', style: Theme.of(context).textTheme.titleMedium))]),
+      if (question.image != null) ...[const SizedBox(height: 12), QuestionImageView(question.image!, maxHeight: 220)],
       const SizedBox(height: 12), SelectableText(question.prompt, style: Theme.of(context).textTheme.titleLarge),
       const SizedBox(height: 16), AppBadge(label: label, color: color, background: background, icon: icon),
       const SizedBox(height: 18), Text('A tua resposta', style: Theme.of(context).textTheme.titleMedium),

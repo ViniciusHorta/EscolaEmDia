@@ -1,14 +1,17 @@
+import '../../../shared/widgets/question_image.dart';
 class AttemptOption {
   const AttemptOption(this.id,this.text);
   final String id,text;
   factory AttemptOption.fromJson(Map value)=>AttemptOption(value['id'] as String,value['text'] as String);
 }
 class AttemptQuestion {
-  const AttemptQuestion({required this.id,required this.type,required this.prompt,required this.options});
+  const AttemptQuestion({required this.id,required this.type,required this.prompt,required this.options,this.image});
   final String id,type,prompt;
+  final QuestionImage? image;
   final List<AttemptOption> options;
   factory AttemptQuestion.fromJson(Map value)=>AttemptQuestion(id:value['id'] as String,type:value['type'] as String,
-    prompt:value['prompt'] as String,options:(value['options'] as List? ?? []).cast<Map>().map(AttemptOption.fromJson).toList());
+    prompt:value['prompt'] as String,options:(value['options'] as List? ?? []).cast<Map>().map(AttemptOption.fromJson).toList(),
+    image:QuestionImage.tryParse(value['image']));
 }
 class SavedAnswer {
   const SavedAnswer(this.value,this.revision);

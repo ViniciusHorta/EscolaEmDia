@@ -1,10 +1,12 @@
+import '../../../shared/widgets/question_image.dart';
 import 'submission_summary.dart';
 
 class ChildFeedbackQuestion {
   const ChildFeedbackQuestion({required this.id, required this.number, required this.type,
     required this.prompt, required this.answerType, required this.answerText, required this.outcome,
-    required this.explanation, this.selectedOptionText, this.correctOptionText});
+    required this.explanation, this.selectedOptionText, this.correctOptionText, this.image});
   final String id, type, prompt, answerType, answerText, outcome, explanation;
+  final QuestionImage? image;
   final String? selectedOptionText, correctOptionText;
   final int number;
   bool get needsPractice => outcome != 'correct';
@@ -20,6 +22,7 @@ class ChildFeedbackQuestion {
       prompt: value['prompt'] as String, answerType: value['answerType'] as String,
       answerText: value['answerText'] as String, outcome: outcome, explanation: value['explanation'] as String,
       selectedOptionText: value['selectedOptionText'] as String?, correctOptionText: value['correctOptionText'] as String?,
+      image: QuestionImage.tryParse(value['image']),
     );
   }
 }

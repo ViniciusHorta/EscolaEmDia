@@ -8,6 +8,7 @@ import '../../../shared/widgets/app_badge.dart';
 import '../../../shared/widgets/premium_crown.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_card.dart';
+import '../../../shared/widgets/question_image.dart';
 import '../../billing/domain/billing_models.dart';
 import '../../billing/presentation/premium_paywall.dart';
 import '../../family/domain/family_models.dart';
@@ -453,6 +454,8 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
           CircleAvatar(radius:14,backgroundColor:context.area.soft,child:Text('${i+1}',style:const TextStyle(fontSize:13,fontWeight:FontWeight.w700))),
           const SizedBox(width:12),
           Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+            if(QuestionImage.tryParse(questions[i]['image']) case final img?)Padding(padding:const EdgeInsets.only(bottom:6),
+              child:Align(alignment:Alignment.centerLeft,child:QuestionImageView(img,maxHeight:140))),
             Text('${questions[i]['prompt']}',style:const TextStyle(fontSize:15,height:1.4)),
             Text(questions[i]['type']=='written'?'Resposta aberta':questions[i]['type']=='true_false'?'Verdadeiro ou falso':'Escolha múltipla',
               style:const TextStyle(fontSize:13,color:AppColors.muted)),
