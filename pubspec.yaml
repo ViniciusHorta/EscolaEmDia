@@ -1,7 +1,7 @@
 name: escola_em_dia
 description: Escola em Dia — estudo em família.
 publish_to: none
-version: 0.1.0+8
+version: 0.1.0+9
 
 environment:
   sdk: '>=3.6.0 <4.0.0'
