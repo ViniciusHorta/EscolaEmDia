@@ -136,7 +136,10 @@
           { "@type": "Question", "name": "Que disciplinas há?", "acceptedAnswer": { "@type": "Answer", "text": "No 1.º ciclo: Português, Matemática e Estudo do meio. Estamos a acrescentar fichas e disciplinas, também para o 2.º e 3.º ciclos." } },
           { "@type": "Question", "name": "Tenho de instalar alguma coisa?", "acceptedAnswer": { "@type": "Answer", "text": "Não. Abre no navegador do telemóvel, tablet ou computador. Se quiseres, adiciona-a ao ecrã principal." } },
           { "@type": "Question", "name": "A criança precisa de e-mail?", "acceptedAnswer": { "@type": "Answer", "text": "Não. Só o responsável cria conta. A criança usa um perfil protegido pelo seu PIN." } },
-          { "@type": "Question", "name": "E se tiver mais do que um filho?", "acceptedAnswer": { "@type": "Answer", "text": "Cria um perfil para cada um, mesmo que andem em anos ou ciclos diferentes. Cada criança tem as suas fichas, o seu PIN e o seu progresso, e as fichas propostas são sempre do seu ano." } },
+          { "@type": "Question", "name": "E se tiver mais do que um filho?", "acceptedAnswer": { "@type": "Answer", "text": "Cria um perfil para cada um, mesmo que andem em anos ou ciclos diferentes. Cada criança tem as suas fichas, o seu PIN e o seu progresso, e as fichas propostas são sempre do seu ano. No plano gratuito está incluída uma criança; as restantes precisam do Premium." } },
+          { "@type": "Question", "name": "Quanto custa?", "acceptedAnswer": { "@type": "Answer", "text": "Podes usar grátis com uma criança: uma ficha por dia, fichas Free até 6 perguntas e o radar de aprendizagem dos últimos 30 dias. O Premium custa 3,99 € por mês por criança e tira os limites diários, abre o catálogo completo e a aprendizagem completa, com sugestões de estudo. Cancelas quando quiseres." } },
+          { "@type": "Question", "name": "Outros adultos da família podem acompanhar?", "acceptedAnswer": { "@type": "Answer", "text": "Sim. Podes convidar até 3 adultos por e-mail (até 4 responsáveis por família). Todos acompanham as mesmas crianças e podem preparar fichas, rever respostas e ver a aprendizagem." } },
+          { "@type": "Question", "name": "Como acompanho a aprendizagem?", "acceptedAnswer": { "@type": "Answer", "text": "Na área dos pais, um radar mostra a prática e o desempenho de cada disciplina nos últimos 30 dias. Não são notas: ajuda a perceber onde vale a pena insistir. Com o Premium escolhes outros períodos (7 dias, 90 dias ou o ano escolar), vês os temas de cada disciplina e a evolução, e recebes sugestões de estudo." } },
           { "@type": "Question", "name": "Substitui a escola ou o explicador?", "acceptedAnswer": { "@type": "Answer", "text": "Não. É um complemento para criar o hábito de estudar em casa — com a família por perto." } }
         ]
       }
@@ -157,6 +160,8 @@
       <nav class="nav" aria-label="Principal">
         <a href="#porque">Porquê</a>
         <a href="#como-funciona">Como funciona</a>
+        <a href="#aprendizagem">Aprendizagem</a>
+        <a href="#planos">Planos</a>
         <a href="#perguntas">Perguntas</a>
       </nav>
       <div class="header__actions">
@@ -356,6 +361,155 @@
       </div>
     </section>
 
+    <!-- APRENDIZAGEM -->
+    <section class="section" id="aprendizagem">
+      <div class="container">
+        <header class="section__head reveal">
+          <p class="eyebrow">Aprendizagem</p>
+          <h2>Vês onde está a correr bem.<br>E onde vale a pena insistir.</h2>
+        </header>
+
+        <div class="step learn">
+          <div class="step__text reveal">
+            <ul class="learn__list">
+              <li>
+                <h3>Prática e desempenho lado a lado</h3>
+                <p>Um radar mostra, por disciplina, quanto a criança praticou e quantas respostas acertou — com base nas fichas que já fez.</p>
+              </li>
+              <li>
+                <h3>Sem notas nem comparações</h3>
+                <p>Não há rankings nem comparações entre irmãos. Quando ainda há poucas respostas, a app avisa em vez de tirar conclusões.</p>
+              </li>
+              <li>
+                <h3>Sugestões para a próxima ficha <span class="tag-premium">Premium</span></h3>
+                <p>Até três sugestões de estudo, os temas de cada disciplina e a evolução face ao período anterior. Preparas a ficha sugerida num toque.</p>
+              </li>
+            </ul>
+          </div>
+          <div class="step__visual reveal" style="--d:1">
+            <div class="mock mock--radar" role="img" aria-label="Exemplo de radar: Matemática com prática 63% e desempenho 76%; Português com prática 100% e desempenho 55%; Estudo do meio com prática 60% e desempenho 74%; Inglês com prática 41% e desempenho 50%. Sugestão: rever Português.">
+              <div class="radar__head"><strong>Aprendizagem</strong><span class="chip chip--period">30 dias</span></div>
+              <svg class="radar" viewBox="-56 -14 352 268" aria-hidden="true">
+                <g class="radar__grid">
+                  <polygon points="120,30 210,120 120,210 30,120"/>
+                  <polygon points="120,52.5 187.5,120 120,187.5 52.5,120"/>
+                  <polygon points="120,75 165,120 120,165 75,120"/>
+                  <polygon points="120,97.5 142.5,120 120,142.5 97.5,120"/>
+                  <path d="M120 30V210M30 120H210"/>
+                </g>
+                <polygon class="radar__practice" points="120,63.3 210,120 120,174 83.1,120"/>
+                <polygon class="radar__perf" points="120,51.6 169.5,120 120,186.6 75,120"/>
+                <g class="radar__dots--practice">
+                  <rect x="115.5" y="58.8" width="9" height="9"/><rect x="205.5" y="115.5" width="9" height="9"/>
+                  <rect x="115.5" y="169.5" width="9" height="9"/><rect x="78.6" y="115.5" width="9" height="9"/>
+                </g>
+                <g class="radar__dots--perf">
+                  <circle cx="120" cy="51.6" r="5"/><circle cx="169.5" cy="120" r="5"/>
+                  <circle cx="120" cy="186.6" r="5"/><circle cx="75" cy="120" r="5"/>
+                </g>
+                <g class="radar__labels">
+                  <text x="120" y="16" text-anchor="middle">Matemática</text>
+                  <text x="222" y="124">Português</text>
+                  <text x="120" y="232" text-anchor="middle">Estudo do meio</text>
+                  <text x="18" y="124" text-anchor="end">Inglês</text>
+                </g>
+              </svg>
+              <div class="radar__legend"><span class="lg lg--practice">Prática</span><span class="lg lg--perf">Desempenho</span></div>
+              <div class="radar__tip">
+                <strong>Rever Português</strong>
+                <small>Muita prática, 55% de acerto. Pode ser útil rever em conjunto.</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAMÍLIA -->
+    <section class="section section--tint" id="familia">
+      <div class="container">
+        <header class="section__head reveal">
+          <p class="eyebrow">Família</p>
+          <h2>Estudar é trabalho de equipa.</h2>
+        </header>
+
+        <div class="step family">
+          <div class="step__text reveal">
+            <ul class="learn__list">
+              <li>
+                <h3>Até 4 responsáveis</h3>
+                <p>Convida o pai, a mãe, os avós ou quem ajuda nos estudos. Recebem um convite por e-mail e passam a acompanhar as mesmas crianças.</p>
+              </li>
+              <li>
+                <h3>Todos ao corrente</h3>
+                <p>Qualquer responsável pode preparar fichas, rever respostas e ver a aprendizagem — sem trocar mensagens a perguntar «já fez os trabalhos?».</p>
+              </li>
+              <li>
+                <h3>Um perfil por criança</h3>
+                <p>Cada criança tem o seu PIN, as suas fichas e o seu progresso — mesmo que andem em anos diferentes.</p>
+              </li>
+            </ul>
+          </div>
+          <div class="step__visual reveal" style="--d:1" aria-hidden="true">
+            <div class="mock mock--family">
+              <small class="family__label">Responsáveis</small>
+              <div class="family__row">
+                <span class="person"><span class="avatar">👩</span>Mãe</span>
+                <span class="person"><span class="avatar tone-sun">👨</span>Pai</span>
+                <span class="person"><span class="avatar tone-green">👵</span>Avó</span>
+                <span class="person person--invite"><span class="avatar">＋</span>Convidar</span>
+              </div>
+              <small class="family__label">Crianças</small>
+              <div class="family__row">
+                <span class="person"><span class="avatar avatar--lg">🦊</span>Inês<small>3.º ano</small></span>
+                <span class="person"><span class="avatar avatar--lg tone-sun">🐻</span>Tomás<small>1.º ano</small></span>
+              </div>
+              <div class="family__note">✉️ Convite enviado a avo.rosa@…</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PLANOS -->
+    <section class="section" id="planos">
+      <div class="container">
+        <header class="section__head reveal">
+          <p class="eyebrow">Planos</p>
+          <h2>Começa grátis.<br>Passa a Premium quando fizer sentido.</h2>
+        </header>
+
+        <div class="plans">
+          <article class="plan reveal">
+            <h3>Gratuito</h3>
+            <p class="plan__price"><strong>0 €</strong></p>
+            <ul class="plan__list">
+              <li>1 criança por família</li>
+              <li>1 ficha por dia</li>
+              <li>Fichas Free, até 6 perguntas</li>
+              <li>Revisão das respostas abertas</li>
+              <li>Radar de aprendizagem dos últimos 30 dias</li>
+            </ul>
+            <a class="btn btn--ghost" href="https://app.escolaemdia.me/?modo=criar" data-event="sign_up_click" data-location="plans_free">Criar conta grátis</a>
+          </article>
+          <article class="plan plan--premium reveal" style="--d:1">
+            <span class="plan__badge">Mais completo</span>
+            <h3>Premium</h3>
+            <p class="plan__price"><strong>3,99 €</strong> / mês por criança</p>
+            <ul class="plan__list">
+              <li>Fichas sem limite diário</li>
+              <li>Catálogo completo e fichas mais longas</li>
+              <li>Repetir fichas sempre que quiseres</li>
+              <li>Aprendizagem completa: 7 dias, 90 dias ou ano escolar, temas e evolução</li>
+              <li>Sugestões de estudo para a próxima ficha</li>
+            </ul>
+            <a class="btn btn--primary" href="https://app.escolaemdia.me/?modo=criar" data-event="sign_up_click" data-location="plans_premium">Começar</a>
+          </article>
+        </div>
+        <p class="plans__note reveal">O Premium é ativado por criança, na área dos pais. Cancelas quando quiseres. Toda a família (até 4 responsáveis) incluída em qualquer plano.</p>
+      </div>
+    </section>
+
     <!-- FAQ -->
     <section class="section" id="perguntas">
       <div class="container container--narrow">
@@ -391,7 +545,19 @@
           </details>
           <details class="reveal">
             <summary>E se tiver mais do que um filho?</summary>
-            <p>Cria um perfil para cada um, mesmo que andem em anos ou ciclos diferentes. Cada criança tem as suas fichas, o seu PIN e o seu progresso, e as fichas propostas são sempre do seu ano.</p>
+            <p>Cria um perfil para cada um, mesmo que andem em anos ou ciclos diferentes. Cada criança tem as suas fichas, o seu PIN e o seu progresso, e as fichas propostas são sempre do seu ano. No plano gratuito está incluída uma criança; as restantes precisam do Premium.</p>
+          </details>
+          <details class="reveal">
+            <summary>Quanto custa?</summary>
+            <p>Podes usar grátis com uma criança: uma ficha por dia, fichas Free até 6 perguntas e o radar de aprendizagem dos últimos 30 dias. O Premium custa 3,99 € por mês por criança e tira os limites diários, abre o catálogo completo e a aprendizagem completa, com sugestões de estudo. Cancelas quando quiseres.</p>
+          </details>
+          <details class="reveal">
+            <summary>Outros adultos da família podem acompanhar?</summary>
+            <p>Sim. Podes convidar até 3 adultos por e-mail (até 4 responsáveis por família). Todos acompanham as mesmas crianças e podem preparar fichas, rever respostas e ver a aprendizagem.</p>
+          </details>
+          <details class="reveal">
+            <summary>Como acompanho a aprendizagem?</summary>
+            <p>Na área dos pais, um radar mostra a prática e o desempenho de cada disciplina nos últimos 30 dias. Não são notas: ajuda a perceber onde vale a pena insistir. Com o Premium escolhes outros períodos (7 dias, 90 dias ou o ano escolar), vês os temas de cada disciplina e a evolução, e recebes sugestões de estudo.</p>
           </details>
           <details class="reveal">
             <summary>Substitui a escola ou o explicador?</summary>
