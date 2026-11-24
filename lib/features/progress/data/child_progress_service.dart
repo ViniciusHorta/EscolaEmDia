@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/child_progress_models.dart';
+import '../domain/learning_models.dart';
 
 class ChildProgressException implements Exception {
   const ChildProgressException(this.message);
@@ -14,6 +15,14 @@ class ChildProgressService {
   Future<ChildProgress> overview(String childId) async {
     final result = ChildProgress.fromJson(await _request('/v1/children/$childId/progress'));
     if (result.child.id != childId) throw const ChildProgressException('Não foi possível confirmar o perfil consultado.');
+    return result;
+  }
+  /// Visão de Aprendizagem: por disciplina, ou por tema quando há [subjectId] (Premium).
+  Future<LearningOverview> learning(String childId, {LearningPeriod period = LearningPeriod.days30, String? subjectId}) async {
+    final result = LearningOverview.fromJson(await _request('/v1/children/$childId/learning', query: {
+      'period': period.code, if (subjectId != null) 'subjectId': subjectId,
+    }));
+    if (result.childId != childId) throw const ChildProgressException('Não foi possível confirmar o perfil consultado.');
     return result;
   }
   Future<AttemptHistoryPage> history(String childId, {String? cursor, String? subjectId, String? status}) async {

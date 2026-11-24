@@ -6,16 +6,22 @@ import '../../family/domain/family_models.dart';
 import '../data/child_progress_service.dart';
 import '../domain/child_progress_models.dart';
 import 'widgets/attempt_history_card.dart';
+import 'widgets/learning_section.dart';
 import 'widgets/progress_stat_card.dart';
 import 'widgets/subject_progress_card.dart';
 
 class ChildProgressPage extends StatefulWidget {
-  const ChildProgressPage({super.key, required this.childId, required this.service, required this.onClose, required this.onReview, this.isPremium = false});
+  const ChildProgressPage({super.key, required this.childId, required this.service, required this.onClose, required this.onReview, this.isPremium = false,
+    this.onUpgrade, this.onPrepare});
   final String childId;
   final ChildProgressService service;
   final VoidCallback onClose;
   final ValueChanged<String> onReview;
   final bool isPremium;
+  /// Oferta Premium (períodos, temas, evolução e sugestões da Visão de Aprendizagem).
+  final VoidCallback? onUpgrade;
+  /// Abre a preparação de fichas para esta criança (com a disciplina e o tema sugeridos, quando existem).
+  final LearningPrepare? onPrepare;
   @override
   State<ChildProgressPage> createState() => _ChildProgressPageState();
 }
@@ -97,6 +103,9 @@ class _ChildProgressPageState extends State<ChildProgressPage> {
         AppButton(label: 'Atualizar', expand: false, icon: Icons.refresh_rounded, loading: loading, onPressed: busy ? null : load),
       ]),
       const SizedBox(height: 24),
+      LearningSection(isPremium: widget.isPremium, onUpgrade: widget.onUpgrade, onPrepare: widget.onPrepare,
+        load: (period, subjectId) => widget.service.learning(widget.childId, period: period, subjectId: subjectId)),
+      const SizedBox(height: 28),
       if (loading) const Center(child: CircularProgressIndicator(semanticsLabel: 'A carregar acompanhamento')),
       if (!loading && overviewError != null) ...[
         AppCard(child: Semantics(liveRegion: true, child: Text(overviewError!))),

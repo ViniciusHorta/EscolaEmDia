@@ -28,7 +28,7 @@ class ChildDailyAccess {
 }
 
 /// Porque é que a oferta Premium está a ser mostrada ao responsável.
-enum PaywallReason { dailyLimit, premiumWorksheet, locked, general }
+enum PaywallReason { dailyLimit, premiumWorksheet, locked, general, learning }
 
 PaywallReason? paywallReasonForCode(String? code) => switch (code) {
   'DAILY_ASSIGNMENT_LIMIT_REACHED' => PaywallReason.dailyLimit,
