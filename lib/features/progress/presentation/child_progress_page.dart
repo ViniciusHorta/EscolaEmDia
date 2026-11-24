@@ -98,9 +98,10 @@ class _ChildProgressPageState extends State<ChildProgressPage> {
     final data = progress;
     return AppPage(title: 'Acompanhamento', subtitle: data == null ? 'O percurso de cada criança, ao seu ritmo.'
       : '${ChildAvatars.emoji(data.child.avatarId)} ${data.child.displayName}${widget.isPremium ? ' 👑' : ''} • ${data.child.schoolYear}.º Ano', children: [
-      Wrap(spacing: 12, runSpacing: 12, children: [
-        AppButton(label: 'Voltar aos perfis', expand: false, variant: AppButtonVariant.secondary, icon: Icons.arrow_back_rounded, onPressed: widget.onClose),
-        AppButton(label: 'Atualizar', expand: false, icon: Icons.refresh_rounded, loading: loading, onPressed: busy ? null : load),
+      Row(children: [
+        Expanded(child: AppButton(label: 'Voltar aos perfis', variant: AppButtonVariant.secondary, icon: Icons.arrow_back_rounded, onPressed: widget.onClose)),
+        const SizedBox(width: 12),
+        Expanded(child: AppButton(label: 'Atualizar', icon: Icons.refresh_rounded, loading: loading, onPressed: busy ? null : load)),
       ]),
       const SizedBox(height: 24),
       LearningSection(isPremium: widget.isPremium, onUpgrade: widget.onUpgrade, onPrepare: widget.onPrepare,
