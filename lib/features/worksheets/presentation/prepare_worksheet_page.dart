@@ -16,7 +16,7 @@ import '../data/worksheet_service.dart';
 import '../domain/worksheet_models.dart';
 
 class PrepareWorksheetPage extends StatefulWidget {
-  const PrepareWorksheetPage({super.key,required this.children,required this.service,required this.onClose,required this.onViewChild,this.subscribeFor,this.initialChildId});
+  const PrepareWorksheetPage({super.key,required this.children,required this.service,required this.onClose,required this.onViewChild,this.subscribeFor,this.initialChildId,this.initialSubjectId,this.initialTopicId});
   final List<ChildProfile> children;
   final WorksheetService service;
   final VoidCallback onClose;
@@ -25,6 +25,8 @@ class PrepareWorksheetPage extends StatefulWidget {
   final PremiumSubscribe? Function(String childId)? subscribeFor;
   /// Criança pré-selecionada (ex.: «Preparar uma ficha» no cartão da criança).
   final String? initialChildId;
+  /// Disciplina e tema pré-selecionados (ex.: sugestão da Visão de Aprendizagem). O responsável pode alterar.
+  final String? initialSubjectId, initialTopicId;
   @override State<PrepareWorksheetPage> createState()=>_PrepareWorksheetPageState();
 }
 class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
@@ -49,12 +51,20 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
   /// Plano e utilização de hoje da criança selecionada (null enquanto carrega ou se falhar).
   ChildDailyAccess? access;
   int generation=0;
+  /// A disciplina/tema iniciais só são aplicados uma vez.
+  bool initialSubjectApplied=false,initialTopicApplied=false;
 
   @override void initState(){super.initState();child=widget.children.where((c)=>c.id==widget.initialChildId).firstOrNull??(widget.children.isEmpty?null:widget.children.first);loadSubjects();loadAccess();}
   @override void dispose(){topicSearch.dispose();worksheetSearch.dispose();super.dispose();}
   Future<void> loadSubjects() async {
     setState((){loading=true;error=null;});
-    try{final data=await widget.service.subjects();if(!mounted)return;setState(()=>subjects=data);}
+    try{
+      final data=await widget.service.subjects();if(!mounted)return;
+      final initial=initialSubjectApplied?null:data.where((s)=>s.id==widget.initialSubjectId).firstOrNull;
+      initialSubjectApplied=true;
+      setState((){subjects=data;if(initial!=null&&subject==null)subject=initial;});
+      if(initial!=null&&subject?.id==initial.id)await loadTopics();
+    }
     on WorksheetException catch(failure){if(mounted)setState(()=>error=failure.message);}
     finally{if(mounted)setState(()=>loading=false);}
   }
@@ -108,7 +118,11 @@ class _PrepareWorksheetPageState extends State<PrepareWorksheetPage> {
       // Se falhar, a pesquisa continua a funcionar só pelo nome dos temas.
       final fetched=await Future.wait([widget.service.topics(target.id,profile.schoolYear),
         widget.service.proposals(target.id,profile.schoolYear,const <String>{},childId:profile.id).catchError((Object _)=>const <WorksheetSummary>[])]);
-      if(mounted&&current==generation)setState((){topics=fetched[0] as List<SchoolTopic>;catalogue=fetched[1] as List<WorksheetSummary>;});
+      if(mounted&&current==generation){
+        setState((){topics=fetched[0] as List<SchoolTopic>;catalogue=fetched[1] as List<WorksheetSummary>;
+          if(!initialTopicApplied&&topics.any((t)=>t.id==widget.initialTopicId)){selectedTopics.add(widget.initialTopicId!);}
+          initialTopicApplied=true;});
+      }
     }
     on WorksheetException catch(failure){if(mounted&&current==generation)setState(()=>error=failure.message);}
     finally{if(mounted&&current==generation)setState(()=>loading=false);}

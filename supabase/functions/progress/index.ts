@@ -6,6 +6,7 @@ const messages: Record<string, string> = {
   PARENT_LOCKED: "Desbloqueia a área do responsável para consultar o acompanhamento.",
   CHILD_NOT_FOUND: "Este perfil não está disponível nesta família.",
   INVALID_REQUEST: "Os filtros ou a página do histórico são inválidos.",
+  PREMIUM_REQUIRED: "Esta análise está disponível no plano Premium.",
   STORAGE_UNAVAILABLE:
     "Não foi possível carregar o acompanhamento. Tenta novamente.",
   ROUTE_NOT_FOUND: "Endereço não encontrado.",
@@ -29,7 +30,7 @@ Deno.serve(async (req: Request) => {
   const path = url.pathname
     .replace(/^\/functions\/v1(?=\/)/, "")
     .replace(/^\/progress(?=\/|$)/, "");
-  const route = /^\/v1\/children\/([^/]+)\/(progress|attempts)$/.exec(path);
+  const route = /^\/v1\/children\/([^/]+)\/(progress|attempts|learning)$/.exec(path);
   const operation = route?.[2] ?? "unknown";
   const policy = createCors(req, {
     methods: "GET, OPTIONS",
@@ -74,7 +75,8 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "GET") return fail(405, "METHOD_NOT_ALLOWED");
   const cursor = url.searchParams.get("cursor"),
     subjectId = url.searchParams.get("subjectId"),
-    status = url.searchParams.get("status");
+    status = url.searchParams.get("status"),
+    period = url.searchParams.get("period");
   if (
     !uuid.test(route[1]) ||
     (cursor !== null && !uuid.test(cursor)) ||
@@ -87,8 +89,11 @@ Deno.serve(async (req: Request) => {
         "completed",
         "abandoned",
       ].includes(status)) ||
-    [...url.searchParams.keys()].some(
-      (k) => !["cursor", "subjectId", "status"].includes(k),
+    (period !== null && !["7d", "30d", "90d", "year"].includes(period)) ||
+    [...url.searchParams.keys()].some((k) =>
+      operation === "learning"
+        ? !["period", "subjectId"].includes(k)
+        : !["cursor", "subjectId", "status"].includes(k),
     ) ||
     (operation === "progress" && url.searchParams.size > 0)
   )
@@ -144,10 +149,17 @@ Deno.serve(async (req: Request) => {
         p_subject_id: subjectId,
         p_status: status,
       });
+    if (operation === "learning")
+      Object.assign(params, {
+        p_period: period ?? "30d",
+        p_subject_id: subjectId,
+      });
     const { data, error } = await admin.rpc(
       operation === "progress"
         ? "get_parent_child_progress"
-        : "list_parent_child_attempts",
+        : operation === "learning"
+          ? "get_parent_child_learning"
+          : "list_parent_child_attempts",
       params,
     );
     if (error || !data) {
@@ -167,7 +179,7 @@ Deno.serve(async (req: Request) => {
         ? data.error
         : "STORAGE_UNAVAILABLE";
       return fail(
-        code === "PARENT_LOCKED"
+        code === "PARENT_LOCKED" || code === "PREMIUM_REQUIRED"
           ? 403
           : code === "CHILD_NOT_FOUND"
             ? 404

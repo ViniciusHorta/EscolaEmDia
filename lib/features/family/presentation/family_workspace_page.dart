@@ -77,6 +77,8 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
 
   /// Criança pré-selecionada ao abrir «Preparar ficha» a partir do ecrã «Tudo a postos».
   String? prepareChildId;
+  /// Disciplina e tema sugeridos pela Visão de Aprendizagem (pré-seleção na preparação).
+  String? prepareSubjectId, prepareTopicId;
   String? returnFamilyId;
   bool requestingParent = false;
 
@@ -772,6 +774,19 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
         childId: progressChildId!,
         service: progressService,
         isPremium: premiumChildIds.contains(progressChildId),
+        onUpgrade: () {
+          final child = children.where((c) => c.id == progressChildId).firstOrNull;
+          if (child == null) return;
+          showPremiumPaywall(context, childName: child.displayName, reason: PaywallReason.learning,
+              onSubscribe: subscribeFor(child.id));
+        },
+        onPrepare: ({subjectId, topicId}) => setState(() {
+          prepareSubjectId = subjectId;
+          prepareTopicId = topicId;
+          prepareChildId = progressChildId;
+          progressChildId = null;
+          preparing = true;
+        }),
         onClose: () => setState(() {
           progressChildId = null;
         }),
@@ -786,15 +801,21 @@ class _FamilyWorkspacePageState extends State<FamilyWorkspacePage> {
           service: worksheets,
           subscribeFor: subscribeFor,
           initialChildId: prepareChildId,
+          initialSubjectId: prepareSubjectId,
+          initialTopicId: prepareTopicId,
           onClose: () => setState(() {
                 preparing = false;
                 prepareChildId = null;
+                prepareSubjectId = null;
+                prepareTopicId = null;
               }),
           onViewChild: (childId) async {
             setState(() {
               preferredChildId = childId;
               preparing = false;
               prepareChildId = null;
+              prepareSubjectId = null;
+              prepareTopicId = null;
             });
             await enterChildMode();
           });

@@ -87,12 +87,14 @@ class _PremiumPaywallState extends State<_PremiumPaywall> {
     PaywallReason.premiumWorksheet => 'Esta ficha é Premium',
     PaywallReason.locked => '$childName precisa do Premium',
     PaywallReason.general => 'Premium para $childName',
+    PaywallReason.learning => 'Acompanhamento completo para $childName',
   };
   String get explanation => switch (reason) {
     PaywallReason.dailyLimit => 'No plano gratuito cada criança recebe 1 ficha por dia. Amanhã podes preparar outra — ou ativa o Premium para continuar já hoje.',
     PaywallReason.premiumWorksheet => 'O plano gratuito inclui as fichas Free. Com o Premium, $childName tem acesso a todo o catálogo.',
     PaywallReason.locked => 'A vaga gratuita da família já está ocupada por outra criança. Ativa o Premium para $childName receber e fazer fichas.',
     PaywallReason.general => 'Desbloqueia todas as fichas e pratica sem limites diários.',
+    PaywallReason.learning => 'Com o Premium escolhes o período (7 dias, 90 dias ou o ano escolar), exploras os temas de cada disciplina, vês a evolução e recebes sugestões de estudo.',
   };
 
   @override

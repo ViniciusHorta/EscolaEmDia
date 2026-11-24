@@ -71,6 +71,19 @@ void main() {
 
   Finder searchBox(String hint) => find.widgetWithText(TextField, hint);
 
+  testWidgets('disciplina e tema sugeridos chegam pré-selecionados', (tester) async {
+    tester.view.physicalSize = const Size(1080, 4000);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(MaterialApp(theme: AppTheme.light, home: PrepareWorksheetPage(
+      children: const [ChildProfile(id: 'c1', familyId: 'f', displayName: 'Martim', schoolYear: 3, avatarId: 'fox')],
+      service: FakeWorksheets(), onClose: () {}, onViewChild: (_) async {},
+      initialChildId: 'c1', initialSubjectId: 's1', initialTopicId: 't2')));
+    await tester.pumpAndSettle();
+    expect(find.text('Estado: 1 tema selecionado'), findsOneWidget);
+    expect(find.text(tables.name), findsOneWidget);
+  });
+
   testWidgets('pesquisa de temas encontra pelo nome do tema', (tester) async {
     await open(tester);
     await tester.enterText(searchBox('Pesquisar tema ou nome de ficha'), 'tabuadas');
