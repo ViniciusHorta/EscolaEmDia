@@ -25,7 +25,7 @@ window.A = window.A || {};
     TOPIC_IN_USE: 'O tema é usado por fichas: só pode ser renomeado (não muda de disciplina/ano nem pode ser apagado).',
     TOPIC_MISMATCH: 'Os temas escolhidos têm de pertencer à disciplina e ao ano da ficha.',
     TOPICS_REQUIRED: 'Escolhe pelo menos um tema.',
-    INVALID_SCHOOL_YEAR: 'Ano escolar inválido (1 a 4).',
+    INVALID_SCHOOL_YEAR: 'Ano escolar inválido (1 a 9).',
     INVALID_TITLE: 'Título inválido (1 a 160 caracteres).',
     INVALID_CONTENT: 'A base rejeitou o conteúdo da ficha (regras de validação).',
     WORKSHEET_NOT_FOUND: 'A ficha não existe.',
@@ -61,16 +61,19 @@ window.A = window.A || {};
   A.ApiError = ApiError;
 
   // ---------- Supabase ----------
-  function headers() {
-    const h = { apikey: A.state.key, 'Content-Type': 'application/json' };
-    if (A.state.key.startsWith('eyJ')) h.Authorization = 'Bearer ' + A.state.key; // chave legacy (JWT)
+  // conn = { url, key }: por omissão a base ligada (A.state); a Migração usa também a base de destino.
+  function headers(conn = A.state) {
+    const h = { apikey: conn.key, 'Content-Type': 'application/json' };
+    if (conn.key.startsWith('eyJ')) h.Authorization = 'Bearer ' + conn.key; // chave legacy (JWT)
     return h;
   }
+  A.authHeaders = (conn) => { const h = headers(conn); delete h['Content-Type']; return h; };
 
-  A.rpc = async (name, args = {}) => {
+  A.rpc = (name, args = {}) => A.rpcOn(A.state, name, args);
+  A.rpcOn = async (conn, name, args = {}) => {
     let res;
     try {
-      res = await fetch(`${A.state.url}/rest/v1/rpc/${name}`, { method: 'POST', headers: headers(), body: JSON.stringify(args) });
+      res = await fetch(`${conn.url}/rest/v1/rpc/${name}`, { method: 'POST', headers: headers(conn), body: JSON.stringify(args) });
     } catch (e) {
       throw new ApiError('NETWORK', 'Sem ligação ao Supabase (' + e.message + ').');
     }
@@ -111,7 +114,7 @@ window.A = window.A || {};
   A.IMAGE_BUCKET = 'question-images';
   A.IMAGE_MAX_BYTES = 2 * 1024 * 1024; // igual ao file_size_limit do bucket
   A.IMAGE_TYPES = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif' };
-  A.imageUrl = (path) => `${A.state.url}/storage/v1/object/public/${A.IMAGE_BUCKET}/${String(path).split('/').map(encodeURIComponent).join('/')}`;
+  A.imageUrl = (path, url = A.state.url) => `${url}/storage/v1/object/public/${A.IMAGE_BUCKET}/${String(path).split('/').map(encodeURIComponent).join('/')}`;
 
   // Reduz fotos grandes (lado maior até 1600 px, WebP). GIF fica como está para não perder a animação.
   async function shrinkImage(file) {

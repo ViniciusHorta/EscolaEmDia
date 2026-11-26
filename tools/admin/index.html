@@ -23,7 +23,7 @@
     <h2>Ligação ao Supabase</h2>
     <p class="hint">Gere fichas, perguntas, temas e relatos de problemas diretamente na base de dados.</p>
     <div class="field"><label for="url">URL do projeto</label>
-      <input id="url" value="https://hhgxxvvreyhigxynrgmv.supabase.co" autocomplete="off"></div>
+      <input id="url" value="" autocomplete="off"></div>
     <div class="field"><label for="key">Chave <code>service_role</code> (legacy, JWT)</label>
       <input id="key" type="password" placeholder="eyJhbGciOi…" autocomplete="off" spellcheck="false"></div>
     <p class="hint">Supabase → Project Settings → API Keys → <i>Legacy API keys</i> → <code>service_role</code>.
@@ -46,6 +46,7 @@
       <button data-tab="worksheets" class="active">📝 Fichas</button>
       <button data-tab="topics">🏷️ Temas</button>
       <button data-tab="coverage">📊 Cobertura</button>
+      <button data-tab="migrate">🔀 Migração</button>
       <div class="group">Relatos</div>
       <button data-tab="reports">🚩 Relatos de problemas <span id="reportCount" class="count" hidden></span></button>
       <div class="group">Configurações</div>
@@ -132,6 +133,13 @@
       <div id="covDetail"></div>
       <div id="covMatrix"></div>
       <div id="covTodo"></div>
+    </div>
+
+    <!-- Migração -->
+    <div id="tab-migrate" class="tab" hidden>
+      <div class="page-head"><h2>Migração de fichas</h2></div>
+      <p class="hint">Leva fichas desta base para outra (ex.: staging → produção), com as imagens das perguntas.</p>
+      <div id="migBox"></div>
     </div>
 
     <!-- Relatos -->
@@ -225,6 +233,7 @@
 <script src="js/worksheets.js"></script>
 <script src="js/editor.js"></script>
 <script src="js/transfer.js"></script>
+<script src="js/migrate.js"></script>
 <script src="js/reports.js"></script>
 <script src="js/curriculum-draft.js"></script>
 <script src="js/coverage.js"></script>

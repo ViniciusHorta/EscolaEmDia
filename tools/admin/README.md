@@ -38,8 +38,7 @@ Não publicar esta página: com a chave `service_role` tem acesso total à base.
   «Remover imagem» só a tira da pergunta: o ficheiro fica no bucket, porque versões antigas publicadas podem usá-lo.
   Nome do ficheiro: `<disciplina>/<ano>/<título-da-ficha>/<pergunta>-<AAAAMMDD-HHMMSS>.<ext>`
   (ex.: `matematica/5/comparacao-e-ordenacao-de-fracoes-e-decimais-na-reta-02/q1-20261122-194233.webp`).
-  A exportação/importação de fichas mantém o caminho, mas **não copia os ficheiros**: para levar as imagens
-  para outro ambiente, copia a pasta da ficha no bucket `question-images` com o mesmo caminho.
+  A exportação/importação de fichas mantém o caminho, mas **não copia os ficheiros**. A **Migração** copia-os.
 
 - **Documentos legais são imutáveis.** Cada publicação cria uma versão nova. «Exige novo aceite» obriga todos os responsáveis
   a aceitar no próximo acesso (com o resumo «O que mudou»); desmarcar só para correções menores. A primeira versão exige sempre aceite.
@@ -69,6 +68,17 @@ Não publicar esta página: com a chave `service_role` tem acesso total à base.
   fichas novas, as que já existem (mesma disciplina, título e ano: ignorar ou atualizar) e erros (ex.: disciplina em falta).
   Temas e conteúdos são ligados pelo nome e criados se faltarem. Por omissão grava como rascunho.
 
+- **Migração** (Conteúdos › 🔀 Migração). Requer `202611260001_admin_worksheet_digests.sql` **nas duas bases**.
+  Leva fichas da base ligada (origem) para outra (destino), ex.: staging → produção.
+  1. Pede o URL e a chave `service_role` legacy do destino (só em memória).
+  2. Compara as duas bases e lista só as fichas da **origem** que não existem no destino ou estão diferentes
+     (perguntas, temas, Free/Premium, conteúdos da grade, publicação), por disciplina › ano › tema. O que só existe
+     no destino não aparece; fichas arquivadas não se migram. Fichas com título repetido (mesma disciplina e ano)
+     ficam bloqueadas até se mudar o título.
+  3. Escolhes as fichas (uma a uma ou o grupo inteiro) e «Migrar selecionadas»: copia as imagens das perguntas
+     (mesmo caminho no bucket; as que já existem não são substituídas), cria temas e conteúdos em falta e grava a ficha —
+     publicada se está publicada na origem; uma ficha que já existe ganha uma versão nova.
+
 ## Estrutura
 
 - `js/core.js` — estado, chamadas RPC, mensagens, diálogos
@@ -77,6 +87,7 @@ Não publicar esta página: com a chave `service_role` tem acesso total à base.
 - `js/topics.js` — disciplinas e temas
 - `js/curriculum-draft.js` — rascunho dos conteúdos por disciplina/ano/tema
 - `js/transfer.js` — exportar/importar fichas entre ambientes
+- `js/migrate.js` — migração de fichas e imagens para outra base
 - `js/coverage.js` — cobertura do catálogo; a matriz curricular e os mínimos (`MIN_FREE`, `MIN_PREMIUM`) estão no topo do ficheiro
 - `js/reports.js` — relatos de problemas em perguntas
 - `js/users.js` — responsáveis, assinaturas, histórico de faturação e planos e limites
