@@ -25,7 +25,7 @@ window.A = window.A || {};
     TOPIC_IN_USE: 'O tema é usado por fichas: só pode ser renomeado (não muda de disciplina/ano nem pode ser apagado).',
     TOPIC_MISMATCH: 'Os temas escolhidos têm de pertencer à disciplina e ao ano da ficha.',
     TOPICS_REQUIRED: 'Escolhe pelo menos um tema.',
-    INVALID_SCHOOL_YEAR: 'Ano escolar inválido (1 a 4).',
+    INVALID_SCHOOL_YEAR: 'Ano escolar inválido (1 a 9).',
     INVALID_TITLE: 'Título inválido (1 a 160 caracteres).',
     INVALID_CONTENT: 'A base rejeitou o conteúdo da ficha (regras de validação).',
     WORKSHEET_NOT_FOUND: 'A ficha não existe.',
@@ -61,16 +61,19 @@ window.A = window.A || {};
   A.ApiError = ApiError;
 
   // ---------- Supabase ----------
-  function headers() {
-    const h = { apikey: A.state.key, 'Content-Type': 'application/json' };
-    if (A.state.key.startsWith('eyJ')) h.Authorization = 'Bearer ' + A.state.key; // chave legacy (JWT)
+  // conn = { url, key }: por omissão a base ligada (A.state); a Migração usa também a base de destino.
+  function headers(conn = A.state) {
+    const h = { apikey: conn.key, 'Content-Type': 'application/json' };
+    if (conn.key.startsWith('eyJ')) h.Authorization = 'Bearer ' + conn.key; // chave legacy (JWT)
     return h;
   }
+  A.authHeaders = (conn) => { const h = headers(conn); delete h['Content-Type']; return h; };
 
-  A.rpc = async (name, args = {}) => {
+  A.rpc = (name, args = {}) => A.rpcOn(A.state, name, args);
+  A.rpcOn = async (conn, name, args = {}) => {
     let res;
     try {
-      res = await fetch(`${A.state.url}/rest/v1/rpc/${name}`, { method: 'POST', headers: headers(), body: JSON.stringify(args) });
+      res = await fetch(`${conn.url}/rest/v1/rpc/${name}`, { method: 'POST', headers: headers(conn), body: JSON.stringify(args) });
     } catch (e) {
       throw new ApiError('NETWORK', 'Sem ligação ao Supabase (' + e.message + ').');
     }
@@ -111,7 +114,41 @@ window.A = window.A || {};
   A.IMAGE_BUCKET = 'question-images';
   A.IMAGE_MAX_BYTES = 2 * 1024 * 1024; // igual ao file_size_limit do bucket
   A.IMAGE_TYPES = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif' };
-  A.imageUrl = (path) => `${A.state.url}/storage/v1/object/public/${A.IMAGE_BUCKET}/${String(path).split('/').map(encodeURIComponent).join('/')}`;
+  A.imageUrl = (path, url = A.state.url) => `${url}/storage/v1/object/public/${A.IMAGE_BUCKET}/${String(path).split('/').map(encodeURIComponent).join('/')}`;
+
+  // Imagem provisória das perguntas geradas com IA que pedem imagem (a mesma em todas; trocar antes de publicar).
+  A.PLACEHOLDER_IMAGE = '_sistema/imagem-provisoria.png';
+  A.isPlaceholderImage = (img) => !!(img && img.path === A.PLACEHOLDER_IMAGE);
+
+  // Garante que a imagem provisória existe no bucket (cria-a com um canvas na primeira vez).
+  A.ensurePlaceholderImage = async (conn = A.state) => {
+    const head = await fetch(A.imageUrl(A.PLACEHOLDER_IMAGE, conn.url), { method: 'HEAD' }).catch(() => null);
+    if (head && head.ok) return A.PLACEHOLDER_IMAGE;
+    const c = document.createElement('canvas');
+    c.width = c.height = 512;
+    const g = c.getContext('2d');
+    g.fillStyle = '#F1EEFB'; g.fillRect(0, 0, 512, 512);
+    g.strokeStyle = '#B9AEE8'; g.lineWidth = 8; g.setLineDash([24, 16]); g.strokeRect(24, 24, 464, 464);
+    g.setLineDash([]); g.textAlign = 'center'; g.fillStyle = '#5B47C7';
+    g.font = '120px sans-serif'; g.fillText('🖼', 256, 250);
+    g.font = 'bold 34px sans-serif'; g.fillText('Imagem por criar', 256, 330);
+    g.font = '24px sans-serif'; g.fillStyle = '#6B6880'; g.fillText('Escola em Dia', 256, 372);
+    const blob = await new Promise((ok) => c.toBlob(ok, 'image/png'));
+    const res = await fetch(`${conn.url}/storage/v1/object/${A.IMAGE_BUCKET}/${A.PLACEHOLDER_IMAGE}`, {
+      method: 'POST', body: blob, headers: { ...A.authHeaders(conn), 'Content-Type': 'image/png', 'x-upsert': 'true' } });
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      throw new ApiError('HTTP', 'Não foi possível criar a imagem provisória: ' + (body?.message || body?.error || `HTTP ${res.status}`));
+    }
+    return A.PLACEHOLDER_IMAGE;
+  };
+
+  // Estilo comum das ilustrações (ver docs/revisoes/imagens-portugues-1ano.md) + descrição da cena.
+  A.imageStylePrompt = (description, year) => `Ilustração para um livro infantil de crianças de ${Number(year) + 5} anos. ` +
+    'Estilo desenho à mão com cores suaves e alegres, traço simples com contornos limpos, formas arredondadas, ' +
+    'fundo simples e pouco detalhado para não distrair. Composição clara, com o elemento principal grande e ao centro. ' +
+    'Sem texto, sem letras, sem números (exceto se a descrição os pedir), sem logótipos nem marcas. Formato quadrado 1:1. ' +
+    `Deve ler-se bem num ecrã de telemóvel.\n\nCena: ${description}`;
 
   // Reduz fotos grandes (lado maior até 1600 px, WebP). GIF fica como está para não perder a animação.
   async function shrinkImage(file) {

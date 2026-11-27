@@ -32,6 +32,7 @@
 
   function logout() {
     if (A.editor.isDirty() && !confirm('Há alterações por gravar. Sair mesmo assim?')) return;
+    if (A.migrate.isBusy() && !confirm('A migração ainda está a correr. Sair mesmo assim?')) return;
     // Recarregar descarta a chave e todo o estado em memória.
     window.removeEventListener('beforeunload', beforeUnload);
     location.reload();
@@ -61,14 +62,16 @@
     document.querySelectorAll('nav.side button').forEach((b) => b.classList.toggle('active', b.dataset.tab === tab));
     document.querySelectorAll('.tab').forEach((el) => { el.hidden = el.id !== 'tab-' + tab; });
     if (tab === 'reports') A.reports.render();
+    if (tab === 'migrate') A.migrate.render();
+    if (tab === 'gemini') A.gemini.render();
     window.scrollTo({ top: 0 });
     app.sync();
   };
 
   // ---------- Rotas no endereço (#/…) ----------
   // #/fichas, #/fichas/nova, #/fichas/<id>, #/temas, #/cobertura, #/cobertura/<disciplina>/<ano>,
-  // #/relatos, #/documentos, #/planos, #/responsaveis. Funciona também a abrir o ficheiro do disco.
-  const SLUG = { worksheets: 'fichas', topics: 'temas', coverage: 'cobertura', reports: 'relatos', legal: 'documentos', plans: 'planos', users: 'responsaveis' };
+  // #/migrar, #/gemini, #/relatos, #/documentos, #/planos, #/responsaveis. Funciona também a abrir o ficheiro do disco.
+  const SLUG = { worksheets: 'fichas', topics: 'temas', coverage: 'cobertura', migrate: 'migrar', gemini: 'gemini', reports: 'relatos', legal: 'documentos', plans: 'planos', users: 'responsaveis' };
   const TAB = Object.fromEntries(Object.entries(SLUG).map(([t, s]) => [s, t]));
   let routing = false;
 
@@ -119,7 +122,7 @@
   window.addEventListener('hashchange', () => { navigate(); });
 
   function beforeUnload(ev) {
-    if (A.editor.isDirty()) { ev.preventDefault(); ev.returnValue = ''; }
+    if (A.editor.isDirty() || A.migrate.isBusy()) { ev.preventDefault(); ev.returnValue = ''; }
   }
 
   // ---------- Eventos ----------
@@ -140,4 +143,5 @@
   A.coverage.init();
   A.legal.init();
   A.users.init();
+  A.gemini.init();
 })();

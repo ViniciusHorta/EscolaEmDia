@@ -173,6 +173,7 @@
           <td>${countBadge(c.free, C.MIN_FREE, 'free')} ${countBadge(c.premium, C.MIN_PREMIUM, 'premium')}${c.drafts ? ` <span class="badge grey">+${c.drafts} rasc.</span>` : ''}</td>
           <td class="small">${c.ws.map((w) => `<a href="#" data-act="edit-ws" data-id="${w.id}" class="${isPublished(w) ? '' : 'muted'}">${esc(w.title)}</a>`).join(', ') || '<span class="muted">—</span>'}</td>
           <td class="actions"><button class="sm ${c.missing ? '' : 'secondary'}" data-act="new-ws" data-id="${c.id}" title="Criar uma ficha para este conteúdo">+ Ficha</button>
+            <button class="sm secondary" data-act="ai" data-id="${c.id}" title="Gerar fichas com IA (Gemini)">✨ IA</button>
             <button class="icon" data-act="edit" data-id="${c.id}" title="Editar">✎</button><button class="icon" data-act="del" data-id="${c.id}" title="Apagar">🗑</button></td>
         </tr>`).join('') : '<tr><td colspan="5" class="muted small">Sem conteúdos neste tema.</td></tr>');
     }).join('');
@@ -191,6 +192,7 @@
       </div>
       ${A.state.contentsMissing ? A.msg('warn', 'Aplica a migração <code>202611210001_topic_contents.sql</code> para registar conteúdos.') : ''}
       ${unlinked.length ? A.msg('warn', `<b>${unlinked.length} ficha(s) publicada(s) sem conteúdo marcado</b> (não contam para a cobertura): ${unlinked.map((w) => `<a href="#" data-act="edit-ws" data-id="${w.id}">${esc(w.title)}</a>`).join(', ')}. Abre-as e marca os conteúdos.`) : ''}
+      ${A.aiGen.panelHtml(open)}
       ${topics.length ? `<div style="overflow-x:auto"><table class="tbl">
         <thead><tr><th>Conteúdo</th><th>Sem.</th><th>Fichas publicadas</th><th>Fichas ligadas</th><th></th></tr></thead>
         <tbody>${blocks}</tbody></table></div>`
@@ -449,6 +451,7 @@
         if (open) $('covDetail').scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
       }
+      if (ev.target.closest('[data-ai-clear]')) { A.aiGen.clear(open); return; }
       const el = ev.target.closest('[data-act]');
       if (el && el.dataset.act === 'new-ws') { ev.preventDefault(); newWorksheet(el.dataset.id); return; }
       if (!el || !open) return;
@@ -462,6 +465,7 @@
         list: openList,
         close: () => { open = null; C.render(); A.app.sync(); },
         'edit-ws': () => A.editor.open(el.dataset.id),
+        ai: () => A.aiGen.open(el.dataset.id),
       })[el.dataset.act]?.();
     });
   };
