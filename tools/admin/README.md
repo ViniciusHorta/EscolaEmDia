@@ -79,6 +79,19 @@ Não publicar esta página: com a chave `service_role` tem acesso total à base.
      (mesmo caminho no bucket; as que já existem não são substituídas), cria temas e conteúdos em falta e grava a ficha —
      publicada se está publicada na origem; uma ficha que já existe ganha uma versão nova.
 
+- **Gerar fichas com IA (Gemini)**. Token em Configurações › ✨ Gemini (guardado **só neste navegador**, localStorage;
+  também o modelo e os limites RPM/RPD do plano). A barra no topo mostra os pedidos por minuto e por dia e os tokens do dia,
+  **contados por este admin neste navegador** (a API não informa a quota restante); com o limite por minuto atingido, o admin espera.
+  Em Cobertura › disciplina × ano, cada conteúdo tem **✨ IA**: escolhes as fichas (por omissão 1 Free de 6 perguntas e
+  3 Premium de 8, 10 e 12), publicar ou rascunho, máximo de imagens por ficha e indicações extra. Um pedido por ficha, em sequência;
+  o prompt leva as regras por ciclo, o conteúdo/tema e as perguntas já existentes no conteúdo (para não repetir).
+  Respostas inválidas são pedidas de novo uma vez. Títulos «‹conteúdo› - NN» (próximo número livre); cada ficha fica ligada ao conteúdo.
+  Perguntas que pedem imagem ficam com a **imagem provisória** (`_sistema/imagem-provisoria.png`, criada no bucket na 1.ª vez) e
+  `"imageRequest": {"description", "alt"}`; a ficha fica em **rascunho**. No editor aparece a descrição (botão para copiar com o estilo base);
+  ao enviar uma imagem tua o pedido desaparece. **✨ Gerar imagem com IA** manda a descrição + estilo base ao «Modelo de imagens»
+  (Configurações › Gemini; por omissão `gemini-2.5-flash-image`) e substitui a imagem atual (o pedido fica, para gerar outra).
+  Não é possível publicar com imagens provisórias.
+
 ## Estrutura
 
 - `js/core.js` — estado, chamadas RPC, mensagens, diálogos
@@ -88,6 +101,8 @@ Não publicar esta página: com a chave `service_role` tem acesso total à base.
 - `js/curriculum-draft.js` — rascunho dos conteúdos por disciplina/ano/tema
 - `js/transfer.js` — exportar/importar fichas entre ambientes
 - `js/migrate.js` — migração de fichas e imagens para outra base
+- `js/gemini.js` — configuração, chamadas e contagem de uso do Gemini
+- `js/ai-generate.js` — gerar fichas com IA a partir da Cobertura
 - `js/coverage.js` — cobertura do catálogo; a matriz curricular e os mínimos (`MIN_FREE`, `MIN_PREMIUM`) estão no topo do ficheiro
 - `js/reports.js` — relatos de problemas em perguntas
 - `js/users.js` — responsáveis, assinaturas, histórico de faturação e planos e limites

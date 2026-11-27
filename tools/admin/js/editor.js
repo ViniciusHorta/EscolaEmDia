@@ -275,9 +275,20 @@
   }
 
   // Imagem opcional (mostrada à criança acima do enunciado).
+  // Pedido de imagem (fichas geradas com IA): descrição para gerar/procurar a imagem, com botão para copiar.
+  function imageRequestBlock(q) {
+    const r = q.imageRequest;
+    if (!r || typeof r !== 'object' || !r.description) return '';
+    return `<div class="img-req"><b>📝 Imagem a criar</b>${A.isPlaceholderImage(q.image) ? ' <span class="badge warn">Imagem provisória: troca antes de publicar</span>' : ''}
+      <div class="small">${esc(r.description)}</div>
+      <div class="row"><button class="sm" data-act="img-ai">✨ ${A.isPlaceholderImage(q.image) || !q.image ? 'Gerar imagem com IA' : 'Gerar outra com IA'}</button>
+        <button class="sm secondary" data-act="img-copy">Copiar descrição (com o estilo)</button>
+        <span class="hint" style="margin:0">A imagem gerada substitui a atual (grava a ficha para a guardar). Enviar uma imagem tua tira este pedido.</span></div></div>`;
+  }
+
   function imageBlock(q) {
     if (q.image && q.image.path) {
-      return `<div class="q-img">
+      return imageRequestBlock(q) + `<div class="q-img">
         <img src="${esc(A.imageUrl(q.image.path))}" alt="${esc(q.image.alt || '')}" loading="lazy">
         <div class="q-img-side">
           <label class="small">Descrição da imagem <span class="muted">(para leitores de ecrã)</span></label>
@@ -286,8 +297,33 @@
           <button class="sm secondary" data-act="img-del">Remover imagem</button></div>
         </div></div>`;
     }
-    return `<div class="row q-img-add"><label class="sm secondary btn-file">🖼 Adicionar imagem<input type="file" data-f="image-file" accept="image/png,image/jpeg,image/webp,image/gif" hidden></label>
+    return imageRequestBlock(q) + `<div class="row q-img-add"><label class="sm secondary btn-file">🖼 Adicionar imagem<input type="file" data-f="image-file" accept="image/png,image/jpeg,image/webp,image/gif" hidden></label>
       <span class="hint" style="margin:0">Opcional · PNG, JPEG, WebP ou GIF · fotos grandes são reduzidas</span></div>`;
+  }
+
+  // Gera a imagem da pergunta com o Gemini (descrição + estilo base) e substitui a atual. O pedido fica, para gerar outra.
+  async function generateQuestionImage(i, btn) {
+    const q = ed.content.questions[i];
+    if (!q || !q.imageRequest) return;
+    if (!A.gemini.ready()) { A.toast('warn', 'Configura primeiro o token do Gemini em Configurações › ✨ Gemini.'); return; }
+    if (!ed.title.trim()) { A.toast('warn', 'Indica primeiro o título da ficha: faz parte do nome da imagem.'); return; }
+    const label = btn.textContent;
+    btn.disabled = true; btn.textContent = 'A gerar… (pode levar 1 min)';
+    try {
+      const blob = await A.gemini.generateImage(A.imageStylePrompt(q.imageRequest.description, ed.year), {
+        onRetry: (s, n, max) => { btn.textContent = `Modelo sobrecarregado; tentativa ${n}/${max} em ${s} s…`; },
+        onWait: (s) => { btn.textContent = `À espera do limite por minuto (${s} s)…`; },
+      });
+      const base = A.questionImageBase({ subject: A.subject(ed.subjectId)?.name || '', year: ed.year, title: ed.title, questionId: q.id });
+      const path = await A.uploadImage(blob, base);
+      const alt = (q.image && !A.isPlaceholderImage(q.image) && q.image.alt) || q.imageRequest.alt || (q.image && q.image.alt) || '';
+      q.image = { path, ...(alt ? { alt } : {}) };
+      changed({ questions: true });
+      A.toast('ok', 'Imagem gerada ✓ Confere-a e grava a ficha para a guardar.');
+    } catch (e) {
+      A.fail(e);
+      btn.disabled = false; btn.textContent = label;
+    }
   }
 
   async function uploadQuestionImage(input) {
@@ -303,7 +339,9 @@
     try {
       const base = A.questionImageBase({ subject: A.subject(ed.subjectId)?.name || '', year: ed.year, title: ed.title, questionId: q.id });
       const path = await A.uploadImage(file, base);
-      q.image = { path, ...(q.image && q.image.alt ? { alt: q.image.alt } : {}) };
+      const alt = (q.image && q.image.alt) || (q.imageRequest && q.imageRequest.alt) || '';
+      q.image = { path, ...(alt ? { alt } : {}) };
+      delete q.imageRequest; // a imagem verdadeira já existe
       changed({ questions: true });
       A.toast('ok', 'Imagem enviada ✓ Grava a ficha para a guardar.');
     } catch (e) {
@@ -459,6 +497,11 @@
 
   async function save(publish, next = false) {
     if (!validate()) return;
+    const pending = ed.content.questions.filter((q) => A.isPlaceholderImage(q.image)).map((q) => q.id);
+    if (publish && pending.length) {
+      A.toast('warn', `Há ${pending.length} imagem(ns) provisória(s) (${pending.map(esc).join(', ')}). Troca-as antes de publicar ou grava como rascunho.`, 7000);
+      return;
+    }
     const content = A.cleanContent(ed.content);
     const d = ed.data;
     const newVersion = d && latestPublished() && contentChanged();
@@ -615,6 +658,8 @@
           qs.splice(i, 1); changed({ questions: true }); return;
         // Só tira a imagem da pergunta; o ficheiro fica no bucket (versões antigas podem usá-lo).
         case 'img-del': delete qs[i].image; changed({ questions: true }); return;
+        case 'img-copy': A.copy(A.imageStylePrompt(qs[i].imageRequest.description, ed.year), btn, 'Copiado ✓'); return;
+        case 'img-ai': generateQuestionImage(i, btn); return;
         case 'opt-add': { const q = qs[i]; q.options.push({ id: newOptionId(q), text: '' }); changed({ questions: true });
           const inputs = document.querySelectorAll(`.q-card[data-q="${i}"] [data-f=opt-text]`); inputs[inputs.length - 1].focus(); return; }
         case 'opt-del': { const q = qs[i]; const [removed] = q.options.splice(Number(btn.dataset.o), 1);
