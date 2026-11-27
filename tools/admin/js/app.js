@@ -63,14 +63,15 @@
     document.querySelectorAll('.tab').forEach((el) => { el.hidden = el.id !== 'tab-' + tab; });
     if (tab === 'reports') A.reports.render();
     if (tab === 'migrate') A.migrate.render();
+    if (tab === 'gemini') A.gemini.render();
     window.scrollTo({ top: 0 });
     app.sync();
   };
 
   // ---------- Rotas no endereço (#/…) ----------
   // #/fichas, #/fichas/nova, #/fichas/<id>, #/temas, #/cobertura, #/cobertura/<disciplina>/<ano>,
-  // #/migrar, #/relatos, #/documentos, #/planos, #/responsaveis. Funciona também a abrir o ficheiro do disco.
-  const SLUG = { worksheets: 'fichas', topics: 'temas', coverage: 'cobertura', migrate: 'migrar', reports: 'relatos', legal: 'documentos', plans: 'planos', users: 'responsaveis' };
+  // #/migrar, #/gemini, #/relatos, #/documentos, #/planos, #/responsaveis. Funciona também a abrir o ficheiro do disco.
+  const SLUG = { worksheets: 'fichas', topics: 'temas', coverage: 'cobertura', migrate: 'migrar', gemini: 'gemini', reports: 'relatos', legal: 'documentos', plans: 'planos', users: 'responsaveis' };
   const TAB = Object.fromEntries(Object.entries(SLUG).map(([t, s]) => [s, t]));
   let routing = false;
 
@@ -142,4 +143,5 @@
   A.coverage.init();
   A.legal.init();
   A.users.init();
+  A.gemini.init();
 })();
